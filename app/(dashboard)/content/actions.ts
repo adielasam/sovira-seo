@@ -12,7 +12,18 @@ export async function generateContentAction(topic: string, type: string, tone: s
     Tone: ${tone}
     Target Length: ${length}
     
-    Ensure the content is well-structured, engaging, and directly targets the keyword. Do not include markdown wrappers like \`\`\`markdown, just return the raw text formatting.`
+    CRITICAL FORMATTING RULES:
+    1. Do not use markdown formatting such as asterisks (**), pound signs (#), or underscores for emphasis or headings.
+    2. Write in plain text only, using natural paragraph breaks and occasional line breaks for structure — no markdown syntax of any kind.
+    3. Do not include markdown wrappers like \`\`\`markdown, just return the raw text.
+    
+    WRITING STYLE GUIDELINES:
+    1. Write naturally, as a human writer would.
+    2. AVOID generic AI patterns like "In today's fast-paced world," "Whether you're looking to X, Y, or Z," or "Let's dive in."
+    3. Vary sentence length and structure — mix short punchy sentences with longer ones, rather than uniform sentence lengths throughout.
+    4. Avoid repeating the same phrases, transition words, or sentence openers across paragraphs.
+    5. Avoid overly formal or "listicle" phrasing unless the content type specifically calls for a list.
+    6. Sound like a knowledgeable person writing conversationally, not like a corporate blog template.`
 
     const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
@@ -34,9 +45,14 @@ export async function generateContentAction(topic: string, type: string, tone: s
     }
 
     const data = await response.json()
-    const text = data.choices[0]?.message?.content
+    let text = data.choices[0]?.message?.content
 
     if (!text) throw new Error('No content returned from Groq')
+
+    // Post-processing: safety net to strip leaked markdown characters
+    text = text.replace(/\*\*/g, '')
+    text = text.replace(/##/g, '')
+    text = text.replace(/__/g, '')
 
     return { content: text }
   } catch (error: any) {
