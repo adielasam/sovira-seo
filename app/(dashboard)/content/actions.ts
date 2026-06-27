@@ -9,7 +9,7 @@ export async function generateContentAction(topic: string, type: string, tone: s
 
   try {
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
 
     const prompt = `You are an expert SEO content writer. Generate high-quality, SEO-optimized content based on the following parameters:
     Topic/Keyword: ${topic}
