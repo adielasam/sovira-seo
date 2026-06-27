@@ -1,16 +1,11 @@
 'use server'
 
-import { GoogleGenerativeAI } from '@google/generative-ai'
-
 export async function generateContentAction(topic: string, type: string, tone: string, length: string) {
-  if (!process.env.GEMINI_API_KEY) {
-    return { error: 'Gemini API key is not configured' }
+  if (!process.env.GROQ_API_KEY) {
+    return { error: 'Groq API key is not configured' }
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' })
-
     const prompt = `You are an expert SEO content writer. Generate high-quality, SEO-optimized content based on the following parameters:
     Topic/Keyword: ${topic}
     Content Type: ${type}
@@ -19,9 +14,29 @@ export async function generateContentAction(topic: string, type: string, tone: s
     
     Ensure the content is well-structured, engaging, and directly targets the keyword. Do not include markdown wrappers like \`\`\`markdown, just return the raw text formatting.`
 
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    const text = response.text()
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'llama3-8b-8192',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 2000
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Groq API Error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    const text = data.choices[0]?.message?.content
+
+    if (!text) throw new Error('No content returned from Groq')
 
     return { content: text }
   } catch (error: any) {
