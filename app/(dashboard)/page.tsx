@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Activity, Search, Tag, Sparkles, FileText, ArrowUpRight, CheckCircle2, TrendingUp, AlertTriangle } from 'lucide-react'
+import { createClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,12 +31,34 @@ const quickActions = [
   { name: 'View Reports', href: '/reports', icon: FileText, color: 'bg-teal-600' },
 ]
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch real tracked keywords count
+  let trackedCount = 0
+  if (user) {
+    const { count } = await supabase
+      .from('tracked_keywords')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    
+    trackedCount = count || 0
+  }
+
+  // Inject real data into stats
+  const dynamicStats = [
+    { name: 'SEO Score', value: '78', unit: '/100', change: '+5 from last week', trend: 'up', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
+    { name: 'Keywords Tracked', value: trackedCount.toString(), unit: '', change: 'Real-time data', trend: 'up', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    { name: 'Backlinks', value: '1,847', unit: '', change: '23 new this week', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', trend: 'up', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  ]
+
   return (
     <div className="space-y-8">
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 w-full">
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <div key={stat.name} className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 hover:shadow-md transition-all duration-200">
             <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.name}</h3>
             <div className="mt-2 flex items-baseline gap-2">
