@@ -7,8 +7,8 @@ import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
   TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X
 } from 'lucide-react'
-import { signOutAction } from '@/app/auth/actions'
-
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 const navigation = [
   { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
   { name: 'SEO Audit', href: '/audit', icon: Search },
@@ -54,7 +54,16 @@ function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void })
 
 export function Sidebar() {
   const pathname = usePathname()
+  const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
+
+  async function handleLogout() {
+    setLoggingOut(true)
+    const supabase = createClient()
+    await supabase.auth.signOut()
+    router.push('/')
+  }
 
   return (
     <>
@@ -102,15 +111,14 @@ export function Sidebar() {
               <NavItems pathname={pathname} onNav={() => setMobileOpen(false)} />
             </li>
             <li className="mt-auto">
-              <form action={signOutAction}>
-                <button
-                  type="submit"
-                  className="group flex w-full gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-                >
-                  <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
-                  Log out
-                </button>
-              </form>
+              <button
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+              >
+                <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
+                {loggingOut ? 'Logging out...' : 'Log out'}
+              </button>
             </li>
           </ul>
         </nav>
@@ -133,15 +141,14 @@ export function Sidebar() {
                 <NavItems pathname={pathname} />
               </li>
               <li className="mt-auto">
-                <form action={signOutAction}>
-                  <button
-                    type="submit"
-                    className="group flex w-full gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
-                  >
-                    <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
-                    Log out
-                  </button>
-                </form>
+                <button
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                  className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+                >
+                  <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
+                  {loggingOut ? 'Logging out...' : 'Log out'}
+                </button>
               </li>
             </ul>
           </nav>

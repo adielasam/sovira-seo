@@ -37,20 +37,28 @@ export default async function DashboardPage() {
 
   // Fetch real tracked keywords count
   let trackedCount = 0
+  let contentCount = 0
   if (user) {
-    const { count } = await supabase
+    const { count: keywordsCount } = await supabase
       .from('tracked_keywords')
       .select('*', { count: 'exact', head: true })
       .eq('user_id', user.id)
     
-    trackedCount = count || 0
+    trackedCount = keywordsCount || 0
+
+    const { count: generationsCount } = await supabase
+      .from('content_generations')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      
+    contentCount = generationsCount || 0
   }
 
   // Inject real data into stats
   const dynamicStats = [
     { name: 'SEO Score', value: '78', unit: '/100', change: '+5 from last week', trend: 'up', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
-    { name: 'Keywords Tracked', value: trackedCount.toString(), unit: '', change: 'Real-time data', trend: 'up', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-    { name: 'Backlinks', value: '1,847', unit: '', change: '23 new this week', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { name: 'Keywords Tracked', value: trackedCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    { name: 'Content Generations', value: contentCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
     { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', trend: 'up', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
   ]
 

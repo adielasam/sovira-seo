@@ -1,17 +1,27 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText } from 'lucide-react'
+import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { generateContentAction } from './actions'
+import { generateContentAction, saveGeneration, getRecentGenerations, deleteGeneration } from './actions'
 
-const historyItems = [
-  { id: 1, type: 'Blog Post', topic: 'Best SEO Tools 2026', time: '2 hours ago' },
-  { id: 2, type: 'Meta Description', topic: 'Rank Tracker Features', time: 'Yesterday' },
-  { id: 3, type: 'Title Tags', topic: 'Keyword Research Guide', time: '2 days ago' },
-  { id: 4, type: 'Social Post', topic: 'New Algorithm Update', time: 'Last week' },
-  { id: 5, type: 'Blog Post', topic: 'Local SEO Strategies', time: 'Last week' },
-]
+function timeAgo(dateString: string) {
+  const date = new Date(dateString)
+  const now = new Date()
+  const seconds = Math.floor((now.getTime() - date.getTime()) / 1000)
+  
+  let interval = seconds / 31536000
+  if (interval > 1) return Math.floor(interval) + " years ago"
+  interval = seconds / 2592000
+  if (interval > 1) return Math.floor(interval) + " months ago"
+  interval = seconds / 86400
+  if (interval > 1) return Math.floor(interval) + " days ago"
+  interval = seconds / 3600
+  if (interval > 1) return Math.floor(interval) + " hours ago"
+  interval = seconds / 60
+  if (interval > 1) return Math.floor(interval) + " minutes ago"
+  return "Just now"
+}
 
 export default function ContentPage() {
   const [topic, setTopic] = useState('')
@@ -24,6 +34,17 @@ export default function ContentPage() {
   const [displayedContent, setDisplayedContent] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [copied, setCopied] = useState(false)
+  
+  const [history, setHistory] = useState<any[]>([])
+
+  useEffect(() => {
+    fetchHistory()
+  }, [])
+
+  const fetchHistory = async () => {
+    const { data } = await getRecentGenerations()
+    if (data) setHistory(data)
+  }
 
   // Simulation of streaming
   useEffect(() => {
@@ -67,6 +88,16 @@ export default function ContentPage() {
       setContent(result.content)
       setIsStreaming(true)
       toast.success('Content generated successfully')
+      
+      const wordCount = result.content.trim().split(/\s+/).length
+      await saveGeneration({
+        topic,
+        content_type: type,
+        tone,
+        generated_content: result.content,
+        word_count: wordCount
+      })
+      fetchHistory()
     }
   }
 
@@ -75,6 +106,26 @@ export default function ContentPage() {
     setCopied(true)
     toast.success('Copied to clipboard')
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleDelete = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    const { success, error } = await deleteGeneration(id)
+    if (success) {
+      toast.success('Deleted generation')
+      fetchHistory()
+    } else {
+      toast.error(error || 'Failed to delete')
+    }
+  }
+
+  const handleHistoryClick = (item: any) => {
+    setTopic(item.topic)
+    setType(item.content_type)
+    setTone(item.tone || 'Professional')
+    setContent(item.generated_content)
+    setDisplayedContent(item.generated_content)
+    setIsStreaming(false)
   }
 
   const wordCount = displayedContent.trim() ? displayedContent.trim().split(/\s+/).length : 0
@@ -259,26 +310,40 @@ export default function ContentPage() {
           Recent Generations
         </h2>
         <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
-          <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-            {historyItems.map((item) => (
-              <li key={item.id} className="p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer">
-                <div>
-                  <div className="flex items-center gap-3 mb-1">
-                    <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
-                      {item.type}
-                    </span>
-                    <span className="text-xs text-slate-500 dark:text-slate-400">{item.time}</span>
+          {history.length === 0 ? (
+            <div className="p-8 text-center text-slate-500 dark:text-slate-400">
+              No generations yet. Create your first piece of content!
+            </div>
+          ) : (
+            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+              {history.map((item) => (
+                <li 
+                  key={item.id} 
+                  onClick={() => handleHistoryClick(item)}
+                  className="p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                >
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
+                        {item.content_type}
+                      </span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">{timeAgo(item.created_at)}</span>
+                    </div>
+                    <p className="font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
+                      {item.topic}
+                    </p>
                   </div>
-                  <p className="font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
-                    {item.topic}
-                  </p>
-                </div>
-                <button className="opacity-0 group-hover:opacity-100 text-blue-600 dark:text-blue-400 text-sm font-medium transition-opacity">
-                  View
-                </button>
-              </li>
-            ))}
-          </ul>
+                  <button 
+                    onClick={(e) => handleDelete(item.id, e)}
+                    className="opacity-0 group-hover:opacity-100 text-red-500 hover:text-red-600 dark:text-red-400 dark:hover:text-red-300 transition-opacity p-2"
+                    title="Delete generation"
+                  >
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

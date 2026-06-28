@@ -1,5 +1,8 @@
 'use server'
 
+import { createClient } from '@/lib/supabase/server'
+import { revalidatePath } from 'next/cache'
+
 export async function generateContentAction(topic: string, type: string, tone: string, length: string) {
   if (!process.env.GROQ_API_KEY) {
     return { error: 'Groq API key is not configured' }
@@ -59,4 +62,61 @@ export async function generateContentAction(topic: string, type: string, tone: s
     console.error('Error generating content:', error)
     return { error: error.message || 'Failed to generate content' }
   }
+}
+
+export async function saveGeneration(data: { topic: string, content_type: string, tone: string, generated_content: string, word_count: number }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('content_generations')
+    .insert([{ user_id: user.id, ...data }])
+
+  if (error) {
+    console.error('Error saving generation:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/content')
+  return { success: true }
+}
+
+export async function getRecentGenerations() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated', data: [] }
+
+  const { data, error } = await supabase
+    .from('content_generations')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(10)
+
+  if (error) {
+    console.error('Error fetching generations:', error)
+    return { error: error.message, data: [] }
+  }
+
+  return { data }
+}
+
+export async function deleteGeneration(id: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('content_generations')
+    .delete()
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error deleting generation:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/content')
+  return { success: true }
 }
