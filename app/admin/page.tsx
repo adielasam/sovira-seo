@@ -91,7 +91,7 @@ export default async function AdminOverviewPage() {
                   <td className="px-6 py-4 capitalize">{u.plan || 'Free'}</td>
                   <td className="px-6 py-4">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
-                    <Link href={`/admin/activity`} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-xs">
+                    <Link href={`/admin/activity?user_id=${u.id}`} className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-700 font-medium text-xs">
                       View Activity <ArrowRight className="w-3 h-3" />
                     </Link>
                   </td>
