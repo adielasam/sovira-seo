@@ -14,7 +14,7 @@ export async function loginAction(formData: FormData) {
     redirect('/auth/login?error=Email and password are required')
   }
 
-  const { error } = await supabase.auth.signInWithPassword({
+  const { data, error } = await supabase.auth.signInWithPassword({
     email,
     password,
   })
@@ -23,8 +23,22 @@ export async function loginAction(formData: FormData) {
     redirect(`/auth/login?error=${encodeURIComponent(error.message)}`)
   }
 
+  let destination = '/dashboard'
+  
+  if (data?.user) {
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('role')
+      .eq('id', data.user.id)
+      .single()
+      
+    if (profile?.role === 'admin') {
+      destination = '/admin'
+    }
+  }
+
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  redirect(destination)
 }
 
 export async function signupAction(formData: FormData) {

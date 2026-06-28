@@ -44,14 +44,27 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
   const notifRef = useRef<HTMLDivElement>(null)
 
   const [notifications, setNotifications] = useState<any[]>([])
+  const [isAdmin, setIsAdmin] = useState(false)
   
   const fetchNotifs = async () => {
     const { data } = await getNotifications()
     setNotifications(data || [])
   }
 
+  const fetchRole = async () => {
+    const supabase = createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user) {
+      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
+      if (profile?.role === 'admin') {
+        setIsAdmin(true)
+      }
+    }
+  }
+
   useEffect(() => {
     fetchNotifs()
+    fetchRole()
   }, [])
 
   useEffect(() => {
@@ -221,6 +234,16 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
               >
                 Billing
               </Link>
+              
+              {isAdmin && (
+                <Link 
+                  href="/admin"
+                  onClick={() => setDropdownOpen(false)}
+                  className="block px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
+                >
+                  Admin Dashboard
+                </Link>
+              )}
               
               <div className="h-px bg-gray-100 dark:bg-slate-700 my-1" />
 
