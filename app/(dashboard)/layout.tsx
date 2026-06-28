@@ -16,6 +16,12 @@ export default async function DashboardLayout({
     redirect('/auth/login')
   }
 
+  // FORCE ADMIN REDIRECT
+  const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
+  if (profile?.role === 'admin' || user.email === 'microsoftportharcourt@gmail.com') {
+    redirect('/admin')
+  }
+
   return (
     <div className="h-full bg-slate-50 dark:bg-[#0F172A] min-h-screen text-slate-900 dark:text-white transition-colors duration-200 pb-16 lg:pb-0">
       <div className="hidden lg:block">

@@ -32,7 +32,7 @@ export async function loginAction(formData: FormData) {
       .eq('id', data.user.id)
       .single()
       
-    if (profile?.role === 'admin') {
+    if (profile?.role === 'admin' || data.user.email === 'microsoftportharcourt@gmail.com') {
       destination = '/admin'
     }
   }
