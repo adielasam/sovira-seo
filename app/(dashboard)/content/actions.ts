@@ -4,8 +4,8 @@ import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
 
 export async function generateContentAction(topic: string, type: string, tone: string, length: string) {
-  if (!process.env.GROQ_API_KEY) {
-    return { error: 'Groq API key is not configured' }
+  if (!process.env.GEMINI_API_KEY) {
+    return { error: 'Gemini API key is not configured' }
   }
 
   try {
@@ -28,29 +28,31 @@ export async function generateContentAction(topic: string, type: string, tone: s
     5. Avoid overly formal or "listicle" phrasing unless the content type specifically calls for a list.
     6. Sound like a knowledgeable person writing conversationally, not like a corporate blog template.`
 
-    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'llama-3.1-8b-instant',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000
+        contents: [{
+          parts: [{ text: prompt }]
+        }],
+        generationConfig: {
+          temperature: 0.7,
+          maxOutputTokens: 2000
+        }
       })
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`Groq API Error: ${response.status} - ${errorText}`)
+      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
-    let text = data.choices[0]?.message?.content
+    let text = data.candidates?.[0]?.content?.parts?.[0]?.text
 
-    if (!text) throw new Error('No content returned from Groq')
+    if (!text) throw new Error('No content returned from Gemini')
 
     // Post-processing: safety net to strip leaked markdown characters
     text = text.replace(/\*\*/g, '')
@@ -74,9 +76,11 @@ export async function saveGeneration(data: { topic: string, content_type: string
     .insert([{ user_id: user.id, ...data }])
 
   if (error) {
-    console.error('Error saving generation:', error)
+    console.error('Error saving generation to DB:', error)
     return { error: error.message }
   }
+  
+  console.log(`[SAVE TRACE] Successfully saved generation for user ${user.id} with topic ${data.topic}`)
 
   revalidatePath('/content')
   return { success: true }

@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from 'react'
 import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateContentAction, saveGeneration, getRecentGenerations, deleteGeneration } from './actions'
+import { useRouter } from 'next/navigation'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -24,6 +25,7 @@ function timeAgo(dateString: string) {
 }
 
 export default function ContentPage() {
+  const router = useRouter()
   const [topic, setTopic] = useState('')
   const [type, setType] = useState('Blog Post')
   const [tone, setTone] = useState('Professional')
@@ -90,14 +92,20 @@ export default function ContentPage() {
       toast.success('Content generated successfully')
       
       const wordCount = result.content.trim().split(/\s+/).length
-      await saveGeneration({
+      console.log('[SAVE TRACE] Calling saveGeneration...', { topic, type, tone, wordCount })
+      
+      const saveRes = await saveGeneration({
         topic,
         content_type: type,
         tone,
         generated_content: result.content,
         word_count: wordCount
       })
-      fetchHistory()
+      
+      console.log('[SAVE TRACE] saveGeneration response:', saveRes)
+      
+      await fetchHistory()
+      router.refresh() // Force Next.js to re-render the Server Components and clear cache
     }
   }
 

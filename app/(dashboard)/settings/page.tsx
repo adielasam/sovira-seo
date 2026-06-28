@@ -1,12 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { User, CreditCard, Bell, Key, Settings as SettingsIcon, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import { getUserProfile, updateUserPlan } from './actions'
+
+declare var PaystackPop: any;
 
 export default function SettingsPage() {
+  const router = useRouter()
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaving, setIsSaving] = useState(false)
+  const [user, setUser] = useState<any>(null)
+  const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    // Load Paystack inline script
+    const script = document.createElement('script')
+    script.src = 'https://js.paystack.co/v1/inline.js'
+    document.head.appendChild(script)
+
+    const fetchUser = async () => {
+      const data = await getUserProfile()
+      if (data.user) setUser(data.user)
+      if (data.profile) setProfile(data.profile)
+    }
+    fetchUser()
+  }, [])
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -17,8 +38,37 @@ export default function SettingsPage() {
     }, 1000)
   }
 
-  const handleManageBilling = () => {
-    toast.success('Redirecting to Stripe/Paystack billing portal...')
+  const handleUpgrade = (planName: string, planAmount: number) => {
+    if (!user) {
+      toast.error('Please log in to upgrade')
+      return
+    }
+    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+      toast.error('Paystack key not configured')
+      return
+    }
+    
+    const handler = PaystackPop.setup({
+      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+      email: user.email,
+      amount: planAmount * 100, // in kobo
+      currency: 'NGN',
+      ref: 'SOVIRA_' + Date.now(),
+      onClose: () => {
+        console.log('Payment closed')
+      },
+      callback: async (response: any) => {
+        const res = await updateUserPlan(response.reference, planName)
+        if (res.error) {
+          toast.error(res.error)
+        } else {
+          toast.success('Payment successful! Plan upgraded.')
+          setProfile({ ...profile, plan: planName })
+          router.refresh()
+        }
+      }
+    })
+    handler.openIframe()
   }
 
   return (
@@ -87,7 +137,7 @@ export default function SettingsPage() {
               <form onSubmit={handleSave} className="p-6 space-y-6">
                 <div className="flex items-center gap-6">
                   <div className="w-20 h-20 bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 rounded-full flex items-center justify-center text-2xl font-bold">
-                    JD
+                    {profile?.full_name ? profile.full_name.charAt(0).toUpperCase() : 'U'}
                   </div>
                   <div>
                     <button type="button" className="px-4 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
@@ -99,18 +149,14 @@ export default function SettingsPage() {
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">First Name</label>
-                    <input type="text" defaultValue="John" className="block w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Last Name</label>
-                    <input type="text" defaultValue="Doe" className="block w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Full Name</label>
+                    <input type="text" defaultValue={profile?.full_name || ''} className="block w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500" />
                   </div>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">Email Address</label>
-                  <input type="email" defaultValue="john@example.com" className="block w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-not-allowed" disabled />
+                  <input type="email" defaultValue={user?.email || ''} className="block w-full px-4 py-2 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-not-allowed" disabled />
                   <p className="text-xs text-slate-500 mt-1.5">Contact support to change your email address.</p>
                 </div>
 
@@ -131,65 +177,66 @@ export default function SettingsPage() {
                   <h3 className="font-semibold text-slate-900 dark:text-white">Current Plan</h3>
                 </div>
                 <div className="p-6">
-                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
+                  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                       <div className="flex items-center gap-3 mb-1">
-                        <h4 className="text-xl font-bold text-slate-900 dark:text-white">Pro Plan</h4>
-                        <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
+                        <h4 className="text-xl font-bold text-slate-900 dark:text-white capitalize">{profile?.plan || 'Free'} Plan</h4>
+                        <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Active</span>
                       </div>
-                      <p className="text-slate-600 dark:text-slate-400">Billed monthly ($79/mo). Next billing date: Jul 26, 2026</p>
-                    </div>
-                    <button onClick={handleManageBilling} className="px-4 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-                      Manage Subscription
-                    </button>
-                  </div>
-                  
-                  <div className="space-y-4 pt-6 border-t border-slate-200 dark:border-slate-800">
-                    <div>
-                      <div className="flex justify-between text-sm font-medium mb-1">
-                        <span className="text-slate-700 dark:text-slate-300">Keywords Tracked</span>
-                        <span className="text-slate-900 dark:text-white">142 / 500</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '28%' }}></div>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="flex justify-between text-sm font-medium mb-1">
-                        <span className="text-slate-700 dark:text-slate-300">SEO Audits</span>
-                        <span className="text-slate-900 dark:text-white">45 / 100</span>
-                      </div>
-                      <div className="w-full bg-slate-100 dark:bg-slate-800 rounded-full h-2">
-                        <div className="bg-blue-600 h-2 rounded-full" style={{ width: '45%' }}></div>
-                      </div>
+                      <p className="text-slate-600 dark:text-slate-400">Manage your subscription and billing details.</p>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
-                <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-                  <h3 className="font-semibold text-slate-900 dark:text-white">Billing History</h3>
+              {/* Upgrade Plans Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Starter Plan */}
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Starter</h4>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦29,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
+                    <p>✓ 100 Keywords Tracked</p>
+                    <p>✓ 20 SEO Audits/mo</p>
+                    <p>✓ Basic AI Content</p>
+                  </div>
+                  <button onClick={() => handleUpgrade('starter', 29000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors">
+                    {profile?.plan === 'starter' ? 'Current Plan' : 'Upgrade'}
+                  </button>
                 </div>
-                <ul className="divide-y divide-slate-200 dark:divide-slate-800">
-                  {[
-                    { id: 'INV-001', date: 'Jun 26, 2026', amount: '$79.00', status: 'Paid' },
-                    { id: 'INV-002', date: 'May 26, 2026', amount: '$79.00', status: 'Paid' },
-                    { id: 'INV-003', date: 'Apr 26, 2026', amount: '$79.00', status: 'Paid' }
-                  ].map((inv) => (
-                    <li key={inv.id} className="p-4 sm:px-6 flex items-center justify-between">
-                      <div>
-                        <p className="font-medium text-slate-900 dark:text-white">{inv.date}</p>
-                        <p className="text-sm text-slate-500">{inv.id}</p>
-                      </div>
-                      <div className="flex items-center gap-4">
-                        <span className="font-medium text-slate-900 dark:text-white">{inv.amount}</span>
-                        <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">{inv.status}</span>
-                        <button className="text-blue-600 hover:text-blue-900 dark:text-blue-400 text-sm font-medium">PDF</button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+
+                {/* Pro Plan */}
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-2 ring-blue-500 dark:ring-blue-500 text-center relative flex flex-col h-full shadow-md">
+                  <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                    POPULAR
+                  </div>
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Pro</h4>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦79,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
+                    <p>✓ 500 Keywords Tracked</p>
+                    <p>✓ 100 SEO Audits/mo</p>
+                    <p>✓ Unlimited AI Content</p>
+                    <p>✓ Priority Support</p>
+                  </div>
+                  <button onClick={() => handleUpgrade('pro', 79000)} className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-500 transition-colors">
+                    {profile?.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
+                  </button>
+                </div>
+
+                {/* Agency Plan */}
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Agency</h4>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦199,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
+                    <p>✓ Unlimited Keywords</p>
+                    <p>✓ Unlimited SEO Audits</p>
+                    <p>✓ Unlimited AI Content</p>
+                    <p>✓ API Access</p>
+                  </div>
+                  <button onClick={() => handleUpgrade('agency', 199000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors">
+                    {profile?.plan === 'agency' ? 'Current Plan' : 'Upgrade'}
+                  </button>
+                </div>
               </div>
             </div>
           )}
