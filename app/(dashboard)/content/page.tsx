@@ -38,6 +38,24 @@ export default function ContentPage() {
   const [copied, setCopied] = useState(false)
   
   const [history, setHistory] = useState<any[]>([])
+  
+  const [msgIndex, setMsgIndex] = useState(0)
+  
+  const messages = [
+    "Crafting your content...",
+    "Analyzing your topic...",
+    "Optimizing for SEO...",
+    "Adding the finishing touches...",
+    "Almost ready..."
+  ]
+
+  useEffect(() => {
+    if (!isGenerating) return
+    const interval = setInterval(() => {
+      setMsgIndex(prev => (prev + 1) % messages.length)
+    }, 2000)
+    return () => clearInterval(interval)
+  }, [isGenerating])
 
   useEffect(() => {
     fetchHistory()
@@ -142,7 +160,7 @@ export default function ContentPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Content AI Generator</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Create SEO-optimized content in seconds with Gemini AI.</p>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Create SEO-optimized content in seconds with Sovira AI.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -267,13 +285,38 @@ export default function ContentPage() {
                 <p>Fill out the form on the left to generate content.</p>
               </div>
             ) : isGenerating ? (
-              <div className="h-full flex flex-col items-center justify-center space-y-4">
-                <div className="flex space-x-2">
-                  <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                  <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                  <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+              <div className="flex flex-col items-center justify-center h-full gap-6">
+                {/* 3D Rotating Cube */}
+                <div className="relative w-16 h-16" style={{ perspective: '200px' }}>
+                  <div className="absolute inset-0 animate-spin rounded-lg"
+                    style={{
+                      background: 'linear-gradient(135deg, #2563eb, #7c3aed, #06b6d4)',
+                      animation: 'spin3d 1.5s ease-in-out infinite',
+                      transformStyle: 'preserve-3d',
+                      boxShadow: '0 0 30px rgba(37,99,235,0.5)'
+                    }}
+                  />
                 </div>
-                <p className="text-slate-500 dark:text-slate-400 text-sm">Consulting Gemini AI...</p>
+                
+                {/* Pulsing dots */}
+                <div className="flex gap-2">
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-bounce" 
+                    style={{ animationDelay: '0ms' }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-bounce" 
+                    style={{ animationDelay: '150ms' }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-bounce" 
+                    style={{ animationDelay: '300ms' }} />
+                </div>
+
+                {/* Rotating text messages - cycles every 2 seconds */}
+                <div className="text-center">
+                  <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 animate-pulse">
+                    {messages[msgIndex]}
+                  </p>
+                  <p className="text-xs text-slate-400 mt-1">
+                    This usually takes a few seconds
+                  </p>
+                </div>
               </div>
             ) : (
               <div className="prose prose-slate dark:prose-invert max-w-none whitespace-pre-wrap font-sans text-slate-700 dark:text-slate-300">
