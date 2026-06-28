@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server'
-import { Search, Download, MoreVertical, Ban, Bell } from 'lucide-react'
+import { Search, Download } from 'lucide-react'
+import { UserActions } from './user-actions'
 
 export const dynamic = 'force-dynamic'
 
@@ -57,24 +58,18 @@ export default async function AdminUsersPage() {
                     <div className="text-slate-500 text-xs">{u.email}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className={`px-2 py-1 rounded text-xs font-medium ${u.role === 'admin' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}`}>
+                    <span className={`px-2 py-1 rounded text-xs font-medium ${
+                      u.role === 'admin' ? 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400' 
+                      : u.role === 'suspended' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+                      : 'bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300'
+                    }`}>
                       {u.role}
                     </span>
                   </td>
                   <td className="px-6 py-4 capitalize">{u.plan || 'Free'}</td>
                   <td className="px-6 py-4">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <button title="Send Notification" className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors">
-                        <Bell className="w-4 h-4" />
-                      </button>
-                      <button title="Suspend User" className="p-1.5 text-slate-400 hover:text-red-600 transition-colors">
-                        <Ban className="w-4 h-4" />
-                      </button>
-                      <button className="p-1.5 text-slate-400 hover:text-slate-600 transition-colors">
-                        <MoreVertical className="w-4 h-4" />
-                      </button>
-                    </div>
+                    <UserActions user={u} />
                   </td>
                 </tr>
               ))}

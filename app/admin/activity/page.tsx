@@ -3,12 +3,14 @@ import { Download, Search, Filter } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminActivityPage() {
+export default async function AdminActivityPage({
+  searchParams,
+}: {
+  searchParams: { user_id?: string }
+}) {
   const supabase = await createClient()
 
-  // We do a join to get user emails if possible, but user_profiles is better
-  // Supabase RPC or join:
-  const { data: logs } = await supabase
+  let query = supabase
     .from('activity_logs')
     .select(`
       *,
@@ -16,6 +18,12 @@ export default async function AdminActivityPage() {
     `)
     .order('created_at', { ascending: false })
     .limit(100)
+
+  if (searchParams.user_id) {
+    query = query.eq('user_id', searchParams.user_id)
+  }
+
+  const { data: logs } = await query
 
   return (
     <div className="space-y-6">
