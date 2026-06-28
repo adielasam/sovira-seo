@@ -16,7 +16,7 @@ export default async function AdminOverviewPage() {
 
   // Fetch active today (from activity logs)
   const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  today.setUTCHours(0, 0, 0, 0)
   
   // Note: we can't easily COUNT DISTINCT in supabase client without RPC, 
   // so we'll fetch today's logs and count unique users manually (fine for MVP)

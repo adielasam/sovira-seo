@@ -12,10 +12,7 @@ export default async function AdminActivityPage({
 
   let query = supabase
     .from('activity_logs')
-    .select(`
-      *,
-      user_profiles ( email )
-    `)
+    .select('*')
     .order('created_at', { ascending: false })
     .limit(100)
 
@@ -24,6 +21,10 @@ export default async function AdminActivityPage({
   }
 
   const { data: logs } = await query
+  
+  // Manually fetch user emails to avoid foreign key relation crashes if the DB schema is missing it
+  const { data: profiles } = await supabase.from('user_profiles').select('id, email')
+  const emailMap = Object.fromEntries(profiles?.map((p: any) => [p.id, p.email]) || [])
 
   return (
     <div className="space-y-6">
@@ -72,7 +73,7 @@ export default async function AdminActivityPage({
                 <tr key={log.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <td className="px-6 py-4 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
                   <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
-                    {log.user_profiles?.email || 'Unknown User'}
+                    {emailMap[log.user_id] || 'Unknown User'}
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded text-xs font-medium">
