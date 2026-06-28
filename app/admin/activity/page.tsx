@@ -26,6 +26,30 @@ export default async function AdminActivityPage({
   const { data: profiles } = await supabase.from('user_profiles').select('id, email')
   const emailMap = Object.fromEntries(profiles?.map((p: any) => [p.id, p.email]) || [])
 
+  const renderDetails = (details: any) => {
+    if (!details || Object.keys(details).length === 0) return <span className="text-slate-400 italic">No details</span>
+    
+    if (details.topic) {
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-medium text-slate-700 dark:text-slate-300">Topic: {details.topic}</span>
+          {details.type && <span className="text-xs text-slate-500">Type: {details.type}</span>}
+        </div>
+      )
+    }
+    
+    if (details.keyword) {
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-medium text-slate-700 dark:text-slate-300">Keyword: {details.keyword}</span>
+          {details.difficulty && <span className="text-xs text-slate-500">Difficulty: {details.difficulty}</span>}
+        </div>
+      )
+    }
+
+    return <pre className="text-[10px] text-slate-500 max-w-[200px] truncate">{JSON.stringify(details)}</pre>
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -81,9 +105,7 @@ export default async function AdminActivityPage({
                     </span>
                   </td>
                   <td className="px-6 py-4">
-                    <pre className="text-[10px] text-slate-500 max-w-[200px] truncate">
-                      {JSON.stringify(log.details)}
-                    </pre>
+                    {renderDetails(log.details)}
                   </td>
                   <td className="px-6 py-4 text-xs font-mono">{log.ip_address || 'N/A'}</td>
                 </tr>
