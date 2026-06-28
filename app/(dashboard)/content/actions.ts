@@ -80,9 +80,17 @@ export async function saveGeneration(data: { topic: string, content_type: string
     return { error: error.message }
   }
   
+  // Log the activity
+  await supabase.from('activity_logs').insert([{
+    user_id: user.id,
+    action: 'Content Generated',
+    details: { topic: data.topic, type: data.content_type }
+  }])
+  
   console.log(`[SAVE TRACE] Successfully saved generation for user ${user.id} with topic ${data.topic}`)
 
   revalidatePath('/content')
+  revalidatePath('/admin/activity')
   return { success: true }
 }
 

@@ -57,7 +57,15 @@ export async function trackKeyword(keywordData: Omit<KeywordResult, 'id'>) {
     return { error: error.message }
   }
 
+  // Log the activity
+  await supabase.from('activity_logs').insert([{
+    user_id: user.id,
+    action: 'Tracked Keyword',
+    details: { keyword: keywordData.keyword, difficulty: keywordData.difficulty }
+  }])
+
   revalidatePath('/keywords')
+  revalidatePath('/admin/activity')
   revalidatePath('/rank-tracker')
   return { success: true }
 }
