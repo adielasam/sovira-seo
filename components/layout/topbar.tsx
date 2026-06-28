@@ -1,6 +1,6 @@
 'use client'
 
-import { Bell, LogOut, Check, Info, AlertTriangle, CheckCircle } from 'lucide-react'
+import { Bell, LogOut, Check, Info, AlertTriangle, CheckCircle, ShieldCheck } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { useState, useRef, useEffect } from 'react'
@@ -236,13 +236,18 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
               </Link>
               
               {isAdmin && (
-                <Link 
-                  href="/admin"
-                  onClick={() => setDropdownOpen(false)}
-                  className="block px-4 py-2 text-sm font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20"
-                >
-                  Admin Dashboard
-                </Link>
+                <>
+                  <div className="h-px bg-gray-100 dark:bg-slate-700 my-1" />
+                  
+                  <Link 
+                    href="/admin"
+                    onClick={() => setDropdownOpen(false)}
+                    className="flex items-center gap-3 px-4 py-2.5 text-sm text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/20 font-semibold transition-colors"
+                  >
+                    <ShieldCheck className="w-4 h-4" />
+                    Switch to Admin Panel
+                  </Link>
+                </>
               )}
               
               <div className="h-px bg-gray-100 dark:bg-slate-700 my-1" />
