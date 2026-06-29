@@ -54,9 +54,15 @@ export async function analyzeCompetitorAction(url: string) {
       seo: seoScore
     }
 
+    let domainName = formattedUrl
+    try {
+      domainName = new URL(formattedUrl).hostname
+    } catch (e) {}
+
     const { error: dbError } = await supabase.from('competitors').insert([{
       user_id: user.id,
       url: formattedUrl,
+      domain: domainName,
       metrics: metricsData
     }])
 
