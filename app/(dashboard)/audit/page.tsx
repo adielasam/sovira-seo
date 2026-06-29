@@ -77,7 +77,7 @@ export default function AuditPage() {
     <div className="space-y-8">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Technical SEO Audit</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Run a comprehensive on-page SEO & performance analysis using Google PageSpeed Insights.</p>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Run a comprehensive on-page SEO & performance analysis of your website.</p>
       </div>
 
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
@@ -107,16 +107,29 @@ export default function AuditPage() {
       </div>
 
       {isAuditing && (
-        <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center min-h-[400px]">
-          <div className="relative w-24 h-24 mb-8">
-            <div className="absolute inset-0 rounded-full border-4 border-slate-100 dark:border-slate-800"></div>
-            <div className="absolute inset-0 rounded-full border-4 border-blue-600 border-t-transparent animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center">
-              <Search className="w-8 h-8 text-blue-600 animate-pulse" />
-            </div>
+        <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
+          <div className="relative flex items-center justify-center w-32 h-32 mb-10">
+            {/* Ambient glows */}
+            <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-500/10 rounded-full blur-2xl animate-pulse"></div>
+            <div className="absolute inset-4 bg-purple-500/20 dark:bg-purple-500/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '500ms' }}></div>
+            
+            {/* Rotating geometric shapes */}
+            <div className="absolute inset-0 rounded-2xl border-4 border-slate-100 dark:border-slate-800 rotate-45"></div>
+            <div className="absolute inset-0 rounded-2xl border-4 border-blue-500 border-r-transparent border-l-transparent animate-spin"></div>
+            <div className="absolute inset-2 rounded-full border-4 border-purple-500 border-t-transparent border-b-transparent animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
+            
+            <Globe className="w-10 h-10 text-blue-600 dark:text-blue-400 relative z-10 animate-pulse" />
           </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Analyzing page with Google PageSpeed...</h2>
-          <p className="text-slate-500 text-sm">This typically takes 10-20 seconds for a full live audit.</p>
+          
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Running deep site analysis...</h2>
+          
+          <div className="flex flex-col items-center gap-3 text-slate-500 text-sm">
+            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-full ring-1 ring-slate-200 dark:ring-slate-700">
+              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
+              <span className="animate-pulse">Scanning DOM elements & meta tags...</span>
+            </div>
+            <p className="text-xs text-slate-400">This live audit typically takes 10-20 seconds.</p>
+          </div>
         </div>
       )}
 
