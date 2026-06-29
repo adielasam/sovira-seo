@@ -3,10 +3,10 @@
 import { useState, useCallback, useEffect, useTransition } from 'react'
 import { Search, Download, Filter, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Plus, Sparkles, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { trackKeyword, untrackKeyword, getTrackedKeywords } from './actions'
+import { trackKeyword, untrackKeyword, getTrackedKeywords, generateKeywordIdeasAction } from './actions'
 
 interface KeywordResult {
-  id: number
+  id?: number
   keyword: string
   volume: string
   difficulty: number
@@ -14,53 +14,6 @@ interface KeywordResult {
   trend: 'up' | 'down'
   intent: 'Informational' | 'Commercial' | 'Transactional' | 'Navigational'
 }
-
-// Robust mock keyword generator — creates realistic variations from any seed phrase
-function generateKeywords(seed: string): KeywordResult[] {
-  const s = seed.trim().toLowerCase()
-  const prefixes = [
-    `best ${s}`,
-    `how to ${s}`,
-    `${s} for beginners`,
-    `${s} tips`,
-    `${s} guide`,
-    `${s} online`,
-    `${s} free`,
-    `${s} fast`,
-    `top ${s} strategies`,
-    `${s} tutorial`,
-    `${s} ideas`,
-    `${s} tools`,
-    `${s} course`,
-    `${s} without experience`,
-    `${s} from home`,
-  ]
-  const intents: KeywordResult['intent'][] = ['Informational', 'Commercial', 'Transactional', 'Navigational']
-
-  // Seeded random so results are consistent per query
-  const seededRand = (n: number, offset: number) => {
-    const val = Math.abs(Math.sin(n * 9301 + offset * 49297 + seed.length * 233) * 233280)
-    return val - Math.floor(val)
-  }
-
-  return prefixes.map((kw, i) => {
-    const r = seededRand(i, kw.length)
-    const volume = Math.floor(r * 280000 + 1200)
-    const diff = Math.floor(seededRand(i, i * 3) * 88 + 12)
-    const cpc = (seededRand(i, i * 7) * 28 + 0.5).toFixed(2)
-    return {
-      id: i + 1,
-      keyword: kw,
-      volume: volume >= 1000 ? `${(volume / 1000).toFixed(0)}K` : String(volume),
-      difficulty: diff,
-      cpc: `$${cpc}`,
-      trend: seededRand(i, i * 11) > 0.38 ? 'up' : 'down',
-      intent: intents[Math.floor(seededRand(i, i * 5) * 4)],
-    }
-  })
-}
-
-const defaultKeywords: KeywordResult[] = generateKeywords('seo tools')
 
 function getDifficultyBadge(score: number) {
   if (score < 40) return <span className="bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 px-2.5 py-0.5 rounded-full text-xs font-medium border border-green-200 dark:border-green-800/50">Easy ({score})</span>
@@ -81,8 +34,8 @@ function getIntentBadge(intent: KeywordResult['intent']) {
 export default function KeywordsPage() {
   const [query, setQuery] = useState('')
   const [isSearching, setIsSearching] = useState(false)
-  const [results, setResults] = useState<KeywordResult[]>(defaultKeywords)
-  const [lastQuery, setLastQuery] = useState('seo tools')
+  const [results, setResults] = useState<KeywordResult[]>([])
+  const [lastQuery, setLastQuery] = useState('')
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
 
@@ -93,24 +46,43 @@ export default function KeywordsPage() {
         setTrackedKeywords(new Set(data.map(k => k.keyword)))
       }
     }
+    const loadInitial = async () => {
+      setIsSearching(true)
+      const { data } = await generateKeywordIdeasAction('seo tools')
+      if (data) {
+        setResults(data as any[])
+        setLastQuery('seo tools')
+      }
+      setIsSearching(false)
+    }
     loadTracked()
+    loadInitial()
   }, [])
 
-  const handleSearch = useCallback((e: React.FormEvent) => {
+  const handleSearch = useCallback(async (e: React.FormEvent) => {
     e.preventDefault()
     if (!query.trim()) {
       toast.error('Please enter a keyword to research')
       return
     }
     setIsSearching(true)
-    // Simulate realistic 1.5s API delay
-    setTimeout(() => {
-      const generated = generateKeywords(query.trim())
-      setResults(generated)
-      setLastQuery(query.trim())
+    const { data, error, message } = await generateKeywordIdeasAction(query.trim())
+    if (error) {
+      if (error === 'LIMIT_REACHED') {
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message } }))
+      } else {
+        toast.error(error)
+      }
       setIsSearching(false)
-      toast.success(`Found ${generated.length} keywords for "${query.trim()}"`, { icon: '🔍' })
-    }, 1500)
+      return
+    }
+    
+    if (data) {
+      setResults(data as any[])
+      setLastQuery(query.trim())
+      toast.success(`Found ${data.length} keywords for "${query.trim()}"`, { icon: '🔍' })
+    }
+    setIsSearching(false)
   }, [query])
 
   const handleTrack = async (item: KeywordResult) => {

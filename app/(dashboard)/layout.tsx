@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { BottomNav } from '@/components/layout/bottom-nav'
+import { UpgradeModal } from '@/components/ui/upgrade-modal'
 
 export default async function DashboardLayout({
   children,
@@ -36,6 +37,7 @@ export default async function DashboardLayout({
         </main>
       </div>
       <BottomNav />
+      <UpgradeModal />
     </div>
   )
 }

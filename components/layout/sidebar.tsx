@@ -5,7 +5,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -19,6 +19,7 @@ const navigation = [
   { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
   { name: 'Reports', href: '/reports', icon: FileText },
   { name: 'Settings', href: '/settings', icon: Settings },
+  { name: 'Integrations', href: '/integrations', icon: Plug },
 ]
 
 function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void }) {

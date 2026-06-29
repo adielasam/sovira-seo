@@ -1,10 +1,13 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText, Trash2 } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText, Trash2, Edit2, Eye, Send } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { generateContentAction, saveGeneration, getRecentGenerations, deleteGeneration } from './actions'
+import { generateContentAction, saveGeneration, getRecentGenerations, deleteGeneration, updateGeneration, publishToWordPressAction } from './actions'
+import { getCmsIntegration } from '../integrations/actions'
 import { useRouter } from 'next/navigation'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
@@ -36,9 +39,14 @@ export default function ContentPage() {
   const [displayedContent, setDisplayedContent] = useState('')
   const [isStreaming, setIsStreaming] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
+  
+  const [viewMode, setViewMode] = useState<'edit' | 'preview'>('preview')
+  const [activeId, setActiveId] = useState<string | null>(null)
   
   const [history, setHistory] = useState<any[]>([])
-  
+  const [cmsProvider, setCmsProvider] = useState<string | null>(null)
+  const [isPublishing, setIsPublishing] = useState(false)
   const [msgIndex, setMsgIndex] = useState(0)
   
   const messages = [
@@ -59,7 +67,15 @@ export default function ContentPage() {
 
   useEffect(() => {
     fetchHistory()
+    fetchCmsIntegration()
   }, [])
+
+  const fetchCmsIntegration = async () => {
+    const { data } = await getCmsIntegration()
+    if (data && data.cms_provider) {
+      setCmsProvider(data.cms_provider)
+    }
+  }
 
   const fetchHistory = async () => {
     const { data } = await getRecentGenerations()
@@ -80,7 +96,7 @@ export default function ContentPage() {
           setIsStreaming(false)
           clearInterval(interval)
         }
-      }, 10)
+      }, 5) // Faster for Groq since it's very fast usually
       
       return () => clearInterval(interval)
     }
@@ -97,21 +113,30 @@ export default function ContentPage() {
     setContent('')
     setDisplayedContent('')
     setIsStreaming(false)
+    setActiveId(null)
+    setViewMode('preview')
 
     const result = await generateContentAction(topic, type, tone, length)
     
     setIsGenerating(false)
     
     if (result.error) {
+      if (result.error === 'LIMIT_REACHED') {
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: result.message } }))
+        setIsStreaming(false)
+        return
+      }
       toast.error(result.error)
-    } else if (result.content) {
+      setIsStreaming(false)
+      return
+    }
+    
+    if (result.content) {
       setContent(result.content)
       setIsStreaming(true)
       toast.success('Content generated successfully')
       
       const wordCount = result.content.trim().split(/\s+/).length
-      console.log('[SAVE TRACE] Calling saveGeneration...', { topic, type, tone, wordCount })
-      
       const saveRes = await saveGeneration({
         topic,
         content_type: type,
@@ -120,10 +145,29 @@ export default function ContentPage() {
         word_count: wordCount
       })
       
-      console.log('[SAVE TRACE] saveGeneration response:', saveRes)
+      if (saveRes.success && saveRes.id) {
+        setActiveId(saveRes.id)
+      }
       
       await fetchHistory()
-      router.refresh() // Force Next.js to re-render the Server Components and clear cache
+      router.refresh()
+    }
+  }
+
+  const handleSaveDraft = async () => {
+    if (!activeId) {
+      toast.error('No active draft to save.')
+      return
+    }
+    setIsSaving(true)
+    const { success, error } = await updateGeneration(activeId, displayedContent)
+    setIsSaving(false)
+    
+    if (success) {
+      toast.success('Draft saved successfully!')
+      fetchHistory()
+    } else {
+      toast.error(error || 'Failed to save draft')
     }
   }
 
@@ -139,6 +183,11 @@ export default function ContentPage() {
     const { success, error } = await deleteGeneration(id)
     if (success) {
       toast.success('Deleted generation')
+      if (activeId === id) {
+        setActiveId(null)
+        setDisplayedContent('')
+        setContent('')
+      }
       fetchHistory()
     } else {
       toast.error(error || 'Failed to delete')
@@ -152,6 +201,27 @@ export default function ContentPage() {
     setContent(item.generated_content)
     setDisplayedContent(item.generated_content)
     setIsStreaming(false)
+    setActiveId(item.id)
+    setViewMode('preview')
+  }
+
+  const handlePublish = async () => {
+    if (!activeId || !cmsProvider || !displayedContent) return
+    setIsPublishing(true)
+    
+    // Extract title (first H1 or first line)
+    const titleMatch = displayedContent.match(/^#\s+(.*)/m)
+    const postTitle = titleMatch ? titleMatch[1] : `AI Generated Post - ${new Date().toLocaleDateString()}`
+    
+    const result = await publishToWordPressAction(postTitle, displayedContent)
+    
+    setIsPublishing(false)
+    
+    if (result.error) {
+      toast.error(result.error)
+    } else {
+      toast.success(`Successfully published draft to WordPress!`)
+    }
   }
 
   const wordCount = displayedContent.trim() ? displayedContent.trim().split(/\s+/).length : 0
@@ -261,32 +331,46 @@ export default function ContentPage() {
         </div>
 
         {/* Right Panel - Output */}
-        <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 lg:col-span-2 flex flex-col h-[600px]">
-          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-[#0F172A] rounded-t-xl">
+        <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 lg:col-span-2 flex flex-col h-[700px]">
+          <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50 dark:bg-[#0F172A] rounded-t-xl">
             <h3 className="font-semibold text-slate-900 dark:text-white flex items-center gap-2">
               <FileText className="w-4 h-4 text-slate-400" />
-              Generated Output
+              Content Drafting
             </h3>
-            <div className="flex gap-2">
-              {displayedContent && (
+            
+            {displayedContent && (
+              <div className="flex items-center gap-4">
+                <div className="flex bg-slate-200 dark:bg-slate-800 rounded-lg p-1">
+                  <button 
+                    onClick={() => setViewMode('edit')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'edit' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                  >
+                    <Edit2 className="w-3.5 h-3.5" /> Edit
+                  </button>
+                  <button 
+                    onClick={() => setViewMode('preview')}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-colors ${viewMode === 'preview' ? 'bg-white dark:bg-slate-700 text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                  >
+                    <Eye className="w-3.5 h-3.5" /> Preview
+                  </button>
+                </div>
                 <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400">
                   {wordCount} words
                 </span>
-              )}
-            </div>
+              </div>
+            )}
           </div>
           
-          <div className="flex-1 p-6 overflow-y-auto bg-white dark:bg-[#1E293B]">
+          <div className="flex-1 p-0 overflow-hidden bg-white dark:bg-[#1E293B] relative">
             {!content && !isGenerating ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 space-y-4">
+              <div className="h-full flex flex-col items-center justify-center text-slate-500 dark:text-slate-400 space-y-4 p-6">
                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center">
                   <Sparkles className="w-8 h-8 text-slate-400 dark:text-slate-500" />
                 </div>
                 <p>Fill out the form on the left to generate content.</p>
               </div>
             ) : isGenerating ? (
-              <div className="flex flex-col items-center justify-center h-full gap-6">
-                {/* 3D Rotating Cube */}
+              <div className="flex flex-col items-center justify-center h-full gap-6 p-6">
                 <div className="relative w-16 h-16" style={{ perspective: '200px' }}>
                   <div className="absolute inset-0 animate-spin rounded-lg"
                     style={{
@@ -297,59 +381,74 @@ export default function ContentPage() {
                     }}
                   />
                 </div>
-                
-                {/* Pulsing dots */}
                 <div className="flex gap-2">
-                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-bounce" 
-                    style={{ animationDelay: '0ms' }} />
-                  <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-bounce" 
-                    style={{ animationDelay: '150ms' }} />
-                  <div className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-bounce" 
-                    style={{ animationDelay: '300ms' }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-purple-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                  <div className="w-2.5 h-2.5 rounded-full bg-cyan-500 animate-bounce" style={{ animationDelay: '300ms' }} />
                 </div>
-
-                {/* Rotating text messages - cycles every 2 seconds */}
                 <div className="text-center">
                   <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 animate-pulse">
                     {messages[msgIndex]}
                   </p>
-                  <p className="text-xs text-slate-400 mt-1">
-                    This usually takes a few seconds
-                  </p>
+                  <p className="text-xs text-slate-400 mt-1">This usually takes a few seconds</p>
                 </div>
               </div>
             ) : (
-              <div className="prose prose-slate dark:prose-invert max-w-none whitespace-pre-wrap font-sans text-slate-700 dark:text-slate-300">
-                {displayedContent}
-                {isStreaming && <span className="inline-block w-2 h-4 ml-1 bg-blue-600 animate-pulse" />}
+              <div className="h-full w-full relative">
+                {viewMode === 'edit' ? (
+                  <textarea
+                    value={displayedContent}
+                    onChange={(e) => setDisplayedContent(e.target.value)}
+                    className="w-full h-full p-6 bg-transparent text-slate-800 dark:text-slate-200 resize-none focus:outline-none font-mono text-sm leading-relaxed"
+                    placeholder="Start drafting your content here..."
+                  />
+                ) : (
+                  <div className="h-full w-full p-6 overflow-y-auto prose prose-slate dark:prose-invert max-w-none">
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                      {displayedContent + (isStreaming ? ' █' : '')}
+                    </ReactMarkdown>
+                  </div>
+                )}
               </div>
             )}
           </div>
           
-          <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex justify-end gap-3 bg-slate-50 dark:bg-[#0F172A] rounded-b-xl">
+          <div className="px-6 py-4 border-t border-slate-200 dark:border-slate-800 flex flex-wrap justify-between items-center gap-3 bg-slate-50 dark:bg-[#0F172A] rounded-b-xl">
             <button 
-              disabled={!displayedContent || isStreaming}
-              onClick={() => handleGenerate(new Event('submit') as any)}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              disabled={!activeId || isStreaming || !cmsProvider || isPublishing}
+              onClick={handlePublish}
+              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-blue-200 dark:border-blue-900/50 bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-400 hover:bg-blue-100 dark:hover:bg-blue-900/40 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              <RefreshCw className="w-4 h-4" />
-              Regenerate
+              {isPublishing ? <div className="w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+              {cmsProvider ? `Publish to ${cmsProvider === 'wordpress' ? 'WordPress' : 'Webflow'}` : 'Connect CMS to Publish'}
             </button>
-            <button 
-              disabled={!displayedContent || isStreaming}
-              className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              Save
-            </button>
-            <button 
-              disabled={!displayedContent || isStreaming}
-              onClick={handleCopy}
-              className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-              {copied ? 'Copied' : 'Copy'}
-            </button>
+
+            <div className="flex gap-2">
+              <button 
+                disabled={!displayedContent || isStreaming}
+                onClick={() => handleGenerate(new Event('submit') as any)}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                <span className="hidden sm:inline">Regenerate</span>
+              </button>
+              <button 
+                disabled={!displayedContent || isStreaming || !activeId || isSaving}
+                onClick={handleSaveDraft}
+                className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {isSaving ? <div className="w-4 h-4 border-2 border-slate-400 border-t-transparent rounded-full animate-spin" /> : <Save className="w-4 h-4" />}
+                <span className="hidden sm:inline">{isSaving ? 'Saving...' : 'Save Draft'}</span>
+              </button>
+              <button 
+                disabled={!displayedContent || isStreaming}
+                onClick={handleCopy}
+                className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -358,7 +457,7 @@ export default function ContentPage() {
       <div>
         <h2 className="text-lg font-semibold text-slate-900 dark:text-white flex items-center gap-2 mb-4">
           <History className="w-5 h-5 text-slate-500" />
-          Recent Generations
+          Version History & Drafts
         </h2>
         <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
           {history.length === 0 ? (
@@ -371,14 +470,21 @@ export default function ContentPage() {
                 <li 
                   key={item.id} 
                   onClick={() => handleHistoryClick(item)}
-                  className="p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer"
+                  className={`p-4 sm:p-6 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors group cursor-pointer ${activeId === item.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
                 >
                   <div>
                     <div className="flex items-center gap-3 mb-1">
                       <span className="text-xs font-medium px-2 py-0.5 rounded bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300">
                         {item.content_type}
                       </span>
-                      <span className="text-xs text-slate-500 dark:text-slate-400">{timeAgo(item.created_at)}</span>
+                      <span className="text-xs text-slate-500 dark:text-slate-400">
+                        {item.updated_at ? `Last edited ${timeAgo(item.updated_at)}` : `Created ${timeAgo(item.created_at)}`}
+                      </span>
+                      {activeId === item.id && (
+                        <span className="text-xs font-bold text-blue-600 dark:text-blue-400 flex items-center gap-1">
+                          <Edit2 className="w-3 h-3" /> Active Draft
+                        </span>
+                      )}
                     </div>
                     <p className="font-medium text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {item.topic}

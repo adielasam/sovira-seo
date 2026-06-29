@@ -2,6 +2,7 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { checkUsageLimit } from '@/lib/usage'
 
 export interface KeywordResult {
   id?: number
@@ -29,7 +30,14 @@ export async function getTrackedKeywords() {
     return { data: [], error: error.message }
   }
 
-  return { data, error: null }
+  // Add deterministic mocked ranking data
+  const enrichedData = data?.map(k => {
+    const pseudoRank = (k.keyword.length * 7 + 3) % 98 + 1
+    const pseudoChange = (k.keyword.length % 5) === 0 ? 0 : (k.keyword.length % 2 === 0 ? 2 : -3)
+    return { ...k, rank: pseudoRank, change: pseudoChange }
+  }) || []
+
+  return { data: enrichedData, error: null }
 }
 
 export async function trackKeyword(keywordData: Omit<KeywordResult, 'id'>) {
@@ -90,4 +98,68 @@ export async function untrackKeyword(keyword: string) {
   revalidatePath('/keywords')
   revalidatePath('/rank-tracker')
   return { success: true }
+}
+
+export async function generateKeywordIdeasAction(seed: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user) {
+    const { limitReached } = await checkUsageLimit(user.id, 'keyword')
+    if (limitReached) {
+      return { error: 'LIMIT_REACHED', message: 'You have reached your Free plan keyword research limit.' }
+    }
+  }
+
+  const s = seed.trim().toLowerCase()
+  const prefixes = [
+    `best ${s}`,
+    `how to ${s}`,
+    `${s} for beginners`,
+    `${s} tips`,
+    `${s} guide`,
+    `${s} online`,
+    `${s} free`,
+    `${s} fast`,
+    `top ${s} strategies`,
+    `${s} tutorial`,
+    `${s} ideas`,
+    `${s} tools`,
+    `${s} course`,
+    `${s} without experience`,
+    `${s} from home`,
+  ]
+  const intents: KeywordResult['intent'][] = ['Informational', 'Commercial', 'Transactional', 'Navigational']
+
+  // Deterministic seed-based generation
+  const seededRand = (n: number, offset: number) => {
+    let val = Math.abs(Math.sin(n * 9301 + offset * 49297 + seed.length * 233) * 233280)
+    return val - Math.floor(val)
+  }
+
+  const results: KeywordResult[] = prefixes.map((kw, i) => {
+    const r = seededRand(i, kw.length)
+    const volume = Math.floor(r * 280000 + 1200)
+    const diff = Math.floor(seededRand(i, i * 3) * 88 + 12)
+    const cpc = (seededRand(i, i * 7) * 28 + 0.5).toFixed(2)
+    return {
+      id: i + 1,
+      keyword: kw,
+      volume: volume >= 1000 ? `${(volume / 1000).toFixed(0)}K` : String(volume),
+      difficulty: diff,
+      cpc: `$${cpc}`,
+      trend: seededRand(i, i * 11) > 0.38 ? 'up' : 'down',
+      intent: intents[Math.floor(seededRand(i, i * 5) * 4)],
+    }
+  })
+
+  if (user) {
+    await supabase.from('activity_logs').insert([{
+      user_id: user.id,
+      action: 'Keyword Research',
+      details: { query: seed, resultsCount: results.length }
+    }])
+  }
+
+  return { data: results }
 }

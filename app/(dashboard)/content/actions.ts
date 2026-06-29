@@ -2,10 +2,22 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import { checkUsageLimit } from '@/lib/usage'
 
 export async function generateContentAction(topic: string, type: string, tone: string, length: string) {
-  if (!process.env.GEMINI_API_KEY) {
-    return { error: 'Gemini API key is not configured' }
+  if (!process.env.GROQ_API_KEY) {
+    return { error: 'Groq API key is not configured' }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user) {
+    const { limitReached } = await checkUsageLimit(user.id, 'generation')
+    if (limitReached) {
+      return { error: 'LIMIT_REACHED', message: 'You have reached your Free plan content limit.' }
+    }
   }
 
   try {
@@ -16,48 +28,39 @@ export async function generateContentAction(topic: string, type: string, tone: s
     Target Length: ${length}
     
     CRITICAL FORMATTING RULES:
-    1. Do not use markdown formatting such as asterisks (**), pound signs (#), or underscores for emphasis or headings.
-    2. Write in plain text only, using natural paragraph breaks and occasional line breaks for structure — no markdown syntax of any kind.
-    3. Do not include markdown wrappers like \`\`\`markdown, just return the raw text.
+    1. USE Markdown formatting! Use # for H1, ## for H2, ### for H3.
+    2. Use bolding (**bold**) for important keywords, and bullet points for lists.
+    3. Do not include markdown wrappers like \`\`\`markdown, just return the raw markdown text.
     
     WRITING STYLE GUIDELINES:
     1. Write naturally, as a human writer would.
     2. AVOID generic AI patterns like "In today's fast-paced world," "Whether you're looking to X, Y, or Z," or "Let's dive in."
     3. Vary sentence length and structure — mix short punchy sentences with longer ones, rather than uniform sentence lengths throughout.
-    4. Avoid repeating the same phrases, transition words, or sentence openers across paragraphs.
-    5. Avoid overly formal or "listicle" phrasing unless the content type specifically calls for a list.
-    6. Sound like a knowledgeable person writing conversationally, not like a corporate blog template.`
+    4. Sound like a knowledgeable person writing conversationally.`
 
-    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${process.env.GEMINI_API_KEY}`, {
+    const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        contents: [{
-          parts: [{ text: prompt }]
-        }],
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 2000
-        }
+        model: 'llama3-8b-8192',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.7,
+        max_tokens: 2000
       })
     })
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`Gemini API Error: ${response.status} - ${errorText}`)
+      throw new Error(`Groq API Error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
-    let text = data.candidates?.[0]?.content?.parts?.[0]?.text
+    const text = data.choices?.[0]?.message?.content
 
-    if (!text) throw new Error('No content returned from Gemini')
-
-    // Post-processing: safety net to strip leaked markdown characters
-    text = text.replace(/\*\*/g, '')
-    text = text.replace(/##/g, '')
-    text = text.replace(/__/g, '')
+    if (!text) throw new Error('No content returned from Groq')
 
     return { content: text }
   } catch (error: any) {
@@ -71,14 +74,17 @@ export async function saveGeneration(data: { topic: string, content_type: string
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Not authenticated' }
 
-  const { error } = await supabase
+  const { data: newRows, error } = await supabase
     .from('content_generations')
     .insert([{ user_id: user.id, ...data }])
+    .select('id')
 
   if (error) {
     console.error('Error saving generation to DB:', error)
     return { error: error.message }
   }
+  
+  const insertedId = newRows?.[0]?.id
   
   // Log the activity
   await supabase.from('activity_logs').insert([{
@@ -91,7 +97,7 @@ export async function saveGeneration(data: { topic: string, content_type: string
 
   revalidatePath('/content')
   revalidatePath('/admin/activity')
-  return { success: true }
+  return { success: true, id: insertedId }
 }
 
 export async function getRecentGenerations() {
@@ -131,4 +137,136 @@ export async function deleteGeneration(id: string) {
 
   revalidatePath('/content')
   return { success: true }
+}
+
+export async function updateGeneration(id: string, content: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('content_generations')
+    .update({ generated_content: content, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .eq('user_id', user.id)
+
+  if (error) {
+    console.error('Error updating generation:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/content')
+  return { success: true }
+}
+
+export async function generateBriefAction(topic: string) {
+  if (!process.env.GEMINI_API_KEY) {
+    return { error: 'Gemini API key is not configured' }
+  }
+
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user) {
+    const { limitReached } = await checkUsageLimit(user.id, 'generation')
+    if (limitReached) {
+      return { error: 'LIMIT_REACHED', message: 'You have reached your Free plan generation limit.' }
+    }
+  }
+
+  try {
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
+
+    const prompt = `You are an expert SEO strategist. Create a comprehensive SEO content brief for the topic: "${topic}".
+    
+    You must return a clean, valid JSON object (no markdown formatting, no \`\`\`json wrappers) matching exactly this schema:
+    {
+      "h1": "String (The optimized H1 title)",
+      "metaDescription": "String (150-160 characters)",
+      "headings": [
+        { "level": "H2", "text": "String" },
+        { "level": "H3", "text": "String" }
+      ],
+      "lsiKeywords": ["String", "String", ... (exactly 10 keywords)],
+      "targetWordCount": Number (e.g. 1500)
+    }`
+
+    const result = await model.generateContent(prompt)
+    const response = await result.response
+    let text = response.text()
+    
+    // Clean up any potential markdown formatting the AI might still add
+    text = text.replace(/```json/gi, '').replace(/```/g, '').trim()
+    
+    const parsedJson = JSON.parse(text)
+    return { data: parsedJson }
+  } catch (error: any) {
+    console.error('Gemini error:', error)
+    return { error: error.message || 'Failed to generate brief' }
+  }
+}
+
+export async function publishToWordPressAction(title: string, markdownContent: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  // Fetch WP credentials
+  const { data: profile, error } = await supabase
+    .from('user_profiles')
+    .select('wp_url, wp_username, wp_app_password')
+    .eq('id', user.id)
+    .single()
+
+  if (error || !profile || !profile.wp_url || !profile.wp_username || !profile.wp_app_password) {
+    return { error: 'WordPress credentials not found. Please connect your site in the Integrations tab.' }
+  }
+
+  // Basic markdown to HTML conversion for WordPress
+  let htmlContent = markdownContent
+    .replace(/^### (.*$)/gim, '<h3>$1</h3>')
+    .replace(/^## (.*$)/gim, '<h2>$1</h2>')
+    .replace(/^# (.*$)/gim, '<h1>$1</h1>')
+    .replace(/\*\*(.*)\*\*/gim, '<strong>$1</strong>')
+    .replace(/\*(.*)\*/gim, '<em>$1</em>')
+    .replace(/\n\n/gim, '</p><p>')
+  htmlContent = `<p>${htmlContent}</p>`
+
+  const wpEndpoint = `${profile.wp_url}/wp-json/wp/v2/posts`
+  const credentials = Buffer.from(`${profile.wp_username}:${profile.wp_app_password}`).toString('base64')
+
+  try {
+    const response = await fetch(wpEndpoint, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Basic ${credentials}`
+      },
+      body: JSON.stringify({
+        title: title,
+        content: htmlContent,
+        status: 'draft' // Create as draft as requested
+      })
+    })
+
+    const data = await response.json()
+
+    if (!response.ok) {
+      console.error('WP API Error:', data)
+      return { error: data.message || `WordPress API returned ${response.status}` }
+    }
+
+    // Log successful publish
+    await supabase.from('activity_logs').insert([{
+      user_id: user.id,
+      action: 'Published to WordPress',
+      details: { url: profile.wp_url, postId: data.id }
+    }])
+
+    return { success: true, url: data.link }
+  } catch (err: any) {
+    console.error('WP Publish Error:', err)
+    return { error: 'Failed to communicate with WordPress site. Please check your URL and credentials.' }
+  }
 }

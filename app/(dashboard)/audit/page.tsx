@@ -1,24 +1,28 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState } from 'react'
 import { Globe, Search, FileDown, CheckCircle2, XCircle, AlertTriangle, Info, Loader2 } from 'lucide-react'
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts'
 import toast from 'react-hot-toast'
 
-const steps = [
-  "Crawling page structure...",
-  "Analyzing meta tags & headings...",
-  "Checking performance signals...",
-  "Generating your report..."
-]
+interface AuditResult {
+  overallScore: number;
+  seoScore: number;
+  performanceScore: number;
+  speed: string;
+  issues: {
+    type: 'critical' | 'warning' | 'info' | 'success';
+    title: string;
+    description: string;
+  }[]
+}
 
 export default function AuditPage() {
   const [url, setUrl] = useState('')
   const [isAuditing, setIsAuditing] = useState(false)
-  const [currentStep, setCurrentStep] = useState(0)
-  const [showResults, setShowResults] = useState(false)
+  const [result, setResult] = useState<AuditResult | null>(null)
 
-  const handleRunAudit = (e: React.FormEvent) => {
+  const handleRunAudit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!url) {
       toast.error('Please enter a URL to audit')
@@ -26,31 +30,54 @@ export default function AuditPage() {
     }
     
     setIsAuditing(true)
-    setShowResults(false)
-    setCurrentStep(0)
+    setResult(null)
 
-    // Simulate 4 steps, 3 seconds each (Wait, 3 seconds each is 12 seconds total. Let's do 1.5s each so the user doesn't wait forever, but I'll stick to instructions "3 seconds each step")
-    let step = 0;
-    const interval = setInterval(() => {
-      step++;
-      if (step < steps.length) {
-        setCurrentStep(step)
-      } else {
-        clearInterval(interval)
-        setIsAuditing(false)
-        setShowResults(true)
-        toast.success('Audit completed successfully!')
+    try {
+      // Bypassing any proxy by hitting the route handler, which natively uses fetch to Google APIs
+      const res = await fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      })
+
+      const data = await res.json()
+      
+      if (!res.ok) {
+        if (data.error === 'LIMIT_REACHED') {
+          window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: data.message } }))
+          return
+        }
+        throw new Error(data.error || 'Audit failed')
       }
-    }, 3000)
+      
+      setResult(data)
+      toast.success('Audit completed successfully!')
+    } catch (error: any) {
+      toast.error(error.message)
+    } finally {
+      setIsAuditing(false)
+    }
   }
 
-  const scoreData = [{ name: 'Score', value: 67, fill: '#EA580C' }] // Orange color for 67
+  const getScoreColor = (score: number) => {
+    if (score >= 90) return '#16A34A' // green-600
+    if (score >= 50) return '#EA580C' // orange-600
+    return '#DC2626' // red-600
+  }
+
+  const getScoreText = (score: number) => {
+    if (score >= 90) return { text: 'Excellent', color: 'text-green-600 dark:text-green-400' }
+    if (score >= 50) return { text: 'Needs Improvement', color: 'text-orange-600 dark:text-orange-400' }
+    return { text: 'Poor', color: 'text-red-600 dark:text-red-400' }
+  }
+
+  const scoreData = result ? [{ name: 'Score', value: result.overallScore, fill: getScoreColor(result.overallScore) }] : []
 
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">SEO Audit</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Run a comprehensive on-page SEO analysis.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Technical SEO Audit</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Run a comprehensive on-page SEO & performance analysis using Google PageSpeed Insights.</p>
       </div>
 
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
@@ -71,10 +98,10 @@ export default function AuditPage() {
           <button
             type="submit"
             disabled={isAuditing}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed min-w-[160px]"
           >
             {isAuditing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Search className="w-5 h-5" />}
-            Run Audit
+            {isAuditing ? 'Analyzing...' : 'Run Audit'}
           </button>
         </form>
       </div>
@@ -88,20 +115,16 @@ export default function AuditPage() {
               <Search className="w-8 h-8 text-blue-600 animate-pulse" />
             </div>
           </div>
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{steps[currentStep]}</h2>
-          <div className="flex gap-2 mt-4">
-            {steps.map((_, i) => (
-              <div key={i} className={`w-12 h-1.5 rounded-full transition-colors duration-500 ${i <= currentStep ? 'bg-blue-600' : 'bg-slate-200 dark:bg-slate-700'}`}></div>
-            ))}
-          </div>
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Analyzing page with Google PageSpeed...</h2>
+          <p className="text-slate-500 text-sm">This typically takes 10-20 seconds for a full live audit.</p>
         </div>
       )}
 
-      {showResults && (
+      {result && !isAuditing && (
         <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Audit Results for {url}</h2>
-            <button className="flex items-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Audit Results for <span className="text-blue-600">{url}</span></h2>
+            <button className="flex items-center justify-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
               <FileDown className="w-4 h-4" />
               Download PDF Report
             </button>
@@ -110,14 +133,14 @@ export default function AuditPage() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Score Gauge */}
             <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center">
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Overall Score</h3>
+              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Overall Health Score</h3>
               <div className="h-48 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={20} data={scoreData} startAngle={180} endAngle={0}>
                     <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
                     <RadialBar background dataKey="value" cornerRadius={10} />
                     <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-4xl font-bold fill-slate-900 dark:fill-white">
-                      67
+                      {result.overallScore}
                     </text>
                     <text x="50%" y="65%" textAnchor="middle" dominantBaseline="middle" className="text-sm font-medium fill-slate-500 dark:fill-slate-400">
                       /100
@@ -125,36 +148,38 @@ export default function AuditPage() {
                   </RadialBarChart>
                 </ResponsiveContainer>
               </div>
-              <p className="text-orange-600 dark:text-orange-400 font-medium mt-2">Needs Improvement</p>
+              <p className={`${getScoreText(result.overallScore).color} font-medium mt-2`}>
+                {getScoreText(result.overallScore).text}
+              </p>
             </div>
 
             {/* Check Cards */}
             <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-orange-500">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Page Speed</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">72ms</p>
+              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-blue-500">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">SEO Score</p>
+                <p className={`text-2xl font-bold ${getScoreText(result.seoScore).color}`}>{result.seoScore}/100</p>
               </div>
-              <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-green-500">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Meta Tags</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">Good</p>
+              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-purple-500">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Performance</p>
+                <p className={`text-2xl font-bold ${getScoreText(result.performanceScore).color}`}>{result.performanceScore}/100</p>
               </div>
-              <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-red-500">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Headings</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">2 Issues</p>
+              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-cyan-500">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Speed Index</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{result.speed}</p>
               </div>
-              <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-red-500">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Images</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">5 missing alt</p>
+              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-orange-500">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Total Issues</p>
+                <p className="text-2xl font-bold text-slate-900 dark:text-white">{result.issues.length}</p>
               </div>
-              <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-green-500">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Mobile</p>
-                <p className="text-lg font-bold text-slate-900 dark:text-white">Passed</p>
+              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-red-500">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Critical Issues</p>
+                <p className="text-2xl font-bold text-red-600">{result.issues.filter(i => i.type === 'critical').length}</p>
               </div>
-              <div className="bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-green-500">
-                <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">SSL</p>
-                <div className="flex items-center gap-2">
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">Active</p>
-                  <span className="w-2 h-2 rounded-full bg-green-500"></span>
+              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-green-500">
+                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Connection</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
+                  <p className="text-lg font-bold text-slate-900 dark:text-white">Secure</p>
                 </div>
               </div>
             </div>
@@ -162,61 +187,38 @@ export default function AuditPage() {
 
           {/* Issues List */}
           <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Identified Issues</h3>
+            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+              <h3 className="font-semibold text-slate-900 dark:text-white">Identified Issues (Top {result.issues.length})</h3>
             </div>
-            <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-              <li className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Critical</span>
-                    <h4 className="font-medium text-slate-900 dark:text-white">Missing H1 tag</h4>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">The page does not have an H1 tag. This is a critical ranking factor.</p>
-                </div>
-              </li>
-              <li className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Critical</span>
-                    <h4 className="font-medium text-slate-900 dark:text-white">3 images without alt text</h4>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Images missing alt attributes harm accessibility and image search rankings.</p>
-                </div>
-              </li>
-              <li className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Warning</span>
-                    <h4 className="font-medium text-slate-900 dark:text-white">Meta description too short</h4>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">The meta description is under 50 characters. Aim for 150-160 characters.</p>
-                </div>
-              </li>
-              <li className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Warning</span>
-                    <h4 className="font-medium text-slate-900 dark:text-white">Page speed below 90</h4>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Improve page load time by compressing large images and minifying JS/CSS.</p>
-                </div>
-              </li>
-              <li className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Info</span>
-                    <h4 className="font-medium text-slate-900 dark:text-white">Consider adding schema markup</h4>
-                  </div>
-                  <p className="text-sm text-slate-600 dark:text-slate-400">Structured data helps search engines understand your content better and can trigger rich snippets.</p>
-                </div>
-              </li>
-            </ul>
+            {result.issues.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                <p>Great job! No major issues were detected by Lighthouse.</p>
+              </div>
+            ) : (
+              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
+                {result.issues.map((issue, idx) => (
+                  <li key={idx} className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    {issue.type === 'critical' ? (
+                      <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
+                    ) : (
+                      <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
+                    )}
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        {issue.type === 'critical' ? (
+                          <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Critical</span>
+                        ) : (
+                          <span className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Warning</span>
+                        )}
+                        <h4 className="font-medium text-slate-900 dark:text-white">{issue.title}</h4>
+                      </div>
+                      <p className="text-sm text-slate-600 dark:text-slate-400">{issue.description}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       )}

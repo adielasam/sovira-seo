@@ -35,13 +35,7 @@ export default function RankTrackerPage() {
       setIsLoading(true)
       const { data } = await getTrackedKeywords()
       if (data) {
-        // We calculate a pseudo-random rank/change for MVP visualization
-        const enriched = data.map(k => {
-          const pseudoRank = (k.keyword.length * 7 + 3) % 98 + 1
-          const pseudoChange = (k.keyword.length % 5) === 0 ? 0 : (k.keyword.length % 2 === 0 ? 2 : -3)
-          return { ...k, rank: pseudoRank, change: pseudoChange }
-        })
-        setTrackedData(enriched)
+        setTrackedData(data)
       }
       setIsLoading(false)
     }
