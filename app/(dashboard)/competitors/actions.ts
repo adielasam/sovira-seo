@@ -20,20 +20,20 @@ export async function analyzeCompetitorAction(url: string) {
     formattedUrl = 'https://' + formattedUrl
   }
 
-  try {
-    // We use PageSpeed Insights to get real domain metrics for the competitor
-    const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(formattedUrl)}&category=SEO&category=PERFORMANCE`
-    const res = await fetch(apiUrl)
-    const data = await res.json()
+    try {
+      // We use PageSpeed Insights to get real domain metrics for the competitor
+      const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(formattedUrl)}&category=SEO&category=PERFORMANCE`
+      const res = await fetch(apiUrl, { cache: 'no-store' })
+      const data = await res.json()
 
-    if (data.error) {
-      return { error: 'Failed to analyze competitor domain. Ensure the URL is accessible.' }
-    }
+      if (data.error) {
+        return { error: `Google API Error: ${data.error.message || 'Failed to analyze competitor domain.'}` }
+      }
 
-    const lighthouse = data.lighthouseResult
-    if (!lighthouse || !lighthouse.categories) {
-      return { error: 'Could not retrieve metrics for this competitor.' }
-    }
+      const lighthouse = data.lighthouseResult
+      if (!lighthouse || !lighthouse.categories) {
+        return { error: 'Could not retrieve metrics for this competitor.' }
+      }
 
     const performanceScore = Math.round(lighthouse.categories.performance?.score * 100) || 0
     const seoScore = Math.round(lighthouse.categories.seo?.score * 100) || 0
