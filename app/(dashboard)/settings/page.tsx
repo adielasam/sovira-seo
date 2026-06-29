@@ -198,48 +198,48 @@ export default function SettingsPage() {
               {/* Upgrade Plans Grid */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 {/* Starter Plan */}
-                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Starter</h4>
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 hover:ring-blue-200 dark:hover:ring-blue-900 group cursor-pointer">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">Starter</h4>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦29,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
-                    <p>✓ 100 Keywords Tracked</p>
-                    <p>✓ 20 SEO Audits/mo</p>
-                    <p>✓ Basic AI Content</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> 100 Keywords Tracked</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> 20 SEO Audits/mo</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> Basic AI Content</p>
                   </div>
-                  <button onClick={() => handleUpgrade('starter', 29000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors">
+                  <button onClick={() => handleUpgrade('starter', 29000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-all duration-300 group-hover:bg-blue-50 group-hover:text-blue-700 dark:group-hover:bg-blue-900/30 dark:group-hover:text-blue-400">
                     {profile?.plan === 'starter' ? 'Current Plan' : 'Upgrade'}
                   </button>
                 </div>
 
                 {/* Pro Plan */}
-                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-2 ring-blue-500 dark:ring-blue-500 text-center relative flex flex-col h-full shadow-md">
-                  <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-blue-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-2 ring-blue-500 text-center relative flex flex-col h-full shadow-lg shadow-blue-500/10 transition-all duration-300 hover:-translate-y-2 hover:shadow-2xl hover:shadow-blue-500/20 group cursor-pointer scale-100 hover:scale-[1.02]">
+                  <div className="absolute top-0 right-0 transform translate-x-1/2 -translate-y-1/2 bg-gradient-to-r from-blue-600 to-blue-400 text-white text-xs font-bold px-3 py-1 rounded-full shadow-md animate-pulse">
                     POPULAR
                   </div>
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Pro</h4>
+                  <h4 className="text-lg font-bold text-blue-600 dark:text-blue-400">Pro</h4>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦79,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
-                    <p>✓ 500 Keywords Tracked</p>
-                    <p>✓ 100 SEO Audits/mo</p>
-                    <p>✓ Unlimited AI Content</p>
-                    <p>✓ Priority Support</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> 500 Keywords Tracked</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> 100 SEO Audits/mo</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> Unlimited AI Content</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> Priority Support</p>
                   </div>
-                  <button onClick={() => handleUpgrade('pro', 79000)} className="w-full px-4 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-500 transition-colors">
+                  <button onClick={() => handleUpgrade('pro', 79000)} className="w-full px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
                     {profile?.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
                   </button>
                 </div>
 
                 {/* Agency Plan */}
-                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full">
-                  <h4 className="text-lg font-bold text-slate-900 dark:text-white">Agency</h4>
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10 hover:ring-purple-200 dark:hover:ring-purple-900 group cursor-pointer">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">Agency</h4>
                   <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦199,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
-                    <p>✓ Unlimited Keywords</p>
-                    <p>✓ Unlimited SEO Audits</p>
-                    <p>✓ Unlimited AI Content</p>
-                    <p>✓ API Access</p>
+                    <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> Unlimited Keywords</p>
+                    <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> Unlimited SEO Audits</p>
+                    <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> Unlimited AI Content</p>
+                    <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> API Access</p>
                   </div>
-                  <button onClick={() => handleUpgrade('agency', 199000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-colors">
+                  <button onClick={() => handleUpgrade('agency', 199000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-all duration-300 group-hover:bg-purple-50 group-hover:text-purple-700 dark:group-hover:bg-purple-900/30 dark:group-hover:text-purple-400">
                     {profile?.plan === 'agency' ? 'Current Plan' : 'Upgrade'}
                   </button>
                 </div>
