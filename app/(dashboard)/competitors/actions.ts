@@ -22,7 +22,8 @@ export async function analyzeCompetitorAction(url: string) {
 
     try {
       // We use PageSpeed Insights to get real domain metrics for the competitor
-      const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(formattedUrl)}&category=SEO&category=PERFORMANCE`
+      const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY ? `&key=${process.env.GOOGLE_PAGESPEED_API_KEY}` : ''
+      const apiUrl = `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(formattedUrl)}&category=SEO&category=PERFORMANCE${apiKey}`
       const res = await fetch(apiUrl, { cache: 'no-store' })
       const data = await res.json()
 

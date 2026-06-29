@@ -21,8 +21,9 @@ export async function POST(req: Request) {
     }
 
     // Call Google PageSpeed API
+    const apiKey = process.env.GOOGLE_PAGESPEED_API_KEY ? `&key=${process.env.GOOGLE_PAGESPEED_API_KEY}` : ''
     const response = await fetch(
-      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=SEO&category=PERFORMANCE`
+      `https://www.googleapis.com/pagespeedonline/v5/runPagespeed?url=${encodeURIComponent(url)}&category=SEO&category=PERFORMANCE${apiKey}`
     )
     
     if (!response.ok) {
