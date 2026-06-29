@@ -86,3 +86,43 @@ export async function getReportByIdAction(id: string) {
   if (error) return { error: error.message }
   return { data }
 }
+
+export async function saveReportScheduleAction(scheduleData: { frequency: string, emails: string, type: string }) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('report_schedules')
+    .upsert({
+      user_id: user.id,
+      frequency: scheduleData.frequency,
+      emails: scheduleData.emails,
+      type: scheduleData.type,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'user_id, frequency' })
+
+  if (error) {
+    console.error('Schedule Error:', error)
+    return { error: error.message }
+  }
+
+  revalidatePath('/reports')
+  return { success: true }
+}
+
+export async function getReportSchedulesAction() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  const { data, error } = await supabase
+    .from('report_schedules')
+    .select('*')
+    .eq('user_id', user.id)
+
+  if (error) return { error: error.message }
+  return { data }
+}
