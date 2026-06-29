@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { getUserProfile, updateUserPlan } from './actions'
 
-declare var PaystackPop: any;
+import PaystackPop from '@paystack/inline-js'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -20,11 +20,6 @@ export default function SettingsPage() {
   const [showConfirmPw, setShowConfirmPw] = useState(false)
 
   useEffect(() => {
-    // Load Paystack inline script
-    const script = document.createElement('script')
-    script.src = 'https://js.paystack.co/v1/inline.js'
-    document.head.appendChild(script)
-
     const fetchUser = async () => {
       const data = await getUserProfile()
       if (data.user) setUser(data.user)
@@ -53,23 +48,16 @@ export default function SettingsPage() {
     }
     
     try {
-      if (typeof window === 'undefined' || !(window as any).PaystackPop) {
-        toast.error('Payment gateway is still loading, please try again in a second.')
-        return
-      }
-
-      const handler = (window as any).PaystackPop.setup({
+      const paystack = new PaystackPop()
+      paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: user.email,
         amount: planAmount * 100, // in kobo
         currency: 'NGN',
-        ref: 'SOVIRA_' + Date.now(),
-        onClose: () => {
-          console.log('Payment closed')
-        },
-        callback: async (response: any) => {
+        reference: 'SOVIRA_' + Date.now(),
+        onSuccess: async (transaction: any) => {
           toast.loading('Verifying payment...')
-          const res = await updateUserPlan(response.reference, planName)
+          const res = await updateUserPlan(transaction.reference, planName)
           toast.dismiss()
           if (res.error) {
             toast.error(res.error)
@@ -78,9 +66,11 @@ export default function SettingsPage() {
             setProfile({ ...profile, plan: planName })
             router.refresh()
           }
+        },
+        onCancel: () => {
+          console.log('Payment closed')
         }
       })
-      handler.openIframe()
     } catch (err) {
       console.error('Paystack error:', err)
       toast.error('Failed to initialize payment gateway')
