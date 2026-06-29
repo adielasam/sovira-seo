@@ -98,12 +98,12 @@ export async function analyzeCompetitorAction(url: string) {
       keywords: extractedKeywords
     }
 
-    const { error: dbError } = await supabase.from('competitors').insert([{
+    const { error: dbError } = await supabase.from('competitors').upsert([{
       user_id: user.id,
       url: formattedUrl,
       domain: domainName,
       metrics: metricsData
-    }])
+    }], { onConflict: 'user_id, domain' })
 
     if (dbError) throw dbError
 
