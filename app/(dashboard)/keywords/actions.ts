@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkUsageLimit } from '@/lib/usage'
 import { ApifyClient } from 'apify-client'
+import { revalidatePath } from 'next/cache'
 
 export interface KeywordResult {
   id?: number
