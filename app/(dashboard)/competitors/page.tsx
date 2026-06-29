@@ -1,15 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { Search, Plus, ExternalLink, Activity, Target, Shield } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Search, Plus, ExternalLink, Activity, Target, Shield, Trash2, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-const metrics = [
-  { name: 'Domain Authority', yourSite: '34', comp1: '67', comp2: '45', comp3: '52', icon: Shield },
-  { name: 'Organic Keywords', yourSite: '1,240', comp1: '8,930', comp2: '3,210', comp3: '4,780', icon: Target },
-  { name: 'Monthly Traffic', yourSite: '12,400', comp1: '89,000', comp2: '34,500', comp3: '41,200', icon: Activity },
-  { name: 'Backlinks', yourSite: '1,847', comp1: '12,430', comp2: '5,670', comp3: '7,890', icon: ExternalLink },
-]
+import { analyzeCompetitorAction, getCompetitorsAction, removeCompetitorAction } from './actions'
 
 const sharedKeywords = [
   'seo tools', 'keyword research', 'rank tracker', 'seo audit', 'backlink checker',
@@ -19,16 +13,64 @@ const sharedKeywords = [
 export default function CompetitorsPage() {
   const [url, setUrl] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
+  const [competitors, setCompetitors] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
 
-  const handleAnalyze = (e: React.FormEvent) => {
+  useEffect(() => {
+    loadCompetitors()
+  }, [])
+
+  const loadCompetitors = async () => {
+    setIsLoading(true)
+    const { data } = await getCompetitorsAction()
+    if (data) setCompetitors(data)
+    setIsLoading(false)
+  }
+
+  const handleAnalyze = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!url) return
     setIsAnalyzing(true)
-    setTimeout(() => {
-      setIsAnalyzing(false)
-      toast.success('Competitor added successfully')
+    const { error, success, message } = await analyzeCompetitorAction(url)
+    
+    if (error) {
+      if (error === 'LIMIT_REACHED') {
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message } }))
+      } else {
+        toast.error(error)
+      }
+    } else if (success) {
+      toast.success('Competitor analyzed successfully!')
       setUrl('')
-    }, 1000)
+      await loadCompetitors()
+    }
+    setIsAnalyzing(false)
+  }
+
+  const handleRemove = async (id: string) => {
+    const { error } = await removeCompetitorAction(id)
+    if (error) {
+      toast.error(error)
+    } else {
+      toast.success('Competitor removed')
+      setCompetitors(competitors.filter(c => c.id !== id))
+    }
+  }
+
+  // Base metrics layout
+  const baseMetrics = [
+    { key: 'domainAuthority', label: 'Domain Authority', icon: Shield },
+    { key: 'organicKeywords', label: 'Organic Keywords', icon: Target },
+    { key: 'monthlyTraffic', label: 'Monthly Traffic', icon: Activity },
+    { key: 'backlinks', label: 'Backlinks', icon: ExternalLink },
+  ]
+
+  // Mock baseline for "Your Site"
+  const yourSiteMetrics: any = {
+    domainAuthority: 42,
+    organicKeywords: 1240,
+    monthlyTraffic: 12400,
+    backlinks: 1847
   }
 
   return (
@@ -48,16 +90,16 @@ export default function CompetitorsPage() {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="Enter competitor URL (e.g. competitor.com)"
+              placeholder="Enter competitor URL (e.g. https://competitor.com)"
               className="block w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
             />
           </div>
           <button
             type="submit"
             disabled={isAnalyzing}
-            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed min-w-[150px]"
           >
-            <Plus className="w-5 h-5" />
+            {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <Plus className="w-5 h-5" />}
             {isAnalyzing ? 'Analyzing...' : 'Analyze'}
           </button>
         </form>
@@ -69,57 +111,71 @@ export default function CompetitorsPage() {
           <h3 className="font-semibold text-slate-900 dark:text-white">Domain Comparison</h3>
         </div>
         <div className="overflow-x-auto w-full">
-          <table className="min-w-[600px] w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-white dark:bg-[#1E293B]">
-              <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Metric</th>
-                <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider bg-blue-50/50 dark:bg-blue-900/10">Your Site</th>
-                <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">competitor1.com</th>
-                <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">competitor2.com</th>
-                <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">competitor3.com</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#1E293B]">
-              {metrics.map((metric, idx) => (
-                <tr key={metric.name} className={idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-[#0F172A]/50' : ''}>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                    <metric.icon className="w-4 h-4 text-slate-400" />
-                    {metric.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-900/5">
-                    {metric.yourSite}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-300">
-                    {metric.comp1}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-300">
-                    {metric.comp2}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-300">
-                    {metric.comp3}
-                  </td>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <table className="min-w-[800px] w-full divide-y divide-slate-200 dark:divide-slate-800">
+              <thead className="bg-white dark:bg-[#1E293B]">
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky left-0 bg-white dark:bg-[#1E293B] z-10 w-48">Metric</th>
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider bg-blue-50/50 dark:bg-blue-900/10">Your Site</th>
+                  {competitors.map((comp) => {
+                    let domain = ''
+                    try { domain = new URL(comp.url).hostname } catch(e) { domain = comp.url }
+                    return (
+                      <th key={comp.id} scope="col" className="px-6 py-4 text-center text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider max-w-[150px] truncate">
+                        {domain}
+                      </th>
+                    )
+                  })}
+                  {competitors.length === 0 && (
+                    <th scope="col" className="px-6 py-4 text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">No Competitors Added</th>
+                  )}
                 </tr>
-              ))}
-              <tr>
-                <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2">
-                  <ExternalLink className="w-4 h-4 text-slate-400" />
-                  Top Pages
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center bg-blue-50/30 dark:bg-blue-900/5">
-                  <button className="text-blue-600 dark:text-blue-400 font-medium hover:underline">View</button>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                  <button className="text-blue-600 dark:text-blue-400 font-medium hover:underline">View</button>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                  <button className="text-blue-600 dark:text-blue-400 font-medium hover:underline">View</button>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
-                  <button className="text-blue-600 dark:text-blue-400 font-medium hover:underline">View</button>
-                </td>
-              </tr>
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#1E293B]">
+                {baseMetrics.map((metric, idx) => (
+                  <tr key={metric.key} className={idx % 2 === 0 ? 'bg-slate-50/50 dark:bg-[#0F172A]/50' : ''}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white flex items-center gap-2 sticky left-0 z-10 bg-inherit w-48">
+                      <metric.icon className="w-4 h-4 text-slate-400" />
+                      {metric.label}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-900/5">
+                      {yourSiteMetrics[metric.key].toLocaleString()}
+                    </td>
+                    {competitors.map((comp) => (
+                      <td key={`${comp.id}-${metric.key}`} className="px-6 py-4 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-300">
+                        {comp.metrics[metric.key]?.toLocaleString() || '-'}
+                      </td>
+                    ))}
+                    {competitors.length === 0 && (
+                      <td className="px-6 py-4 whitespace-nowrap text-sm text-center text-slate-400">-</td>
+                    )}
+                  </tr>
+                ))}
+                
+                {/* Actions Row */}
+                {competitors.length > 0 && (
+                  <tr>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white sticky left-0 z-10 bg-white dark:bg-[#1E293B]"></td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center bg-blue-50/30 dark:bg-blue-900/5"></td>
+                    {competitors.map((comp) => (
+                      <td key={comp.id} className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                        <button 
+                          onClick={() => handleRemove(comp.id)}
+                          className="text-red-500 hover:text-red-700 transition-colors flex items-center gap-1 mx-auto text-xs font-medium"
+                        >
+                          <Trash2 className="w-3 h-3" /> Remove
+                        </button>
+                      </td>
+                    ))}
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
 

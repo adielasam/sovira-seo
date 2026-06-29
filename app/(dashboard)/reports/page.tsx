@@ -1,30 +1,47 @@
 'use client'
 
-import { useState } from 'react'
-import { FileText, FileDown, Plus, Mail, Calendar, Download } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { FileText, FileDown, Plus, Mail, Calendar, Eye, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-
-const reports = [
-  { id: 1, name: 'Monthly SEO Overview - June 2026', type: 'Executive Summary', date: 'Jul 1, 2026', size: '1.2 MB', downloads: 3 },
-  { id: 2, name: 'Keyword Ranking Report', type: 'Rankings', date: 'Jun 28, 2026', size: '2.4 MB', downloads: 12 },
-  { id: 3, name: 'Competitor Benchmark: Q2', type: 'Competitor', date: 'Jun 15, 2026', size: '4.1 MB', downloads: 1 },
-  { id: 4, name: 'Technical Site Audit', type: 'Site Audit', date: 'Jun 10, 2026', size: '8.5 MB', downloads: 5 },
-  { id: 5, name: 'Backlink Profile Analysis', type: 'Backlinks', date: 'Jun 1, 2026', size: '1.8 MB', downloads: 2 },
-]
+import { generateReportAction, getReportsAction } from './actions'
+import { useRouter } from 'next/navigation'
 
 export default function ReportsPage() {
   const [isGenerating, setIsGenerating] = useState(false)
+  const [reports, setReports] = useState<any[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const router = useRouter()
 
-  const handleGenerate = () => {
-    setIsGenerating(true)
-    setTimeout(() => {
-      setIsGenerating(false)
-      toast.success('Report generated successfully')
-    }, 2000)
+  useEffect(() => {
+    loadReports()
+  }, [])
+
+  const loadReports = async () => {
+    setIsLoading(true)
+    const { data } = await getReportsAction()
+    if (data) setReports(data)
+    setIsLoading(false)
   }
 
-  const handleDownload = () => {
-    toast.success('Downloading report...')
+  const handleGenerate = async () => {
+    setIsGenerating(true)
+    const types = ['Executive Summary', 'Keyword Rankings', 'Site Audit', 'Competitor Benchmark']
+    const type = types[Math.floor(Math.random() * types.length)]
+    const name = `${type} - ${new Date().toLocaleString('default', { month: 'short', year: 'numeric' })}`
+    
+    const { error, success, id, message } = await generateReportAction(type, name)
+    
+    if (error) {
+      if (error === 'LIMIT_REACHED') {
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message } }))
+      } else {
+        toast.error(error)
+      }
+    } else if (success) {
+      toast.success('Report generated successfully')
+      await loadReports()
+    }
+    setIsGenerating(false)
   }
 
   return (
@@ -32,14 +49,14 @@ export default function ReportsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Reports</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">Generate and download white-label SEO reports.</p>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">Generate and view white-label SEO reports.</p>
         </div>
         <button
           onClick={handleGenerate}
           disabled={isGenerating}
           className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap disabled:opacity-70 disabled:cursor-not-allowed"
         >
-          {isGenerating ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Plus className="w-4 h-4" />}
+          {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Plus className="w-4 h-4" />}
           {isGenerating ? 'Generating...' : 'New Report'}
         </button>
       </div>
@@ -76,46 +93,59 @@ export default function ReportsPage() {
           <h3 className="font-semibold text-slate-900 dark:text-white">Recent Reports</h3>
         </div>
         <div className="overflow-x-auto w-full">
-          <table className="min-w-[600px] w-full divide-y divide-slate-200 dark:divide-slate-800">
-            <thead className="bg-white dark:bg-[#1E293B]">
-              <tr>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Report Name</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Type</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Generated Date</th>
-                <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Size</th>
-                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Action</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#1E293B]">
-              {reports.map((report) => (
-                <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white flex items-center gap-3">
-                    <div className="p-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-lg">
-                      <FileDown className="w-5 h-5" />
-                    </div>
-                    {report.name}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
-                    {report.type}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
-                    {report.date}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
-                    {report.size}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    <button 
-                      onClick={handleDownload}
-                      className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center justify-end gap-1 ml-auto transition-colors"
-                    >
-                      <Download className="w-4 h-4" /> Download
-                    </button>
-                  </td>
+          {isLoading ? (
+            <div className="flex justify-center p-8">
+              <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
+            </div>
+          ) : (
+            <table className="min-w-[600px] w-full divide-y divide-slate-200 dark:divide-slate-800">
+              <thead className="bg-white dark:bg-[#1E293B]">
+                <tr>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Report Name</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Type</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Generated Date</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Size</th>
+                  <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Action</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#1E293B]">
+                {reports.map((report) => (
+                  <tr key={report.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white flex items-center gap-3">
+                      <div className="p-2 bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 rounded-lg">
+                        <FileDown className="w-5 h-5" />
+                      </div>
+                      {report.name}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                      {report.type}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                      {new Date(report.created_at).toLocaleDateString()}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-600 dark:text-slate-300">
+                      {report.size}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button 
+                        onClick={() => router.push(`/reports/${report.id}`)}
+                        className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300 flex items-center justify-end gap-1 ml-auto transition-colors"
+                      >
+                        <Eye className="w-4 h-4" /> View / Print
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {reports.length === 0 && (
+                  <tr>
+                    <td colSpan={5} className="px-6 py-8 text-center text-slate-500 dark:text-slate-400">
+                      No reports generated yet. Click "New Report" to create one.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          )}
         </div>
       </div>
     </div>
