@@ -52,27 +52,39 @@ export default function SettingsPage() {
       return
     }
     
-    const handler = PaystackPop.setup({
-      key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
-      email: user.email,
-      amount: planAmount * 100, // in kobo
-      currency: 'NGN',
-      ref: 'SOVIRA_' + Date.now(),
-      onClose: () => {
-        console.log('Payment closed')
-      },
-      callback: async (response: any) => {
-        const res = await updateUserPlan(response.reference, planName)
-        if (res.error) {
-          toast.error(res.error)
-        } else {
-          toast.success('Payment successful! Plan upgraded.')
-          setProfile({ ...profile, plan: planName })
-          router.refresh()
-        }
+    try {
+      if (typeof window === 'undefined' || !(window as any).PaystackPop) {
+        toast.error('Payment gateway is still loading, please try again in a second.')
+        return
       }
-    })
-    handler.openIframe()
+
+      const handler = (window as any).PaystackPop.setup({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: user.email,
+        amount: planAmount * 100, // in kobo
+        currency: 'NGN',
+        ref: 'SOVIRA_' + Date.now(),
+        onClose: () => {
+          console.log('Payment closed')
+        },
+        callback: async (response: any) => {
+          toast.loading('Verifying payment...')
+          const res = await updateUserPlan(response.reference, planName)
+          toast.dismiss()
+          if (res.error) {
+            toast.error(res.error)
+          } else {
+            toast.success('Payment successful! Plan upgraded.')
+            setProfile({ ...profile, plan: planName })
+            router.refresh()
+          }
+        }
+      })
+      handler.openIframe()
+    } catch (err) {
+      console.error('Paystack error:', err)
+      toast.error('Failed to initialize payment gateway')
+    }
   }
 
   return (
