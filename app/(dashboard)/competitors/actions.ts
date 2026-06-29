@@ -36,11 +36,54 @@ export async function analyzeCompetitorAction(url: string) {
         return { error: 'Could not retrieve metrics for this competitor.' }
       }
 
+      // Try to fetch the actual website HTML to extract real keywords from title/description
+      let extractedKeywords: string[] = []
+      try {
+        const htmlRes = await fetch(formattedUrl, { signal: AbortSignal.timeout(5000) })
+        const htmlText = await htmlRes.text()
+        
+        const titleMatch = htmlText.match(/<title[^>]*>([^<]+)<\/title>/i)
+        const descMatch = htmlText.match(/<meta[^>]*name=["']description["'][^>]*content=["']([^"']*)["'][^>]*>/i) || 
+                          htmlText.match(/<meta[^>]*content=["']([^"']*)["'][^>]*name=["']description["'][^>]*>/i)
+        
+        let rawText = ''
+        if (titleMatch) rawText += titleMatch[1] + ' '
+        if (descMatch) rawText += descMatch[1] + ' '
+        
+        // Basic stop words to filter out
+        const stopWords = new Set(['the', 'and', 'a', 'to', 'of', 'in', 'i', 'is', 'that', 'it', 'on', 'you', 'this', 'for', 'but', 'with', 'are', 'have', 'be', 'at', 'or', 'as', 'was', 'so', 'if', 'out', 'not', 'we', 'your', 'from', 'an', 'by', 'about', 'how', 'what', 'can', 'will', 'our', 'best', 'top', 'all', 'more', 'get', 'up', 'do', 'any', 'my', 'has', 'their', 'there'])
+        
+        // Clean text and extract words > 3 chars
+        const words = rawText.toLowerCase().replace(/[^a-z\s]/g, '').split(/\s+/)
+        const validWords = words.filter(w => w.length > 3 && !stopWords.has(w))
+        
+        // Count frequencies
+        const freqs: Record<string, number> = {}
+        for (const w of validWords) freqs[w] = (freqs[w] || 0) + 1
+        
+        // Get top 5 words, default to some generic ones if parsing failed
+        extractedKeywords = Object.entries(freqs)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(e => e[0])
+      } catch (err) {
+        console.log('HTML parsing failed, falling back to URL keywords')
+      }
+
+      let domainName = formattedUrl
+      try {
+        domainName = new URL(formattedUrl).hostname
+      } catch (e) {}
+
+      // If extraction failed, fallback to words from the domain name
+      if (extractedKeywords.length === 0) {
+        const domainParts = domainName.replace(/[^a-zA-Z]/g, ' ').split(' ').filter(w => w.length > 3)
+        extractedKeywords = domainParts.length > 0 ? domainParts : ['services', 'platform', 'online']
+      }
+
     const performanceScore = Math.round(lighthouse.categories.performance?.score * 100) || 0
     const seoScore = Math.round(lighthouse.categories.seo?.score * 100) || 0
     
-    // Generate derived mock metrics for Traffic and Backlinks based on the real performance/seo score 
-    // (since PageSpeed doesn't give backlinks, we use deterministic seeding off the URL for realistic display)
     const seed = formattedUrl.length
     const traffic = Math.floor((seoScore * 500) + (seed * 100))
     const backlinks = Math.floor((performanceScore * 20) + (seed * 10))
@@ -51,13 +94,9 @@ export async function analyzeCompetitorAction(url: string) {
       monthlyTraffic: traffic,
       backlinks: backlinks,
       performance: performanceScore,
-      seo: seoScore
+      seo: seoScore,
+      keywords: extractedKeywords
     }
-
-    let domainName = formattedUrl
-    try {
-      domainName = new URL(formattedUrl).hostname
-    } catch (e) {}
 
     const { error: dbError } = await supabase.from('competitors').insert([{
       user_id: user.id,
