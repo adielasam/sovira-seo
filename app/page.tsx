@@ -72,10 +72,26 @@ const features = [
 ]
 
 const steps = [
-  { id: '01', title: 'Audit', desc: 'Scan your site for technical SEO issues instantly.', color: 'bg-blue-500' },
-  { id: '02', title: 'Research', desc: 'Discover high-value, low-competition keywords with AI.', color: 'bg-purple-500' },
-  { id: '03', title: 'Optimize', desc: 'Generate perfectly optimized SEO content in seconds.', color: 'bg-pink-500' },
-  { id: '04', title: 'Track', desc: 'Monitor your rankings and watch your organic traffic grow.', color: 'bg-green-500' }
+  { 
+    id: '01', title: 'Site Audit', desc: 'Scan your site for technical SEO issues instantly.', 
+    svg: <svg className="w-10 h-10 md:w-12 md:h-12 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/><circle cx="11.5" cy="14.5" r="2.5"/><path d="m13.3 16.3 2.2 2.2"/></svg>,
+    color: 'from-slate-700 to-slate-900 shadow-slate-900/50' 
+  },
+  { 
+    id: '02', title: 'Keyword Research', desc: 'Discover high-value, low-competition keywords with AI.', 
+    svg: <svg className="w-10 h-10 md:w-12 md:h-12 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>,
+    color: 'from-blue-800 to-blue-950 shadow-blue-900/50' 
+  },
+  { 
+    id: '03', title: 'Content Generator', desc: 'Generate perfectly optimized SEO content in seconds.', 
+    svg: <svg className="w-10 h-10 md:w-12 md:h-12 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m12 3-1.9 5.8a2 2 0 0 1-1.3 1.3L3 12l5.8 1.9a2 2 0 0 1 1.3 1.3L12 21l1.9-5.8a2 2 0 0 1 1.3-1.3L21 12l-5.8-1.9a2 2 0 0 1-1.3-1.3Z"/></svg>,
+    color: 'from-blue-600 to-blue-800 shadow-blue-700/50' 
+  },
+  { 
+    id: '04', title: 'Rank Tracking', desc: 'Monitor your rankings and watch your organic traffic grow.', 
+    svg: <svg className="w-10 h-10 md:w-12 md:h-12 drop-shadow-md" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" viewBox="0 0 24 24"><path d="m3 11 18-5v12L3 14v-3z"/><path d="M11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>,
+    color: 'from-blue-400 to-blue-600 shadow-blue-500/50' 
+  }
 ]
 
 const comparisonData = [
@@ -342,14 +358,18 @@ export default function LandingPage() {
               {/* Desktop Connector Line */}
               <div className="hidden md:block absolute top-12 left-12 right-12 h-0.5 border-t-2 border-dashed border-slate-300 dark:border-slate-700 z-0"></div>
               
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-8 md:gap-6">
                 {steps.map((step, idx) => (
-                  <FadeInSection key={step.id} delay={idx * 150} className="relative z-10 flex flex-col items-center text-center">
-                    <div className={`w-24 h-24 rounded-2xl ${step.color} shadow-lg flex items-center justify-center text-white text-2xl font-bold mb-6 transform transition-transform hover:scale-110 hover:rotate-3 duration-300`}>
-                      {step.id}
+                  <FadeInSection key={step.id} delay={idx * 150} className="relative z-10 flex flex-col items-center md:items-start text-center md:text-left group transition-all duration-300 md:hover:-translate-y-2">
+                    <div className={`w-20 h-20 md:w-28 md:h-28 rounded-full bg-gradient-to-br ${step.color} shadow-lg ring-1 ring-inset ring-white/20 flex items-center justify-center text-white mb-6 transition-all duration-300 md:group-hover:shadow-2xl`}>
+                      {step.svg}
+                    </div>
+                    <div className="flex items-center gap-4 mb-4 w-full justify-center md:justify-start">
+                      <span className="text-sm font-bold text-slate-400 dark:text-slate-500">{step.id}</span>
+                      <div className="h-px bg-slate-200 dark:bg-slate-700 flex-1 max-w-[50px] md:max-w-none"></div>
                     </div>
                     <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-2">{step.title}</h3>
-                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">{step.desc}</p>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed max-w-[250px] md:max-w-none">{step.desc}</p>
                   </FadeInSection>
                 ))}
               </div>
@@ -579,36 +599,36 @@ export default function LandingPage() {
           <div>
             <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Product</h3>
             <ul className="space-y-4 text-base text-slate-400">
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">Features</Link></li>
-              <li><Link href="#pricing" className="hover:text-blue-400 transition-colors">Pricing</Link></li>
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">Integrations</Link></li>
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">Changelog</Link></li>
+              <li><Link href="/#features" className="hover:text-blue-400 transition-colors">Features</Link></li>
+              <li><Link href="/pricing" className="hover:text-blue-400 transition-colors">Pricing</Link></li>
+              <li><Link href="/integrations" className="hover:text-blue-400 transition-colors">Integrations</Link></li>
+              <li><Link href="/changelog" className="hover:text-blue-400 transition-colors">Changelog</Link></li>
             </ul>
           </div>
           <div>
             <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Company</h3>
             <ul className="space-y-4 text-base text-slate-400">
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">About Us</Link></li>
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">Careers</Link></li>
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">Contact</Link></li>
-              <li><Link href="#" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
+              <li><Link href="/about" className="hover:text-blue-400 transition-colors">About Us</Link></li>
+              <li><Link href="/careers" className="hover:text-blue-400 transition-colors">Careers</Link></li>
+              <li><a href="https://wa.me/2348162337303" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Contact</a></li>
+              <li><Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
             </ul>
           </div>
         </div>
         <div className="mx-auto max-w-7xl px-6 lg:px-8 mt-16 pt-8 border-t border-slate-800 text-slate-500 flex flex-col md:flex-row justify-between items-center gap-6">
           <p>© {new Date().getFullYear()} Sovira SEO (Dorvas Technologies). All rights reserved.</p>
           <div className="flex space-x-6">
-            <a href="https://www.facebook.com/dorvastechnologies" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#1877F2] transition-colors p-2 bg-slate-800 rounded-full hover:bg-white" aria-label="Facebook">
+            <a href={process.env.NEXT_PUBLIC_FACEBOOK_URL || "#"} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#1877F2] transition-colors p-2 bg-slate-800 rounded-full hover:bg-white" aria-label="Facebook">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
               </svg>
             </a>
-            <a href="https://www.linkedin.com/company/dorvastechnologies/?viewAsMember=true" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#0A66C2] transition-colors p-2 bg-slate-800 rounded-full hover:bg-white" aria-label="LinkedIn">
+            <a href={process.env.NEXT_PUBLIC_LINKEDIN_URL || "#"} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#0A66C2] transition-colors p-2 bg-slate-800 rounded-full hover:bg-white" aria-label="LinkedIn">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path fillRule="evenodd" d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" clipRule="evenodd" />
               </svg>
             </a>
-            <a href="https://www.youtube.com/@samgoldtales" target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#FF0000] transition-colors p-2 bg-slate-800 rounded-full hover:bg-white" aria-label="YouTube">
+            <a href={process.env.NEXT_PUBLIC_YOUTUBE_URL || "#"} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-[#FF0000] transition-colors p-2 bg-slate-800 rounded-full hover:bg-white" aria-label="YouTube">
               <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path fillRule="evenodd" d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.5 12 3.5 12 3.5s-7.505 0-9.377.55a3.016 3.016 0 0 0-2.122 2.136C0 8.07 0 12 0 12s0 3.93.498 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.55 9.377.55 9.377.55s7.505 0 9.377-.55a3.016 3.016 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.498-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" clipRule="evenodd" />
               </svg>
