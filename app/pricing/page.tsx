@@ -141,7 +141,7 @@ export default function PricingPage() {
               </p>
               <div className="mt-2 flex items-baseline gap-x-1">
                 <span className="text-5xl font-bold tracking-tight">
-                  ${annual ? tier.price.annually / 12 : tier.price.monthly}
+                  ${Math.round(annual ? tier.price.annually / 12 : tier.price.monthly)}
                 </span>
                 <span className={`text-sm font-semibold leading-6 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   /month
