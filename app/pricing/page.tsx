@@ -1,9 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Check, ArrowRight, Zap, Shield, Sparkles, Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import PaystackPop from '@paystack/inline-js'
+import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
 
 const tiers = [
   {
@@ -60,9 +63,65 @@ const tiers = [
 
 export default function PricingPage() {
   const [annual, setAnnual] = useState(true)
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const data = await getUserProfile()
+        if (data && data.user) setUser(data.user)
+      } catch(e) {}
+    }
+    fetchUser()
+  }, [])
 
   const handleSubscribe = (planName: string, amount: number) => {
-    toast(`Initiating Paystack payment for ${planName} ($${amount})`, { icon: '💳' })
+    if (!user) {
+      toast.error('Please log in or create an account first.', { icon: '🔒' })
+      router.push('/auth/login?redirect=/pricing')
+      return
+    }
+
+    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+      toast.error('Paystack key not configured')
+      return
+    }
+    
+    // Map USD to NGN for Paystack logic
+    let ngnAmount = 0
+    const lowerPlan = planName.toLowerCase()
+    if (lowerPlan === 'starter') ngnAmount = annual ? 290000 : 29000
+    else if (lowerPlan === 'pro') ngnAmount = annual ? 790000 : 79000
+    else if (lowerPlan === 'agency') ngnAmount = annual ? 1990000 : 199000
+
+    try {
+      const paystack = new PaystackPop()
+      paystack.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: user.email,
+        amount: ngnAmount * 100, // in kobo
+        currency: 'NGN',
+        reference: 'SOVIRA_' + Date.now(),
+        onSuccess: async (transaction: any) => {
+          toast.loading('Verifying payment...')
+          const res = await updateUserPlan(transaction.reference, lowerPlan)
+          toast.dismiss()
+          if (res.error) {
+            toast.error(res.error)
+          } else {
+            toast.success('Payment successful! Plan upgraded.')
+            router.push('/dashboard')
+          }
+        },
+        onCancel: () => {
+          console.log('Payment closed')
+        }
+      })
+    } catch (err) {
+      console.error('Paystack error:', err)
+      toast.error('Failed to initialize payment gateway')
+    }
   }
 
   return (
