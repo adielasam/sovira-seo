@@ -31,6 +31,7 @@ Your Goal:
     return result.toDataStreamResponse();
   } catch (error) {
     console.error('Chat API Error:', error);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500 });
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return new Response(JSON.stringify({ error: errorMessage }), { status: 500 });
   }
 }
