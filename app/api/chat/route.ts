@@ -23,7 +23,7 @@ Your Goal:
 5. Keep responses concise, punchy, and formatted with markdown when appropriate (bolding key benefits, etc).`;
 
     const result = await streamText({
-      model: groq('llama3-8b-8192'),
+      model: groq('llama-3.1-8b-instant'),
       system: systemPrompt,
       messages,
     });
