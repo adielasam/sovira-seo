@@ -6,9 +6,11 @@ import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
-  CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote
-} from 'lucide-react'
+import { CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { useRouter } from 'next/navigation'
+import PaystackPop from '@paystack/inline-js'
+import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
 
 // --- Custom Hooks & Helpers ---
 function useIntersectionObserver(ref: React.RefObject<Element | null>, options = {}) {
@@ -130,9 +132,65 @@ export default function LandingPage() {
   const [isAnnual, setIsAnnual] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [openFaq, setOpenFaq] = useState<number | null>(0)
+  
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
 
-  const handleSubscribe = () => {
-    toast.success('Redirecting to secure payment portal...', { icon: '💳' })
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const data = await getUserProfile()
+        if (data && data.user) setUser(data.user)
+      } catch(e) {}
+    }
+    fetchUser()
+  }, [])
+
+  const handleSubscribe = (planName: string) => {
+    if (!user) {
+      toast.error('Please log in or create an account first.', { icon: '🔒' })
+      router.push('/auth/login?redirect=/')
+      return
+    }
+
+    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+      toast.error('Paystack key not configured')
+      return
+    }
+    
+    let ngnAmount = 0
+    const lowerPlan = planName.toLowerCase()
+    if (lowerPlan === 'starter') ngnAmount = isAnnual ? 290000 : 29000
+    else if (lowerPlan === 'pro') ngnAmount = isAnnual ? 790000 : 79000
+    else if (lowerPlan === 'agency') ngnAmount = isAnnual ? 1990000 : 199000
+
+    try {
+      const paystack = new PaystackPop()
+      paystack.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: user.email,
+        amount: ngnAmount * 100, // in kobo
+        currency: 'NGN',
+        reference: 'SOVIRA_' + Date.now(),
+        onSuccess: async (transaction: any) => {
+          toast.loading('Verifying payment...')
+          const res = await updateUserPlan(transaction.reference, lowerPlan)
+          toast.dismiss()
+          if (res.error) {
+            toast.error(res.error)
+          } else {
+            toast.success('Payment successful! Plan upgraded.')
+            router.push('/dashboard')
+          }
+        },
+        onCancel: () => {
+          console.log('Payment closed')
+        }
+      })
+    } catch (err) {
+      console.error('Paystack error:', err)
+      toast.error('Failed to initialize payment gateway')
+    }
   }
 
   return (
@@ -499,7 +557,7 @@ export default function LandingPage() {
                   <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">${isAnnual ? '23' : '29'}</span>
                   <span className="text-sm font-semibold text-slate-500">/mo</span>
                 </p>
-                <button onClick={handleSubscribe} className="mt-8 w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Get Started</button>
+                <button onClick={() => handleSubscribe('starter')} className="mt-8 w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Get Started</button>
                 <ul className="mt-8 space-y-4 text-sm text-slate-600 dark:text-slate-400 flex-grow">
                   <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 5 Projects</li>
                   <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 100 Keywords</li>
@@ -518,7 +576,7 @@ export default function LandingPage() {
                   <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">${isAnnual ? '63' : '79'}</span>
                   <span className="text-sm font-semibold text-slate-500">/mo</span>
                 </p>
-                <button onClick={handleSubscribe} className="mt-8 w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-500 transition-colors shadow-md">Get Started</button>
+                <button onClick={() => handleSubscribe('pro')} className="mt-8 w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-500 transition-colors shadow-md">Get Started</button>
                 <ul className="mt-8 space-y-4 text-sm text-slate-600 dark:text-slate-400 flex-grow">
                   <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 25 Projects</li>
                   <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 500 Keywords</li>
@@ -535,7 +593,7 @@ export default function LandingPage() {
                   <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">${isAnnual ? '159' : '199'}</span>
                   <span className="text-sm font-semibold text-slate-500">/mo</span>
                 </p>
-                <button onClick={handleSubscribe} className="mt-8 w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Get Started</button>
+                <button onClick={() => handleSubscribe('agency')} className="mt-8 w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Get Started</button>
                 <ul className="mt-8 space-y-4 text-sm text-slate-600 dark:text-slate-400 flex-grow">
                   <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Unlimited Projects</li>
                   <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Unlimited Keywords</li>
