@@ -108,6 +108,7 @@ export async function getRecentGenerations() {
   const { data, error } = await supabase
     .from('content_generations')
     .select('*')
+    .eq('user_id', user.id)
     .order('created_at', { ascending: false })
     .limit(10)
 
