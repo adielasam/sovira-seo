@@ -149,7 +149,7 @@ export default function LandingPage() {
                   </div>
                   <div className="relative w-full sm:pt-12">
                     <Image 
-                      src="/dashboard-preview.png" 
+                      src="/newdashbaord.PNG" 
                       alt="Sovira SEO Dashboard Interface" 
                       width={1200} 
                       height={800} 
