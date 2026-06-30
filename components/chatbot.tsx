@@ -55,7 +55,7 @@ export function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-[350px] md:w-[400px] h-[600px] max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className="fixed bottom-4 right-4 left-4 md:left-auto w-auto md:w-[400px] h-[500px] max-h-[80vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
           
           {/* Header */}
           <div className="bg-[#0099FF] text-white p-4 flex items-center justify-between shadow-md z-10">

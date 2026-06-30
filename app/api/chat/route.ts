@@ -1,9 +1,8 @@
-import { createGoogleGenerativeAI } from '@ai-sdk/google';
+import { createGroq } from '@ai-sdk/groq';
 import { streamText } from 'ai';
 
-// Initialize the Google Generative AI provider with our specific env var
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY || '',
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY || '',
 });
 
 export const maxDuration = 30;
@@ -24,7 +23,7 @@ Your Goal:
 5. Keep responses concise, punchy, and formatted with markdown when appropriate (bolding key benefits, etc).`;
 
     const result = await streamText({
-      model: google('gemini-1.5-flash'),
+      model: groq('llama3-8b-8192'),
       system: systemPrompt,
       messages,
     });

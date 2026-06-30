@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@ai-sdk/google": "^0.0.52",
+    "@ai-sdk/groq": "^0.0.1",
     "@google/generative-ai": "^0.24.1",
     "@paystack/inline-js": "^2.23.1",
     "@supabase/ssr": "^0.12.0",
