@@ -10,10 +10,20 @@ import PaystackPop from '@paystack/inline-js'
 
 export default function SettingsPage() {
   const router = useRouter()
+  
   const [activeTab, setActiveTab] = useState('profile')
   const [isSaving, setIsSaving] = useState(false)
   const [user, setUser] = useState<any>(null)
   const [profile, setProfile] = useState<any>(null)
+
+  useEffect(() => {
+    // Read the tab from the URL query params without triggering Next.js Suspense warnings
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search)
+      const tab = params.get('tab')
+      if (tab) setActiveTab(tab)
+    }
+  }, [])
 
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)

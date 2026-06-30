@@ -60,7 +60,7 @@ export function UpgradeModal() {
           <button 
             onClick={() => {
               setIsOpen(false)
-              window.location.href = '/settings/billing' // redirect to billing
+              window.location.href = '/settings?tab=billing' // redirect to billing tab
             }}
             className="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
           >
