@@ -13,6 +13,7 @@ export interface KeywordResult {
   cpc: string
   trend: 'up' | 'down'
   intent: 'Informational' | 'Commercial' | 'Transactional' | 'Navigational'
+  rank_history?: { date: string; rank: number }[]
 }
 
 export async function getTrackedKeywords() {
@@ -32,11 +33,25 @@ export async function getTrackedKeywords() {
     return { data: [], error: error.message }
   }
 
-  // Add deterministic mocked ranking data
+  // Add default empty history if null, and calculate current rank/change
   const enrichedData = data?.map(k => {
-    const pseudoRank = (k.keyword.length * 7 + 3) % 98 + 1
-    const pseudoChange = (k.keyword.length % 5) === 0 ? 0 : (k.keyword.length % 2 === 0 ? 2 : -3)
-    return { ...k, rank: pseudoRank, change: pseudoChange }
+    const history = k.rank_history || []
+    
+    // Sort history by date descending
+    const sortedHistory = [...history].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    
+    let currentRank = 0
+    let change = 0
+    
+    if (sortedHistory.length > 0) {
+      currentRank = sortedHistory[0].rank
+      if (sortedHistory.length > 1) {
+        // Change is (previous rank) - (current rank). Positive means improved!
+        change = sortedHistory[1].rank - currentRank
+      }
+    }
+    
+    return { ...k, rank: currentRank, change: change, rank_history: sortedHistory }
   }) || []
 
   return { data: enrichedData, error: null }
@@ -59,6 +74,7 @@ export async function trackKeyword(keywordData: Omit<KeywordResult, 'id'>) {
         cpc: keywordData.cpc,
         trend: keywordData.trend,
         intent: keywordData.intent,
+        rank_history: []
       }
     ])
 
@@ -100,6 +116,81 @@ export async function untrackKeyword(keyword: string) {
   revalidatePath('/keywords')
   revalidatePath('/rank-tracker')
   return { success: true }
+}
+
+export async function refreshKeywordRankAction(keywordId: number, keyword: string, targetDomain: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (!user) return { error: 'Not authenticated' }
+
+  const { limitReached } = await checkUsageLimit(user.id, 'audit') // Rank checks use audit limits for simplicity
+  if (limitReached) {
+    return { error: 'LIMIT_REACHED', message: 'You have reached your Free plan limit.' }
+  }
+
+  try {
+    let newRank = 100 // Default to not found
+    
+    if (process.env.APIFY_API_TOKEN) {
+      const apifyClient = new ApifyClient({ token: process.env.APIFY_API_TOKEN })
+      const actorId = process.env.APIFY_ACTOR_ID || 'apify/google-search-scraper'
+      
+      const run = await apifyClient.actor(actorId).call({
+        queries: keyword,
+        resultsPerPage: 100,
+        countryCode: "us",
+        languageCode: "en"
+      })
+
+      const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems()
+      
+      if (items && items.length > 0) {
+        const organicResults = items[0].organicResults || []
+        const found = organicResults.find((r: any) => r.url.toLowerCase().includes(targetDomain.toLowerCase()))
+        if (found) {
+          newRank = found.position
+        }
+      }
+    } else {
+      // Fallback pseudo-random for testing if Apify is missing
+      newRank = Math.floor(Math.random() * 40) + 1
+    }
+
+    // Fetch existing history
+    const { data: keywordData } = await supabase
+      .from('tracked_keywords')
+      .select('rank_history')
+      .eq('id', keywordId)
+      .eq('user_id', user.id)
+      .single()
+      
+    const history = keywordData?.rank_history || []
+    
+    // Add new data point
+    const newEntry = { date: new Date().toISOString(), rank: newRank }
+    const updatedHistory = [...history, newEntry]
+
+    const { error } = await supabase
+      .from('tracked_keywords')
+      .update({ rank_history: updatedHistory })
+      .eq('id', keywordId)
+      .eq('user_id', user.id)
+
+    if (error) throw error
+
+    await supabase.from('activity_logs').insert([{
+      user_id: user.id,
+      action: 'Rank Checked',
+      details: { keyword, rank: newRank, targetDomain }
+    }])
+
+    revalidatePath('/rank-tracker')
+    return { success: true, newRank }
+  } catch (error: any) {
+    console.error('Error checking rank:', error)
+    return { error: error.message || 'Failed to check rank' }
+  }
 }
 
 export async function generateKeywordIdeasAction(seed: string) {

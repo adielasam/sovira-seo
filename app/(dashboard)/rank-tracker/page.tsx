@@ -1,10 +1,10 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Plus, TrendingUp, TrendingDown, Minus, Filter, Download, Loader2 } from 'lucide-react'
+import { Plus, TrendingUp, TrendingDown, Minus, Filter, Download, Loader2, RefreshCw } from 'lucide-react'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import toast from 'react-hot-toast'
-import { getTrackedKeywords } from '../keywords/actions'
+import { getTrackedKeywords, refreshKeywordRankAction } from '../keywords/actions'
 
 const chartData = [
   { date: 'Jun 1', rank: 45 },
@@ -26,24 +26,64 @@ const keywords = [
 ]
 
 export default function RankTrackerPage() {
-  const [project, setProject] = useState('sovira.com')
+  const [targetDomain, setTargetDomain] = useState('sovira.com')
   const [trackedData, setTrackedData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [refreshingId, setRefreshingId] = useState<number | null>(null)
+
+  const loadKeywords = async () => {
+    setIsLoading(true)
+    const { data } = await getTrackedKeywords()
+    if (data) {
+      setTrackedData(data)
+    }
+    setIsLoading(false)
+  }
 
   useEffect(() => {
-    const loadKeywords = async () => {
-      setIsLoading(true)
-      const { data } = await getTrackedKeywords()
-      if (data) {
-        setTrackedData(data)
-      }
-      setIsLoading(false)
-    }
     loadKeywords()
   }, [])
 
   const handleAddKeyword = () => {
     toast.success('Keyword added to tracker')
+  }
+
+  const handleRefreshRank = async (keywordId: number, keyword: string) => {
+    if (!targetDomain) {
+      toast.error('Please enter a target domain first')
+      return
+    }
+    setRefreshingId(keywordId)
+    const res = await refreshKeywordRankAction(keywordId, keyword, targetDomain)
+    setRefreshingId(null)
+    if (res?.error) {
+      toast.error(res.error)
+    } else {
+      toast.success(`Rank updated: ${res.newRank}`)
+      loadKeywords()
+    }
+  }
+
+  const getDynamicChartData = () => {
+    const dateMap: Record<string, { totalRank: number, count: number }> = {}
+    
+    trackedData.forEach(kw => {
+      if (kw.rank_history && kw.rank_history.length > 0) {
+        kw.rank_history.forEach((entry: any) => {
+           const d = new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+           if (!dateMap[d]) dateMap[d] = { totalRank: 0, count: 0 }
+           dateMap[d].totalRank += entry.rank
+           dateMap[d].count += 1
+        })
+      }
+    })
+    
+    const aggregated = Object.keys(dateMap).map(date => ({
+      date,
+      rank: Math.round(dateMap[date].totalRank / dateMap[date].count)
+    }))
+    
+    return aggregated.length > 0 ? aggregated : chartData
   }
 
   return (
@@ -54,15 +94,13 @@ export default function RankTrackerPage() {
           <p className="text-slate-600 dark:text-slate-400 mt-1">Monitor your search engine rankings over time.</p>
         </div>
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          <select 
-            value={project}
-            onChange={(e) => setProject(e.target.value)}
-            className="px-4 py-2 bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
-          >
-            <option value="sovira.com">sovira.com</option>
-            <option value="client-site.com">client-site.com</option>
-            <option value="blog.sovira.com">blog.sovira.com</option>
-          </select>
+          <input 
+            type="text"
+            placeholder="Target Domain (e.g. sovira.com)"
+            value={targetDomain}
+            onChange={(e) => setTargetDomain(e.target.value)}
+            className="px-4 py-2 w-[200px] bg-white dark:bg-[#1E293B] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+          />
           <button
             onClick={handleAddKeyword}
             className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm whitespace-nowrap"
@@ -84,7 +122,7 @@ export default function RankTrackerPage() {
         </div>
         <div className="h-[300px] w-full">
           <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={chartData} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
+            <LineChart data={getDynamicChartData()} margin={{ top: 5, right: 20, bottom: 5, left: 0 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#334155" opacity={0.2} vertical={false} />
               <XAxis dataKey="date" stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
               <YAxis reversed stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} domain={[1, 100]} />
@@ -120,6 +158,7 @@ export default function RankTrackerPage() {
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Change</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Search Volume</th>
                 <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Target URL</th>
+                <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#1E293B]">
@@ -138,14 +177,15 @@ export default function RankTrackerPage() {
                 </tr>
               ) : (
                 trackedData.map((kw, i) => (
-                  <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr key={kw.id || i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
                       {kw.keyword}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className="text-sm font-bold text-slate-900 dark:text-white w-8">{kw.rank}</span>
-                        {kw.rank <= 3 && <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-800">TOP 3</span>}
+                        <span className="text-sm font-bold text-slate-900 dark:text-white w-8">{kw.rank || '-'}</span>
+                        {kw.rank > 0 && kw.rank <= 3 && <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-800">TOP 3</span>}
+                        {kw.rank === 100 && <span className="ml-2 px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-500 dark:bg-slate-800 dark:text-slate-400 border border-slate-200 dark:border-slate-700">100+</span>}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -164,6 +204,16 @@ export default function RankTrackerPage() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400 truncate max-w-[200px]">
                       /{kw.keyword.replace(/\s+/g, '-')}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <button
+                        onClick={() => handleRefreshRank(kw.id, kw.keyword)}
+                        disabled={refreshingId === kw.id}
+                        className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg transition-colors disabled:opacity-50"
+                        title="Refresh Rank"
+                      >
+                        <RefreshCw className={`w-4 h-4 ${refreshingId === kw.id ? 'animate-spin text-blue-600' : ''}`} />
+                      </button>
                     </td>
                   </tr>
                 ))
