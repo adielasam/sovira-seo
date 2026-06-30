@@ -24,7 +24,7 @@ Your Goal:
 5. Keep responses concise, punchy, and formatted with markdown when appropriate (bolding key benefits, etc).`;
 
     const result = await streamText({
-      model: google('models/gemini-1.5-flash'),
+      model: google('gemini-1.5-flash'),
       system: systemPrompt,
       messages,
     });

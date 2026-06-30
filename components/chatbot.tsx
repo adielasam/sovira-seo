@@ -11,7 +11,7 @@ export function Chatbot() {
   const pathname = usePathname()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  const { messages, input, handleInputChange, handleSubmit } = useChat({
+  const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     api: '/api/chat',
     initialMessages: [
       {
@@ -114,6 +114,13 @@ export function Chatbot() {
                 )}
               </div>
             ))}
+            
+            {error && (
+              <div className="text-red-500 text-sm text-center p-2 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                Error: Failed to connect to Sovira Agent. Please try again.
+              </div>
+            )}
+            
             <div ref={messagesEndRef} />
           </div>
 
