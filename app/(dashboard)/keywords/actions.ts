@@ -146,7 +146,8 @@ export async function refreshKeywordRankAction(keywordId: number, keyword: strin
       const { items } = await apifyClient.dataset(run.defaultDatasetId).listItems()
       
       if (items && items.length > 0) {
-        const organicResults = items[0].organicResults || []
+        const firstItem: any = items[0]
+        const organicResults: any[] = firstItem.organicResults || []
         const found = organicResults.find((r: any) => r.url.toLowerCase().includes(targetDomain.toLowerCase()))
         if (found) {
           newRank = found.position
