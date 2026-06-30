@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, CheckCircle2, Menu, X } from 'lucide-react'
 import toast from 'react-hot-toast'
@@ -140,14 +141,22 @@ export default function LandingPage() {
             {/* Hero Image / Mockup */}
             <div className="mt-16 flow-root sm:mt-24 max-w-5xl mx-auto w-full">
               <div className="rounded-2xl bg-slate-900/5 dark:bg-white/5 p-2 ring-1 ring-inset ring-slate-900/10 dark:ring-white/10 lg:-m-4 lg:rounded-3xl lg:p-4">
-                <div className="rounded-xl bg-white dark:bg-[#1E293B] shadow-2xl ring-1 ring-slate-900/10 dark:ring-white/10 h-[400px] w-full flex items-center justify-center relative overflow-hidden">
-                  <div className="absolute top-0 inset-x-0 h-12 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-2">
+                <div className="rounded-xl bg-white dark:bg-[#1E293B] shadow-2xl ring-1 ring-slate-900/10 dark:ring-white/10 w-full relative overflow-hidden">
+                  <div className="absolute top-0 inset-x-0 h-12 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-2 z-10 hidden sm:flex">
                     <div className="w-3 h-3 rounded-full bg-red-400"></div>
                     <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   </div>
-                  <TrendingUp className="w-24 h-24 text-blue-600/20" />
-                  <p className="absolute text-slate-400 font-medium">Dashboard Interface</p>
+                  <div className="relative w-full sm:pt-12">
+                    <Image 
+                      src="/dashboard-preview.png" 
+                      alt="Sovira SEO Dashboard Interface" 
+                      width={1200} 
+                      height={800} 
+                      className="w-full h-auto object-cover object-top rounded-b-xl sm:rounded-b-none"
+                      priority
+                    />
+                  </div>
                 </div>
               </div>
             </div>
