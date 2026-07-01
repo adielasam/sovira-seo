@@ -6,7 +6,8 @@ import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
-import { CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote } from 'lucide-react'
+  CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote 
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import PaystackPop from '@paystack/inline-js'
