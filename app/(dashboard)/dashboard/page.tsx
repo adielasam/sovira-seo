@@ -1,21 +1,9 @@
 import Link from 'next/link'
 import { Search, Tag, Sparkles, FileText, ArrowUpRight, TrendingUp } from 'lucide-react'
 
+import { createClient } from '@/lib/supabase/server'
+
 export const dynamic = 'force-dynamic'
-
-const stats = [
-  { name: 'SEO Score', value: '78', unit: '/100', change: '+5 from last week', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
-  { name: 'Keywords Tracked', value: '142', unit: '', change: '12 new this week', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-  { name: 'Backlinks', value: '1,847', unit: '', change: '23 new this week', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-  { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
-]
-
-const recentActivity = [
-  { id: 1, title: 'SEO Audit completed for', target: 'example.com', time: '2 hours ago', icon: Search, type: 'success' },
-  { id: 2, title: 'Generated 5 new blog titles for', target: '"SEO Tools"', time: '4 hours ago', icon: Sparkles, type: 'info' },
-  { id: 3, title: 'Rank dropped for keyword', target: '"Best rank tracker"', time: 'Yesterday', icon: TrendingUp, type: 'warning' },
-  { id: 4, title: 'Exported monthly report to', target: 'PDF', time: '3 days ago', icon: FileText, type: 'info' },
-]
 
 const quickActions = [
   { name: 'Run Audit', href: '/audit', icon: Search, color: 'bg-blue-600' },
@@ -24,12 +12,65 @@ const quickActions = [
   { name: 'View Reports', href: '/reports', icon: FileText, color: 'bg-teal-600' },
 ]
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+
+  // Fetch real metrics
+  let keywordsCount = 0
+  let backlinksCount = 0
+  let seoScore = 0 // Placeholder until we have a real aggregate score logic
+  let estTraffic = 0 // Placeholder
+
+  let recentActivity: any[] = []
+
+  if (user) {
+    // Get Keywords Count
+    const { count: kwCount } = await supabase
+      .from('tracked_keywords')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    keywordsCount = kwCount || 0
+
+    // Get Backlinks Count
+    const { count: blCount } = await supabase
+      .from('backlinks')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+    backlinksCount = blCount || 0
+
+    // Fetch real recent activity
+    const { data: activities } = await supabase
+      .from('activity_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (activities && activities.length > 0) {
+      recentActivity = activities.map((act: any) => ({
+        id: act.id,
+        title: act.action.replace('_', ' '),
+        target: '',
+        time: new Date(act.created_at).toLocaleDateString(),
+        icon: FileText,
+        type: 'info'
+      }))
+    }
+  }
+
+  const dynamicStats = [
+    { name: 'SEO Score', value: seoScore > 0 ? seoScore.toString() : '-', unit: '/100', change: seoScore > 0 ? '+0 from last week' : 'No data yet', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
+    { name: 'Keywords Tracked', value: keywordsCount.toString(), unit: '', change: 'Real-time count', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    { name: 'Backlinks', value: backlinksCount.toString(), unit: '', change: 'Real-time count', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { name: 'Est. Monthly Traffic', value: '-', unit: '', change: 'Connect Analytics', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+  ]
+
   return (
     <div className="space-y-8">
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => (
+        {dynamicStats.map((stat) => (
           <div key={stat.name} className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 hover:shadow-md transition-all duration-200">
             <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.name}</h3>
             <div className="mt-2 flex items-baseline gap-2">
@@ -54,25 +95,32 @@ export default function DashboardPage() {
             <Link href="/reports" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500">View all</Link>
           </div>
           <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-2 overflow-hidden">
-            <ul role="list" className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {recentActivity.map((activity) => (
-                <li key={activity.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-start gap-4 rounded-lg">
-                  <div className={`mt-1 p-2 rounded-lg flex-shrink-0 ${
-                    activity.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
-                    activity.type === 'warning' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
-                    'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
-                  }`}>
-                    <activity.icon className="w-4 h-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-slate-900 dark:text-white font-medium">
-                      {activity.title} <span className="text-slate-500 dark:text-slate-400">{activity.target}</span>
-                    </p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            {recentActivity.length > 0 ? (
+              <ul role="list" className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                {recentActivity.map((activity) => (
+                  <li key={activity.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-start gap-4 rounded-lg">
+                    <div className={`mt-1 p-2 rounded-lg flex-shrink-0 ${
+                      activity.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
+                      activity.type === 'warning' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' :
+                      'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'
+                    }`}>
+                      <activity.icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-slate-900 dark:text-white font-medium capitalize">
+                        {activity.title} <span className="text-slate-500 dark:text-slate-400">{activity.target}</span>
+                      </p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <div className="p-8 text-center">
+                <p className="text-sm text-slate-500 dark:text-slate-400 mb-4">No recent activity found. Start tracking keywords or run an audit to see updates here.</p>
+                <Link href="/keywords" className="inline-block px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-500 transition-colors">Add Keywords</Link>
+              </div>
+            )}
           </div>
         </div>
 
