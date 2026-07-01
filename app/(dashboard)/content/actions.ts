@@ -22,16 +22,28 @@ export async function generateContentAction(topic: string, type: string, tone: s
   }
 
   try {
-    const prompt = `You are an expert SEO content writer. Generate high-quality, SEO-optimized content based on the following parameters:
-    Topic/Keyword: ${topic}
-    Content Type: ${type}
-    Tone: ${tone}
-    Target Length: ${length}
-    
-    CRITICAL FORMATTING RULES:
+    let formattingRules = ''
+    if (type === 'Blog Post') {
+      formattingRules = `CRITICAL FORMATTING RULES:
     1. USE Markdown formatting! Use # for H1, ## for H2, ### for H3.
     2. Use bolding (**bold**) for important keywords, and bullet points for lists.
-    3. Do not include markdown wrappers like \`\`\`markdown, just return the raw markdown text.
+    3. Do not include markdown wrappers like \`\`\`markdown, just return the raw markdown text.`
+    } else if (type === 'Social Media Post') {
+      formattingRules = `CRITICAL FORMATTING RULES:
+    1. DO NOT use any Markdown formatting (NO asterisks **, NO hashtags # for headers).
+    2. Use emojis naturally, but keep the text plain and ready to be copy-pasted directly to social media.
+    3. Use standard line breaks and spacing.`
+    } else {
+      formattingRules = `CRITICAL FORMATTING RULES:
+    1. DO NOT use Markdown formatting (NO asterisks **, NO hashtags #).
+    2. Write plain text that is ready to be copied and pasted.`
+    }
+
+    const prompt = `You are an expert SEO Content Writer and Marketer. 
+    Please write a ${length} ${type} about: "${topic}".
+    The tone of voice should be: ${tone}.
+    
+    ${formattingRules}
     
     WRITING STYLE GUIDELINES:
     1. Write naturally, as a human writer would.
