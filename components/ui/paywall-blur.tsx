@@ -15,15 +15,24 @@ export function PaywallBlur({ isPro, children }: PaywallBlurProps) {
   }
 
   return (
-    <div className="relative group rounded-xl overflow-hidden">
-      {/* Blurred Content */}
-      <div className="filter blur-md opacity-50 select-none pointer-events-none transition-all duration-300">
+    <div className="relative group rounded-xl overflow-hidden min-h-[300px]">
+      {/* Clear Content */}
+      <div className="select-none pointer-events-none">
         {children}
       </div>
       
-      {/* Overlay */}
-      <div className="absolute inset-0 z-10 flex flex-col items-center justify-center bg-white/10 dark:bg-slate-900/10 backdrop-blur-[1px]">
-        <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl text-center max-w-sm ring-1 ring-slate-200 dark:ring-slate-700 animate-in zoom-in-95 duration-200">
+      {/* Gradient Blur Overlay starting from top 15% */}
+      <div 
+        className="absolute inset-x-0 bottom-0 top-[15%] z-10 backdrop-blur-md bg-white/40 dark:bg-slate-900/40"
+        style={{
+          maskImage: 'linear-gradient(to bottom, transparent, black 15%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%)'
+        }}
+      ></div>
+      
+      {/* Overlay Modal */}
+      <div className="absolute inset-0 z-20 flex flex-col items-center justify-center pt-24">
+        <div className="bg-white/95 dark:bg-slate-800/95 backdrop-blur-md p-6 rounded-2xl shadow-xl text-center max-w-sm ring-1 ring-slate-200 dark:ring-slate-700 animate-in zoom-in-95 duration-200">
           <div className="mx-auto bg-blue-100 dark:bg-blue-900/30 w-12 h-12 flex items-center justify-center rounded-full mb-4">
             <Lock className="w-6 h-6 text-blue-600 dark:text-blue-400" />
           </div>
