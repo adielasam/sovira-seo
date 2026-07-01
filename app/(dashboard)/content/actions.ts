@@ -6,8 +6,9 @@ import { GoogleGenerativeAI } from '@google/generative-ai'
 import { checkUsageLimit } from '@/lib/usage'
 
 export async function generateContentAction(topic: string, type: string, tone: string, length: string) {
-  if (!process.env.GROQ_API_KEY) {
-    return { error: 'Groq API key is not configured' }
+  const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
+  if (!NARA_API_KEY) {
+    return { error: 'Nara API key is not configured' }
   }
 
   const supabase = await createClient()
@@ -38,14 +39,14 @@ export async function generateContentAction(topic: string, type: string, tone: s
     3. Vary sentence length and structure — mix short punchy sentences with longer ones, rather than uniform sentence lengths throughout.
     4. Sound like a knowledgeable person writing conversationally.`
 
-    const response = await fetch(`https://api.groq.com/openai/v1/chat/completions`, {
+    const response = await fetch(`https://router.nara.id/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`
+        'Authorization': `Bearer ${NARA_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'llama3-8b-8192',
+        model: 'mistral-large',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.7,
         max_tokens: 2000
@@ -54,13 +55,13 @@ export async function generateContentAction(topic: string, type: string, tone: s
 
     if (!response.ok) {
       const errorText = await response.text()
-      throw new Error(`Groq API Error: ${response.status} - ${errorText}`)
+      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
     }
 
     const data = await response.json()
     const text = data.choices?.[0]?.message?.content
 
-    if (!text) throw new Error('No content returned from Groq')
+    if (!text) throw new Error('No content returned from Nara')
 
     return { content: text }
   } catch (error: any) {
@@ -161,8 +162,9 @@ export async function updateGeneration(id: string, content: string) {
 }
 
 export async function generateBriefAction(topic: string) {
-  if (!process.env.GEMINI_API_KEY) {
-    return { error: 'Gemini API key is not configured' }
+  const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
+  if (!NARA_API_KEY) {
+    return { error: 'Nara API key is not configured' }
   }
 
   const supabase = await createClient()
@@ -176,9 +178,6 @@ export async function generateBriefAction(topic: string) {
   }
 
   try {
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' })
-
     const prompt = `You are an expert SEO strategist. Create a comprehensive SEO content brief for the topic: "${topic}".
     
     You must return a clean, valid JSON object (no markdown formatting, no \`\`\`json wrappers) matching exactly this schema:
@@ -193,9 +192,28 @@ export async function generateBriefAction(topic: string) {
       "targetWordCount": Number (e.g. 1500)
     }`
 
-    const result = await model.generateContent(prompt)
-    const response = await result.response
-    let text = response.text()
+    const response = await fetch(`https://router.nara.id/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${NARA_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'mimo-2.5-hermes',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0.2
+      })
+    })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    let text = data.choices?.[0]?.message?.content
+    
+    if (!text) throw new Error('No brief returned from Nara')
     
     // Clean up any potential markdown formatting the AI might still add
     text = text.replace(/```json/gi, '').replace(/```/g, '').trim()
