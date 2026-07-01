@@ -25,6 +25,7 @@ Your Goal:
 6. Keep responses concise, punchy, and formatted with markdown when appropriate. NEVER use placeholders like "[insert link]", always provide the exact URL provided above.`;
 
     const result = await streamText({
+      // @ts-ignore
       model: nara('mistral-large'),
       system: systemPrompt,
       messages,
