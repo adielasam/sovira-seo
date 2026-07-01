@@ -39,7 +39,7 @@ export async function generateContentAction(topic: string, type: string, tone: s
     3. Vary sentence length and structure — mix short punchy sentences with longer ones, rather than uniform sentence lengths throughout.
     4. Sound like a knowledgeable person writing conversationally.`
 
-    const response = await fetch(`https://router.nara.id/v1/chat/completions`, {
+    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -192,7 +192,7 @@ export async function generateBriefAction(topic: string) {
       "targetWordCount": Number (e.g. 1500)
     }`
 
-    const response = await fetch(`https://router.nara.id/v1/chat/completions`, {
+    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

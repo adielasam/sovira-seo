@@ -2,7 +2,7 @@ import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
 const nara = createOpenAI({
-  baseURL: 'https://router.nara.id/v1',
+  baseURL: 'https://router.bynara.id/v1',
   apiKey: process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs',
 });
 
