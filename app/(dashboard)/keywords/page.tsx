@@ -59,17 +59,7 @@ export default function KeywordsPage() {
         setTrackedKeywords(new Set(data.map(k => k.keyword)))
       }
     }
-    const loadInitial = async () => {
-      setIsSearching(true)
-      const { data } = await generateKeywordIdeasAction('seo tools')
-      if (data) {
-        setResults(data as any[])
-        setLastQuery('seo tools')
-      }
-      setIsSearching(false)
-    }
     loadTracked()
-    loadInitial()
   }, [])
 
   const handleSearch = useCallback(async (e: React.FormEvent) => {
@@ -162,9 +152,11 @@ export default function KeywordsPage() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Keyword Research</h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">
-            Showing results for <span className="font-semibold text-blue-600 dark:text-blue-400">&quot;{lastQuery}&quot;</span>
-          </p>
+          {lastQuery && (
+            <p className="text-slate-600 dark:text-slate-400 mt-1">
+              Showing results for <span className="font-semibold text-blue-600 dark:text-blue-400">&quot;{lastQuery}&quot;</span>
+            </p>
+          )}
         </div>
         <button
           onClick={handleExport}
@@ -219,6 +211,7 @@ export default function KeywordsPage() {
         </form>
       </div>
 
+      {results.length > 0 ? (
       <PaywallBlur isPro={isPro}>
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
@@ -300,6 +293,17 @@ export default function KeywordsPage() {
         </div>
       </div>
       </PaywallBlur>
+      ) : (
+        <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
+          <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
+            <Search className="w-8 h-8 text-blue-500 dark:text-blue-400" />
+          </div>
+          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">No Keywords Researched Yet</h3>
+          <p className="text-slate-500 dark:text-slate-400 max-w-md mx-auto">
+            Enter a seed keyword in the search bar above and click "Research" to generate a list of related keywords, search volumes, and difficulty data.
+          </p>
+        </div>
+      )}
     </div>
   )
 }
