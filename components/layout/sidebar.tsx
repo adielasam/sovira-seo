@@ -18,8 +18,8 @@ const navigation = [
   { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
   { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
   { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Settings', href: '/settings', icon: Settings },
   { name: 'Integrations', href: '/integrations', icon: Plug },
+  { name: 'Settings', href: '/settings', icon: Settings },
 ]
 
 function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void }) {

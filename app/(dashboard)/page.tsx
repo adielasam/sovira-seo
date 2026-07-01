@@ -11,13 +11,7 @@ const stats = [
   { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', trend: 'up', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
 ]
 
-const recentActivity = [
-  { id: 1, title: 'SEO Audit completed for', target: 'example.com', time: '2 hours ago', icon: Search, type: 'success' },
-  { id: 2, title: 'Generated 5 new blog titles for', target: '"SEO Tools"', time: '4 hours ago', icon: Sparkles, type: 'info' },
-  { id: 3, title: 'Rank dropped for keyword', target: '"Best rank tracker"', time: 'Yesterday', icon: TrendingUp, type: 'warning' },
-  { id: 4, title: 'Found 12 new backlinks from', target: 'high DA domains', time: '2 days ago', icon: LinkIcon, type: 'success' },
-  { id: 5, title: 'Exported monthly report to', target: 'PDF', time: '3 days ago', icon: FileText, type: 'info' },
-]
+const hardcodedActivity = []
 
 // Mocking LinkIcon here because it clashes with Next Link if not renamed
 function LinkIcon(props: any) {
@@ -52,6 +46,49 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
       
     contentCount = generationsCount || 0
+  }
+
+  // Fetch real activity logs
+  let recentActivity: any[] = []
+  if (user) {
+    const { data: logs } = await supabase
+      .from('activity_logs')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5)
+      
+    if (logs && logs.length > 0) {
+      recentActivity = logs.map(log => {
+        let icon = FileText
+        let type = 'info'
+        let title = log.action
+        let target = ''
+        
+        if (log.action.includes('Audit') || log.action.includes('Analyz')) {
+           icon = Search
+           type = 'success'
+           target = log.details?.url || ''
+        } else if (log.action.includes('Content')) {
+           icon = Sparkles
+           type = 'info'
+           target = log.details?.query || ''
+        } else if (log.action.includes('Rank') || log.action.includes('Tracked')) {
+           icon = TrendingUp
+           type = 'success'
+           target = log.details?.keyword || ''
+        }
+        
+        return {
+          id: log.id,
+          title: title,
+          target: target,
+          time: new Date(log.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }),
+          icon: icon,
+          type: type
+        }
+      })
+    }
   }
 
   // Inject real data into stats
@@ -92,7 +129,11 @@ export default async function DashboardPage() {
           </div>
           <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-2 overflow-hidden">
             <ul role="list" className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {recentActivity.map((activity) => (
+              {recentActivity.length === 0 ? (
+                <li className="p-8 text-center text-slate-500 dark:text-slate-400">
+                  No activity recorded yet. Start exploring the dashboard!
+                </li>
+              ) : recentActivity.map((activity) => (
                 <li key={activity.id} className="p-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors flex items-start gap-4 rounded-lg">
                   <div className={`mt-1 p-2 rounded-lg flex-shrink-0 ${
                     activity.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' :
@@ -103,7 +144,7 @@ export default async function DashboardPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm text-slate-900 dark:text-white font-medium truncate">
-                      {activity.title} <span className="text-slate-500 dark:text-slate-400">{activity.target}</span>
+                      {activity.title} <span className="text-slate-500 dark:text-slate-400 font-normal">{activity.target}</span>
                     </p>
                     <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">{activity.time}</p>
                   </div>

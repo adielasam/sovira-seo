@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Plus, TrendingUp, TrendingDown, Minus, Filter, Download, Loader2, RefreshCw } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import toast from 'react-hot-toast'
 import { getTrackedKeywords, refreshKeywordRankAction } from '../keywords/actions'
@@ -26,6 +27,7 @@ const keywords = [
 ]
 
 export default function RankTrackerPage() {
+  const router = useRouter()
   const [targetDomain, setTargetDomain] = useState('sovira.com')
   const [trackedData, setTrackedData] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -45,7 +47,8 @@ export default function RankTrackerPage() {
   }, [])
 
   const handleAddKeyword = () => {
-    toast.success('Keyword added to tracker')
+    router.push('/keywords')
+    toast.success('Search for a keyword and click Track to add it here!', { icon: '💡' })
   }
 
   const handleRefreshRank = async (keywordId: number, keyword: string) => {

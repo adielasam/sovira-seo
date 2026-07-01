@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useCallback, useEffect, useTransition } from 'react'
-import { Search, Download, Filter, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Plus, Sparkles, Loader2 } from 'lucide-react'
+import { useState, useCallback, useEffect, useTransition, Fragment } from 'react'
+import { Search, Download, Filter, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Plus, Sparkles, Loader2, ChevronDown, ChevronUp, Lock, Target, Globe } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { trackKeyword, untrackKeyword, getTrackedKeywords, generateKeywordIdeasAction } from './actions'
 import { createClient } from '@/lib/supabase/client'
@@ -41,6 +41,7 @@ export default function KeywordsPage() {
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
   const [isPro, setIsPro] = useState(false)
+  const [expandedRow, setExpandedRow] = useState<number | null>(null)
 
   useEffect(() => {
     const checkPlan = async () => {
@@ -244,8 +245,17 @@ export default function KeywordsPage() {
             </thead>
             <tbody className="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-[#1E293B]">
               {results.map((item) => (
-                <tr key={item.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                  <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white max-w-xs">
+                <Fragment key={item.id}>
+                <tr 
+                  onClick={() => setExpandedRow(expandedRow === item.id ? null : item.id!)}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer group"
+                >
+                  <td className="px-4 py-3 text-sm font-medium text-slate-900 dark:text-white max-w-xs flex items-center gap-2">
+                    {expandedRow === item.id ? (
+                      <ChevronUp className="w-4 h-4 text-slate-400" />
+                    ) : (
+                      <ChevronDown className="w-4 h-4 text-slate-400 group-hover:text-blue-500 transition-colors" />
+                    )}
                     <span className="block truncate">{item.keyword}</span>
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-sm font-semibold text-slate-700 dark:text-slate-200">{item.volume}</td>
@@ -260,7 +270,7 @@ export default function KeywordsPage() {
                   </td>
                   <td className="px-4 py-3 whitespace-nowrap text-right text-sm">
                     <button
-                      onClick={() => handleTrack(item)}
+                      onClick={(e) => { e.stopPropagation(); handleTrack(item); }}
                       className={`flex items-center justify-end gap-1 ml-auto transition-colors font-medium ${
                         trackedKeywords.has(item.keyword)
                           ? 'text-green-600 dark:text-green-400'
@@ -272,6 +282,64 @@ export default function KeywordsPage() {
                     </button>
                   </td>
                 </tr>
+                {expandedRow === item.id && (
+                  <tr>
+                    <td colSpan={7} className="p-0 bg-slate-50/50 dark:bg-[#0F172A]/30 border-b border-slate-200 dark:border-slate-800">
+                      <div className="p-6 relative overflow-hidden">
+                        {!isPro && (
+                          <div className="absolute inset-0 z-10 flex flex-col items-center justify-center backdrop-blur-md bg-white/60 dark:bg-slate-900/60">
+                            <Lock className="w-6 h-6 text-blue-600 dark:text-blue-400 mb-2" />
+                            <h4 className="text-sm font-bold text-slate-900 dark:text-white">Pro Feature</h4>
+                            <p className="text-xs text-slate-600 dark:text-slate-300">Upgrade to view deep insights</p>
+                          </div>
+                        )}
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                              <Target className="w-4 h-4 text-blue-500" /> SERP Features
+                            </h4>
+                            <div className="flex flex-wrap gap-2">
+                              <span className="px-2 py-1 bg-white dark:bg-slate-800 text-xs font-medium rounded border border-slate-200 dark:border-slate-700">Featured Snippet</span>
+                              <span className="px-2 py-1 bg-white dark:bg-slate-800 text-xs font-medium rounded border border-slate-200 dark:border-slate-700">People Also Ask</span>
+                              <span className="px-2 py-1 bg-white dark:bg-slate-800 text-xs font-medium rounded border border-slate-200 dark:border-slate-700">Video Carousel</span>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                              <Globe className="w-4 h-4 text-purple-500" /> Global vs Local
+                            </h4>
+                            <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                              <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
+                                <span>Global Vol:</span>
+                                <span className="font-semibold">{parseInt(item.volume.replace('K', '')) * 3}K</span>
+                              </div>
+                              <div className="flex justify-between items-center bg-white dark:bg-slate-800 p-2 rounded border border-slate-200 dark:border-slate-700">
+                                <span>US Vol:</span>
+                                <span className="font-semibold">{item.volume}</span>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="space-y-3">
+                            <h4 className="text-sm font-semibold flex items-center gap-2 text-slate-900 dark:text-white">
+                              <TrendingUp className="w-4 h-4 text-emerald-500" /> Competition
+                            </h4>
+                            <div className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+                              <div className="flex justify-between">
+                                <span>Top 10 Avg DA:</span>
+                                <span className="font-semibold">{(item.difficulty * 0.8).toFixed(0)}</span>
+                              </div>
+                              <div className="flex justify-between">
+                                <span>Avg Backlinks:</span>
+                                <span className="font-semibold">{(item.difficulty * 1.5).toFixed(0)}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                )}
+                </Fragment>
               ))}
             </tbody>
           </table>

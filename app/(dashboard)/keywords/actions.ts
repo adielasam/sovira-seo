@@ -63,6 +63,24 @@ export async function trackKeyword(keywordData: Omit<KeywordResult, 'id'>) {
   
   if (!user) return { error: 'Not authenticated' }
 
+  // Check Limits
+  const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+  const plan = profile?.plan || 'free'
+  
+  const { count } = await supabase.from('tracked_keywords').select('*', { count: 'exact', head: true }).eq('user_id', user.id)
+  
+  const limits: Record<string, number> = {
+     free: 5,
+     starter: 5,
+     pro: 15,
+     agency: 30
+  }
+  const maxKeywords = limits[plan] || 5
+  
+  if (count !== null && count >= maxKeywords) {
+     return { error: `You have reached your limit of ${maxKeywords} tracked keywords on the ${plan} plan. Please upgrade to track more.` }
+  }
+
   const { error } = await supabase
     .from('tracked_keywords')
     .insert([

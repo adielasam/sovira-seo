@@ -137,7 +137,7 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
           <button 
             type="button" 
             onClick={() => setNotifOpen(!notifOpen)}
-            className="relative -m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:text-slate-400 dark:hover:text-slate-300 transition-colors"
+            className="relative -m-2.5 p-2.5 text-gray-400 hover:text-gray-500 dark:text-slate-400 dark:hover:text-slate-300 transition-colors cursor-pointer"
           >
             <span className="sr-only">View notifications</span>
             <Bell className="h-5 w-5" aria-hidden="true" />
@@ -194,7 +194,7 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
           <button 
             type="button"
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-x-4 outline-none"
+            className="flex items-center gap-x-4 outline-none cursor-pointer"
           >
             <span className="hidden lg:flex lg:items-center">
               <span className="text-sm font-medium leading-6 text-gray-700 dark:text-slate-300 max-w-[150px] truncate" aria-hidden="true">

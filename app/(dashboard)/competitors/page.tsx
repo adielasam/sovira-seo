@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Plus, ExternalLink, Activity, Target, Shield, Trash2, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { analyzeCompetitorAction, getCompetitorsAction, removeCompetitorAction } from './actions'
+import { analyzeCompetitorAction, getCompetitorsAction, removeCompetitorAction, getBaseWebsiteAction, updateBaseWebsiteAction, analyzeDomainMetricsOnly } from './actions'
 
 const sharedKeywords = [
   'seo tools', 'keyword research', 'rank tracker', 'seo audit', 'backlink checker',
@@ -15,10 +15,58 @@ export default function CompetitorsPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [competitors, setCompetitors] = useState<any[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [baseWebsite, setBaseWebsite] = useState('')
+  const [isUpdatingBase, setIsUpdatingBase] = useState(false)
+  const [yourSiteMetrics, setYourSiteMetrics] = useState<any>({
+    domainAuthority: 0,
+    organicKeywords: 0,
+    monthlyTraffic: 0,
+    backlinks: 0
+  })
 
   useEffect(() => {
     loadCompetitors()
+    loadBaseWebsite()
   }, [])
+
+  const loadBaseWebsite = async () => {
+    const { url } = await getBaseWebsiteAction()
+    if (url) {
+      setBaseWebsite(url)
+      // Try to get cached metrics from localStorage
+      const cached = localStorage.getItem(`metrics_${url}`)
+      if (cached) {
+        setYourSiteMetrics(JSON.parse(cached))
+      } else {
+        // Fetch dynamically if no cache
+        const { metrics } = await analyzeDomainMetricsOnly(url)
+        if (metrics) {
+          setYourSiteMetrics(metrics)
+          localStorage.setItem(`metrics_${url}`, JSON.stringify(metrics))
+        }
+      }
+    }
+  }
+
+  const handleUpdateBaseWebsite = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!baseWebsite) return
+    setIsUpdatingBase(true)
+    const { error, url } = await updateBaseWebsiteAction(baseWebsite)
+    if (error) {
+      toast.error(error)
+    } else if (url) {
+      toast.success('Base website updated!')
+      setBaseWebsite(url)
+      // Clear old cache, fetch new metrics
+      const { metrics } = await analyzeDomainMetricsOnly(url)
+      if (metrics) {
+        setYourSiteMetrics(metrics)
+        localStorage.setItem(`metrics_${url}`, JSON.stringify(metrics))
+      }
+    }
+    setIsUpdatingBase(false)
+  }
 
   const loadCompetitors = async () => {
     setIsLoading(true)
@@ -65,13 +113,7 @@ export default function CompetitorsPage() {
     { key: 'backlinks', label: 'Backlinks', icon: ExternalLink },
   ]
 
-  // Mock baseline for "Your Site"
-  const yourSiteMetrics: any = {
-    domainAuthority: 42,
-    organicKeywords: 1240,
-    monthlyTraffic: 12400,
-    backlinks: 1847
-  }
+  // Real dynamic metrics will be loaded into yourSiteMetrics state
 
   return (
     <div className="space-y-8">
@@ -81,6 +123,31 @@ export default function CompetitorsPage() {
       </div>
 
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Step 1: Set Your Base Website</h3>
+        <form onSubmit={handleUpdateBaseWebsite} className="flex flex-col sm:flex-row gap-4 mb-8 pb-8 border-b border-slate-200 dark:border-slate-700">
+          <div className="relative flex-1">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Shield className="h-5 w-5 text-emerald-500" />
+            </div>
+            <input
+              type="url"
+              value={baseWebsite}
+              onChange={(e) => setBaseWebsite(e.target.value)}
+              placeholder="Enter your website URL (e.g. https://yourdomain.com)"
+              className="block w-full pl-10 pr-3 py-3 border border-emerald-200 dark:border-emerald-900/50 rounded-lg bg-emerald-50/30 dark:bg-emerald-900/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all"
+            />
+          </div>
+          <button
+            type="submit"
+            disabled={isUpdatingBase}
+            className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-500 text-white px-8 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed min-w-[150px]"
+          >
+            {isUpdatingBase ? <Loader2 className="w-5 h-5 animate-spin" /> : <Target className="w-5 h-5" />}
+            {isUpdatingBase ? 'Setting...' : 'Set Base'}
+          </button>
+        </form>
+
+        <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Step 2: Add Competitors</h3>
         <form onSubmit={handleAnalyze} className="flex flex-col sm:flex-row gap-4">
           <div className="relative flex-1">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -120,7 +187,7 @@ export default function CompetitorsPage() {
               <thead className="bg-white dark:bg-[#1E293B]">
                 <tr>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider sticky left-0 bg-white dark:bg-[#1E293B] z-10 w-48">Metric</th>
-                  <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider bg-blue-50/50 dark:bg-blue-900/10">Your Site</th>
+                  <th scope="col" className="px-6 py-4 text-center text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider bg-emerald-50/50 dark:bg-emerald-900/10">Your Site {baseWebsite ? <span className="block text-[10px] font-normal text-emerald-500">({new URL(baseWebsite.startsWith('http') ? baseWebsite : `https://${baseWebsite}`).hostname})</span> : ''}</th>
                   {competitors.map((comp) => {
                     let domain = ''
                     try { domain = new URL(comp.url).hostname } catch(e) { domain = comp.url }
@@ -142,8 +209,8 @@ export default function CompetitorsPage() {
                       <metric.icon className="w-4 h-4 text-slate-400" />
                       {metric.label}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-slate-900 dark:text-white bg-blue-50/30 dark:bg-blue-900/5">
-                      {yourSiteMetrics[metric.key].toLocaleString()}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center font-bold text-slate-900 dark:text-white bg-emerald-50/30 dark:bg-emerald-900/5">
+                      {yourSiteMetrics[metric.key]?.toLocaleString() || '0'}
                     </td>
                     {competitors.map((comp) => (
                       <td key={`${comp.id}-${metric.key}`} className="px-6 py-4 whitespace-nowrap text-sm text-center text-slate-600 dark:text-slate-300">
@@ -160,7 +227,7 @@ export default function CompetitorsPage() {
                 {competitors.length > 0 && (
                   <tr>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white sticky left-0 z-10 bg-white dark:bg-[#1E293B]"></td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center bg-blue-50/30 dark:bg-blue-900/5"></td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center bg-emerald-50/30 dark:bg-emerald-900/5"></td>
                     {competitors.map((comp) => (
                       <td key={comp.id} className="px-6 py-4 whitespace-nowrap text-sm text-center">
                         <button 
