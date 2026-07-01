@@ -5,7 +5,6 @@ import { Check, ArrowRight, Zap, Shield, Sparkles, Building2 } from 'lucide-reac
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import PaystackPop from '@paystack/inline-js'
 import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
 
 const tiers = [
@@ -76,7 +75,7 @@ export default function PricingPage() {
     fetchUser()
   }, [])
 
-  const handleSubscribe = (planName: string, amount: number) => {
+  const handleSubscribe = async (planName: string, amount: number) => {
     if (!user) {
       toast.error('Please log in or create an account first.', { icon: '🔒' })
       router.push('/auth/login?redirect=/pricing')
@@ -96,6 +95,7 @@ export default function PricingPage() {
     else if (lowerPlan === 'agency') ngnAmount = annual ? 1990000 : 199000
 
     try {
+      const PaystackPop = (await import('@paystack/inline-js')).default
       const paystack = new PaystackPop()
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,

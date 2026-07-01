@@ -10,7 +10,6 @@ import {
 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
-import PaystackPop from '@paystack/inline-js'
 import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
 
 // --- Custom Hooks & Helpers ---
@@ -147,7 +146,7 @@ export default function LandingPage() {
     fetchUser()
   }, [])
 
-  const handleSubscribe = (planName: string) => {
+  const handleSubscribe = async (planName: string) => {
     if (!user) {
       toast.error('Please log in or create an account first.', { icon: '🔒' })
       router.push('/auth/login?redirect=/')
@@ -166,6 +165,7 @@ export default function LandingPage() {
     else if (lowerPlan === 'agency') ngnAmount = isAnnual ? 1990000 : 199000
 
     try {
+      const PaystackPop = (await import('@paystack/inline-js')).default
       const paystack = new PaystackPop()
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,

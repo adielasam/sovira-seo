@@ -6,8 +6,6 @@ import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
 import { getUserProfile, updateUserPlan } from './actions'
 
-import PaystackPop from '@paystack/inline-js'
-
 export default function SettingsPage() {
   const router = useRouter()
   
@@ -47,7 +45,7 @@ export default function SettingsPage() {
     }, 1000)
   }
 
-  const handleUpgrade = (planName: string, planAmount: number) => {
+  const handleUpgrade = async (planName: string, planAmount: number) => {
     if (!user) {
       toast.error('Please log in to upgrade')
       return
@@ -58,6 +56,7 @@ export default function SettingsPage() {
     }
     
     try {
+      const PaystackPop = (await import('@paystack/inline-js')).default
       const paystack = new PaystackPop()
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
