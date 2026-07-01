@@ -4,6 +4,9 @@ import { useState } from 'react'
 import { Globe, Search, FileDown, CheckCircle2, XCircle, AlertTriangle, Info, Loader2 } from 'lucide-react'
 import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts'
 import toast from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
+import { useEffect } from 'react'
+import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 interface AuditResult {
   overallScore: number;
@@ -21,6 +24,20 @@ export default function AuditPage() {
   const [url, setUrl] = useState('')
   const [isAuditing, setIsAuditing] = useState(false)
   const [result, setResult] = useState<AuditResult | null>(null)
+  const [isPro, setIsPro] = useState(false)
+
+  useEffect(() => {
+    const checkPlan = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+        const plan = profile?.plan || 'free'
+        setIsPro(['starter', 'pro', 'agency'].includes(plan))
+      }
+    }
+    checkPlan()
+  }, [])
 
   const handleRunAudit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -134,7 +151,8 @@ export default function AuditPage() {
       )}
 
       {result && !isAuditing && (
-        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <PaywallBlur isPro={isPro}>
+          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <h2 className="text-lg font-bold text-slate-900 dark:text-white">Audit Results for <span className="text-blue-600">{url}</span></h2>
             <button className="flex items-center justify-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
@@ -234,6 +252,7 @@ export default function AuditPage() {
             )}
           </div>
         </div>
+        </PaywallBlur>
       )}
     </div>
   )

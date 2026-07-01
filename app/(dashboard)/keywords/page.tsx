@@ -4,6 +4,8 @@ import { useState, useCallback, useEffect, useTransition } from 'react'
 import { Search, Download, Filter, TrendingUp, TrendingDown, ChevronLeft, ChevronRight, Plus, Sparkles, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { trackKeyword, untrackKeyword, getTrackedKeywords, generateKeywordIdeasAction } from './actions'
+import { createClient } from '@/lib/supabase/client'
+import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 interface KeywordResult {
   id?: number
@@ -38,8 +40,19 @@ export default function KeywordsPage() {
   const [lastQuery, setLastQuery] = useState('')
   const [trackedKeywords, setTrackedKeywords] = useState<Set<string>>(new Set())
   const [isPending, startTransition] = useTransition()
+  const [isPro, setIsPro] = useState(false)
 
   useEffect(() => {
+    const checkPlan = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+        const plan = profile?.plan || 'free'
+        setIsPro(['starter', 'pro', 'agency'].includes(plan))
+      }
+    }
+    checkPlan()
     const loadTracked = async () => {
       const { data } = await getTrackedKeywords()
       if (data) {
@@ -206,6 +219,7 @@ export default function KeywordsPage() {
         </form>
       </div>
 
+      <PaywallBlur isPro={isPro}>
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
         {[
@@ -285,6 +299,7 @@ export default function KeywordsPage() {
           </div>
         </div>
       </div>
+      </PaywallBlur>
     </div>
   )
 }

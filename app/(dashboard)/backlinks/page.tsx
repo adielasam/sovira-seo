@@ -5,6 +5,8 @@ import { Link2, ShieldAlert, TrendingDown, ArrowUpRight, Search, Filter, Externa
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import toast from 'react-hot-toast'
 import { getBacklinksAction, scanBacklinksAction, addBacklinkAction } from './actions'
+import { createClient } from '@/lib/supabase/client'
+import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 export default function BacklinkMonitorPage() {
   const [project, setProject] = useState('sovira.com')
@@ -12,8 +14,22 @@ export default function BacklinkMonitorPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isScanning, setIsScanning] = useState(false)
   const [showAddModal, setShowAddModal] = useState(false)
+  const [isPro, setIsPro] = useState(false)
   
   const [newLink, setNewLink] = useState({ sourceUrl: '', targetPage: '/', anchorText: '', da: 10, spam: 0 })
+
+  useEffect(() => {
+    const checkPlan = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+        const plan = profile?.plan || 'free'
+        setIsPro(['starter', 'pro', 'agency'].includes(plan))
+      }
+    }
+    checkPlan()
+  }, [])
 
   const loadData = async () => {
     setIsLoading(true)
@@ -127,6 +143,7 @@ export default function BacklinkMonitorPage() {
         </div>
       </div>
 
+      <PaywallBlur isPro={isPro}>
       {/* Metrics Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
@@ -295,6 +312,7 @@ export default function BacklinkMonitorPage() {
           </table>
         </div>
       </div>
+      </PaywallBlur>
 
       {/* Add Modal */}
       {showAddModal && (

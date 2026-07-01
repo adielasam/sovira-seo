@@ -18,9 +18,19 @@ export default async function DashboardLayout({
   }
 
   // FORCE ADMIN REDIRECT
-  const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
+  const { data: profile } = await supabase.from('user_profiles').select('role, plan').eq('id', user.id).single()
   if (profile?.role === 'admin' || user.email === 'microsoftportharcourt@gmail.com') {
     redirect('/admin')
+  }
+
+  // 1-Month Free Trial Expiration Check
+  const plan = profile?.plan || 'free'
+  if (plan === 'free') {
+    const signupDate = new Date(user.created_at).getTime()
+    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
+    if (Date.now() - signupDate > thirtyDaysMs) {
+      redirect('/pricing?expired=true')
+    }
   }
 
   return (
