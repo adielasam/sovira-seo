@@ -93,10 +93,10 @@ export default async function DashboardPage() {
 
   // Inject real data into stats
   const dynamicStats = [
-    { name: 'SEO Score', value: '78', unit: '/100', change: '+5 from last week', trend: 'up', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
-    { name: 'Keywords Tracked', value: trackedCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-    { name: 'Content Generations', value: contentCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-    { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', trend: 'up', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+    { name: 'SEO Score', value: '78', unit: '/100', change: '+5 from last week', trend: 'up', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', href: '/audit' },
+    { name: 'Keywords Tracked', value: trackedCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30', href: '/keywords' },
+    { name: 'Backlinks', value: '1,847', unit: '', change: '23 new this week', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30', href: '/backlinks' },
+    { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', trend: 'up', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30', href: '/integrations' },
   ]
 
   return (
@@ -104,10 +104,10 @@ export default async function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4 w-full">
         {dynamicStats.map((stat) => (
-          <div key={stat.name} className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 hover:shadow-md transition-all duration-200">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.name}</h3>
+          <Link href={stat.href} key={stat.name} className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 hover:shadow-md transition-all duration-200 hover:ring-blue-500/50 group block">
+            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{stat.name}</h3>
             <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{stat.value}</span>
+              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{stat.value}</span>
               {stat.unit && <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.unit}</span>}
             </div>
             <div className={`mt-4 flex items-center gap-2 text-xs font-medium ${stat.color}`}>
@@ -116,7 +116,7 @@ export default async function DashboardPage() {
               </div>
               {stat.change}
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
