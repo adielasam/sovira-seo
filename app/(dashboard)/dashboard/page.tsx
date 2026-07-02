@@ -39,6 +39,19 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
     backlinksCount = blCount || 0
 
+    // Get latest SEO Score
+    const { data: latestAudit } = await supabase
+      .from('audits')
+      .select('overall_score')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (latestAudit && latestAudit.overall_score !== null) {
+      seoScore = latestAudit.overall_score
+    }
+
     // Fetch real recent activity
     const { data: activities } = await supabase
       .from('activity_logs')
@@ -60,7 +73,7 @@ export default async function DashboardPage() {
   }
 
   const dynamicStats = [
-    { name: 'SEO Score', value: seoScore > 0 ? seoScore.toString() : '-', unit: '/100', change: seoScore > 0 ? '+0 from last week' : 'No data yet', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
+    { name: 'SEO Score', value: seoScore > 0 ? seoScore.toString() : '-', unit: '/100', change: seoScore > 0 ? 'Based on latest audit' : 'No data yet', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
     { name: 'Keywords Tracked', value: keywordsCount.toString(), unit: '', change: 'Real-time count', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
     { name: 'Backlinks', value: backlinksCount.toString(), unit: '', change: 'Real-time count', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
     { name: 'Est. Monthly Traffic', value: '-', unit: '', change: 'Connect Analytics', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
