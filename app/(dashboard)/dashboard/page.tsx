@@ -42,14 +42,14 @@ export default async function DashboardPage() {
     // Get latest SEO Score
     const { data: latestAudit } = await supabase
       .from('audits')
-      .select('overall_score')
+      .select('scores')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false })
       .limit(1)
       .single()
 
-    if (latestAudit && latestAudit.overall_score !== null) {
-      seoScore = latestAudit.overall_score
+    if (latestAudit && latestAudit.scores && latestAudit.scores.overall !== undefined) {
+      seoScore = latestAudit.scores.overall
     }
 
     // Fetch real recent activity
