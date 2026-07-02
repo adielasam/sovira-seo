@@ -251,6 +251,7 @@ export default function AuditPage() {
                     <p>Perfect score! No issues found in this category.</p>
                   </div>
                 ) : (
+                  <PaywallBlur isPro={isPro}>
                   <div className="space-y-6">
                     <ul className="space-y-4">
                       {result.issues[activePanel].map((issue, idx) => (
@@ -394,6 +395,7 @@ export default function AuditPage() {
                       </div>
                     )}
                   </div>
+                  </PaywallBlur>
                 )}
              </div>
           )}

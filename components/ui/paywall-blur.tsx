@@ -21,12 +21,12 @@ export function PaywallBlur({ isPro, children }: PaywallBlurProps) {
         {children}
       </div>
       
-      {/* Gradient Blur Overlay starting from top 40% */}
+      {/* Gradient Blur Overlay starting from top 15% */}
       <div 
-        className="absolute inset-x-0 bottom-0 top-[40%] z-10 backdrop-blur-md bg-white/60 dark:bg-slate-900/60"
+        className="absolute inset-x-0 bottom-0 top-[15%] z-10 backdrop-blur-md bg-white/60 dark:bg-slate-900/60"
         style={{
-          maskImage: 'linear-gradient(to bottom, transparent, black 20%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 20%)'
+          maskImage: 'linear-gradient(to bottom, transparent, black 15%)',
+          WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 15%)'
         }}
       ></div>
       

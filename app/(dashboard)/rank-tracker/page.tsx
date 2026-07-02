@@ -5,6 +5,8 @@ import { Plus, TrendingUp, TrendingDown, Minus, Filter, Download, Loader2, Refre
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'
 import toast from 'react-hot-toast'
 import { AddKeywordModal } from '@/components/rank-tracker/add-keyword-modal'
+import { createClient } from '@/lib/supabase/client'
+import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 export default function RankTrackerPage() {
   const [trackedData, setTrackedData] = useState<any[]>([])
@@ -15,6 +17,8 @@ export default function RankTrackerPage() {
   const [expandedRow, setExpandedRow] = useState<number | null>(null)
   const [aiInsight, setAiInsight] = useState<string | null>(null)
   const [isGeneratingInsight, setIsGeneratingInsight] = useState(false)
+  const [isPro, setIsPro] = useState(false)
+  const [selectedKeywordId, setSelectedKeywordId] = useState<number | null>(null)
 
   const loadKeywords = async () => {
     setIsLoading(true)
@@ -34,6 +38,16 @@ export default function RankTrackerPage() {
   }
 
   useEffect(() => {
+    const checkPlan = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+        const plan = profile?.plan || 'free'
+        setIsPro(['starter', 'pro', 'agency'].includes(plan))
+      }
+    }
+    checkPlan()
     loadKeywords()
   }, [])
 
@@ -103,6 +117,16 @@ export default function RankTrackerPage() {
   }
 
   const getDynamicChartData = () => {
+    if (selectedKeywordId) {
+      const kw = trackedData.find(k => k.id === selectedKeywordId)
+      if (!kw || !kw.history) return []
+      const history = [...kw.history].reverse() // chronological
+      return history.map((entry: any) => ({
+        date: new Date(entry.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        rank: entry.rank
+      }))
+    }
+
     const dateMap: Record<string, { totalRank: number, count: number }> = {}
     
     trackedData.forEach(kw => {
@@ -122,8 +146,6 @@ export default function RankTrackerPage() {
       rank: Math.round(dateMap[date].totalRank / dateMap[date].count)
     }))
     
-    // Sort chronologically (assuming the strings sort okay for the last 30 days, 
-    // real app would use proper date sorting)
     aggregated.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
     return aggregated
   }
@@ -172,9 +194,22 @@ export default function RankTrackerPage() {
       </div>
 
       {/* Chart Section */}
+      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="font-semibold text-slate-900 dark:text-white">Average Rank (30 Days)</h3>
+          <h3 className="font-semibold text-slate-900 dark:text-white">
+            {selectedKeywordId 
+              ? `Rank Trend: ${trackedData.find(k => k.id === selectedKeywordId)?.keyword}` 
+              : 'Average Rank (30 Days)'}
+          </h3>
+          {selectedKeywordId && (
+            <button 
+              onClick={() => setSelectedKeywordId(null)}
+              className="text-sm text-slate-500 hover:text-blue-600 transition-colors"
+            >
+              Clear Filter
+            </button>
+          )}
         </div>
         <div className="h-[300px] w-full">
           {isLoading ? (
@@ -212,8 +247,10 @@ export default function RankTrackerPage() {
           )}
         </div>
       </div>
+      </PaywallBlur>
 
       {/* Table Section */}
+      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-[#0F172A]">
           <h3 className="font-semibold text-slate-900 dark:text-white">Tracked Keywords</h3>
@@ -251,7 +288,11 @@ export default function RankTrackerPage() {
                 </tr>
               ) : (
                 trackedData.map((kw, i) => (
-                  <tr key={kw.id || i} className="hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                  <tr 
+                    key={kw.id || i} 
+                    onClick={() => setSelectedKeywordId(kw.id)}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors cursor-pointer ${selectedKeywordId === kw.id ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900 dark:text-white">
                       {kw.keyword}
                       <div className="text-xs text-slate-500 font-normal mt-0.5">Vol: {kw.search_volume || 'N/A'} • {kw.country_code?.toUpperCase()}</div>
@@ -327,6 +368,7 @@ export default function RankTrackerPage() {
           </table>
         </div>
       </div>
+      </PaywallBlur>
 
       <AddKeywordModal 
         isOpen={isModalOpen} 

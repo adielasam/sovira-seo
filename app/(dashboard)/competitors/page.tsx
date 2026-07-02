@@ -4,6 +4,8 @@ import { useState, useEffect } from 'react'
 import { Search, Plus, ExternalLink, Activity, Target, Shield, Trash2, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { analyzeCompetitorAction, getCompetitorsAction, removeCompetitorAction, getBaseWebsiteAction, updateBaseWebsiteAction, analyzeDomainMetricsOnly } from './actions'
+import { createClient } from '@/lib/supabase/client'
+import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 const sharedKeywords = [
   'seo tools', 'keyword research', 'rank tracker', 'seo audit', 'backlink checker',
@@ -23,8 +25,19 @@ export default function CompetitorsPage() {
     monthlyTraffic: 0,
     backlinks: 0
   })
+  const [isPro, setIsPro] = useState(false)
 
   useEffect(() => {
+    const checkPlan = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+        const plan = profile?.plan || 'free'
+        setIsPro(['starter', 'pro', 'agency'].includes(plan))
+      }
+    }
+    checkPlan()
     loadCompetitors()
     loadBaseWebsite()
   }, [])
@@ -173,6 +186,7 @@ export default function CompetitorsPage() {
       </div>
 
       {/* Comparison Table */}
+      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#0F172A]">
           <h3 className="font-semibold text-slate-900 dark:text-white">Domain Comparison</h3>
@@ -245,8 +259,10 @@ export default function CompetitorsPage() {
           )}
         </div>
       </div>
+      </PaywallBlur>
 
       {/* Keyword Overlap */}
+      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-6">
         <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-4">Keyword Overlap (Shared Keywords)</h3>
         <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">These are the top keywords that both you and your competitors rank for in the top 100 search results.</p>
@@ -270,6 +286,7 @@ export default function CompetitorsPage() {
           </div>
         )}
       </div>
+      </PaywallBlur>
     </div>
   )
 }

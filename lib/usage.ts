@@ -36,10 +36,10 @@ export async function checkUsageLimit(userId: string, actionType: 'generation' |
     .gte('created_at', thirtyDaysAgo.toISOString())
     
   const limits: Record<string, number> = {
-    'generation': 3,
-    'audit': 5,
-    'keyword': 5,
-    'insight': 5
+    'generation': 30,
+    'audit': 30,
+    'keyword': 30,
+    'insight': 30
   }
   
   if (count !== null && count >= limits[actionType]) {
