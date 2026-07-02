@@ -1,30 +1,121 @@
 'use client'
 
-import { useState } from 'react'
-import { Globe, Search, FileDown, CheckCircle2, XCircle, AlertTriangle, Info, Loader2 } from 'lucide-react'
-import { RadialBarChart, RadialBar, ResponsiveContainer, PolarAngleAxis } from 'recharts'
+import { useState, useEffect } from 'react'
+import { Globe, Search, FileDown, CheckCircle2, XCircle, AlertTriangle, Info, Loader2, Code, FileText, Share2, Shield, Settings, Eye, Zap, Type, Activity, EyeOff, LayoutTemplate } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
-import { useEffect } from 'react'
 import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 interface AuditResult {
-  overallScore: number;
-  seoScore: number;
-  performanceScore: number;
-  speed: string;
-  issues: {
-    type: 'critical' | 'warning' | 'info' | 'success';
-    title: string;
-    description: string;
-  }[]
+  id: string;
+  scores: Record<string, number>;
+  issues: Record<string, any[]>;
+  previousScores?: Record<string, number>;
+}
+
+const CATEGORY_MAP: Record<string, { label: string, icon: any }> = {
+  technical: { label: 'Technical SEO', icon: Settings },
+  speed: { label: 'Website speed', icon: Zap },
+  onPage: { label: 'On-page', icon: LayoutTemplate },
+  aiReadability: { label: 'AI-readability', icon: Eye },
+  content: { label: 'Content quality', icon: FileText },
+  analytics: { label: 'Analytics / Tech', icon: Activity },
+  social: { label: 'Social networks', icon: Share2 },
+  accessibility: { label: 'Accessibility', icon: Type },
+  privacy: { label: 'Privacy & Cookies', icon: Shield },
+  overall: { label: 'Overall', icon: Globe },
+}
+
+function ScoreRing({ score, label, icon: Icon, delta, isLarge = false, onClick }: any) {
+  const radius = isLarge ? 60 : 28
+  const circumference = 2 * Math.PI * radius
+  const strokeDashoffset = circumference - (score / 100) * circumference
+  
+  let colorClass = 'text-green-500'
+  if (score < 80) colorClass = 'text-orange-500'
+  if (score < 50) colorClass = 'text-red-500'
+
+  return (
+    <div 
+      onClick={onClick}
+      className={`relative flex flex-col items-center justify-center p-4 rounded-xl bg-white dark:bg-[#1E293B] shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 transition-all cursor-pointer hover:shadow-md hover:ring-blue-500/50 group ${isLarge ? 'col-span-full md:col-span-1 row-span-2' : ''}`}
+    >
+      <div className="relative flex items-center justify-center">
+        {/* Background Ring */}
+        <svg className={`transform -rotate-90 ${isLarge ? 'w-40 h-40' : 'w-24 h-24'}`}>
+          <circle
+            cx={isLarge ? 80 : 48}
+            cy={isLarge ? 80 : 48}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth={isLarge ? 8 : 4}
+            fill="transparent"
+            className="text-slate-100 dark:text-slate-800"
+          />
+          {/* Progress Ring */}
+          <circle
+            cx={isLarge ? 80 : 48}
+            cy={isLarge ? 80 : 48}
+            r={radius}
+            stroke="currentColor"
+            strokeWidth={isLarge ? 8 : 4}
+            fill="transparent"
+            strokeDasharray={circumference}
+            strokeDashoffset={strokeDashoffset}
+            className={`${colorClass} transition-all duration-1000 ease-out`}
+          />
+        </svg>
+        <div className="absolute flex flex-col items-center">
+          <span className={`${isLarge ? 'text-4xl' : 'text-xl'} font-bold text-slate-900 dark:text-white`}>{score}%</span>
+        </div>
+      </div>
+      
+      <div className="mt-3 flex items-center gap-2">
+        <Icon className={`w-4 h-4 ${colorClass}`} />
+        <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">{label}</span>
+      </div>
+      
+      {delta !== undefined && (
+        <div className={`mt-1 text-xs font-medium ${delta > 0 ? 'text-green-500' : delta < 0 ? 'text-red-500' : 'text-slate-400'}`}>
+          {delta > 0 ? '↑' : delta < 0 ? '↓' : ''} {Math.abs(delta)}% since last scan
+        </div>
+      )}
+    </div>
+  )
 }
 
 export default function AuditPage() {
   const [url, setUrl] = useState('')
   const [isAuditing, setIsAuditing] = useState(false)
   const [result, setResult] = useState<AuditResult | null>(null)
+  const [activePanel, setActivePanel] = useState<string | null>(null)
   const [isPro, setIsPro] = useState(false)
+  const [isAgency, setIsAgency] = useState(false)
+  const [generating, setGenerating] = useState<Record<string, boolean>>({})
+  const [generated, setGenerated] = useState<Record<string, string>>({})
+
+  const handleGenerate = async (type: string, contextContext: string = '') => {
+    if (!isPro) {
+      window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: 'This AI feature requires a Pro plan.' } }))
+      return
+    }
+    setGenerating(prev => ({ ...prev, [type]: true }))
+    try {
+      const res = await fetch('/api/generate/seo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type, url, context: contextContext })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.message || data.error)
+      setGenerated(prev => ({ ...prev, [type]: data.result }))
+      toast.success('Generated successfully!')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setGenerating(prev => ({ ...prev, [type]: false }))
+    }
+  }
 
   useEffect(() => {
     const checkPlan = async () => {
@@ -33,7 +124,8 @@ export default function AuditPage() {
       if (user) {
         const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
         const plan = profile?.plan || 'free'
-        setIsPro(['starter', 'pro', 'agency'].includes(plan))
+        setIsPro(['pro', 'agency'].includes(plan))
+        setIsAgency(plan === 'agency')
       }
     }
     checkPlan()
@@ -41,24 +133,19 @@ export default function AuditPage() {
 
   const handleRunAudit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!url) {
-      toast.error('Please enter a URL to audit')
-      return
-    }
+    if (!url) return toast.error('Please enter a URL to audit')
     
     setIsAuditing(true)
     setResult(null)
+    setActivePanel(null)
 
     try {
-      // Bypassing any proxy by hitting the route handler, which natively uses fetch to Google APIs
       const res = await fetch('/api/audit', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ url })
       })
-
       const data = await res.json()
-      
       if (!res.ok) {
         if (data.error === 'LIMIT_REACHED') {
           window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: data.message } }))
@@ -66,9 +153,8 @@ export default function AuditPage() {
         }
         throw new Error(data.error || 'Audit failed')
       }
-      
       setResult(data)
-      toast.success('Audit completed successfully!')
+      toast.success('Audit completed!')
     } catch (error: any) {
       toast.error(error.message)
     } finally {
@@ -76,25 +162,11 @@ export default function AuditPage() {
     }
   }
 
-  const getScoreColor = (score: number) => {
-    if (score >= 90) return '#16A34A' // green-600
-    if (score >= 50) return '#EA580C' // orange-600
-    return '#DC2626' // red-600
-  }
-
-  const getScoreText = (score: number) => {
-    if (score >= 90) return { text: 'Excellent', color: 'text-green-600 dark:text-green-400' }
-    if (score >= 50) return { text: 'Needs Improvement', color: 'text-orange-600 dark:text-orange-400' }
-    return { text: 'Poor', color: 'text-red-600 dark:text-red-400' }
-  }
-
-  const scoreData = result ? [{ name: 'Score', value: result.overallScore, fill: getScoreColor(result.overallScore) }] : []
-
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 pb-20">
       <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Technical SEO Audit</h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Run a comprehensive on-page SEO & performance analysis of your website.</p>
+        <h1 className="text-2xl font-bold text-slate-900 dark:text-white">SEO Audit Engine</h1>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Deep on-page, technical, and AI-readability analysis.</p>
       </div>
 
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
@@ -107,9 +179,9 @@ export default function AuditPage() {
               type="url"
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://example.com"
+              placeholder="https://yourwebsite.com"
               required
-              className="block w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+              className="block w-full pl-10 pr-3 py-3 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all"
             />
           </div>
           <button
@@ -124,135 +196,209 @@ export default function AuditPage() {
       </div>
 
       {isAuditing && (
-        <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center min-h-[400px] overflow-hidden">
-          <div className="relative flex items-center justify-center w-32 h-32 mb-10">
-            {/* Ambient glows */}
-            <div className="absolute inset-0 bg-blue-500/20 dark:bg-blue-500/10 rounded-full blur-2xl animate-pulse"></div>
-            <div className="absolute inset-4 bg-purple-500/20 dark:bg-purple-500/10 rounded-full blur-xl animate-pulse" style={{ animationDelay: '500ms' }}></div>
-            
-            {/* Rotating geometric shapes */}
-            <div className="absolute inset-0 rounded-2xl border-4 border-slate-100 dark:border-slate-800 rotate-45"></div>
-            <div className="absolute inset-0 rounded-2xl border-4 border-blue-500 border-r-transparent border-l-transparent animate-spin"></div>
-            <div className="absolute inset-2 rounded-full border-4 border-purple-500 border-t-transparent border-b-transparent animate-spin" style={{ animationDirection: 'reverse', animationDuration: '3s' }}></div>
-            
-            <Globe className="w-10 h-10 text-blue-600 dark:text-blue-400 relative z-10 animate-pulse" />
-          </div>
-          
-          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-4 tracking-tight">Running deep site analysis...</h2>
-          
-          <div className="flex flex-col items-center gap-3 text-slate-500 text-sm">
-            <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-full ring-1 ring-slate-200 dark:ring-slate-700">
-              <Loader2 className="w-4 h-4 animate-spin text-blue-500" />
-              <span className="animate-pulse">Scanning DOM elements & meta tags...</span>
-            </div>
-            <p className="text-xs text-slate-400">This live audit typically takes 10-20 seconds.</p>
-          </div>
+        <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center min-h-[400px]">
+          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+          <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Running deep site analysis...</h2>
+          <p className="text-sm text-slate-500">Scanning DOM elements, schemas, and meta tags.</p>
         </div>
       )}
 
       {result && !isAuditing && (
-        <PaywallBlur isPro={isPro}>
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Audit Results for <span className="text-blue-600">{url}</span></h2>
-            <button className="flex items-center justify-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-700 text-blue-600 hover:bg-slate-50 dark:hover:bg-slate-800 px-4 py-2 rounded-lg font-medium transition-colors shadow-sm">
-              <FileDown className="w-4 h-4" />
-              Download PDF Report
-            </button>
+        <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="flex justify-between items-center">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-white">Scores for <span className="text-blue-500">{url}</span></h2>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Score Gauge */}
-            <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center">
-              <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400 mb-4">Overall Health Score</h3>
-              <div className="h-48 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadialBarChart cx="50%" cy="50%" innerRadius="70%" outerRadius="100%" barSize={20} data={scoreData} startAngle={180} endAngle={0}>
-                    <PolarAngleAxis type="number" domain={[0, 100]} angleAxisId={0} tick={false} />
-                    <RadialBar background dataKey="value" cornerRadius={10} />
-                    <text x="50%" y="50%" textAnchor="middle" dominantBaseline="middle" className="text-4xl font-bold fill-slate-900 dark:fill-white">
-                      {result.overallScore}
-                    </text>
-                    <text x="50%" y="65%" textAnchor="middle" dominantBaseline="middle" className="text-sm font-medium fill-slate-500 dark:fill-slate-400">
-                      /100
-                    </text>
-                  </RadialBarChart>
-                </ResponsiveContainer>
-              </div>
-              <p className={`${getScoreText(result.overallScore).color} font-medium mt-2`}>
-                {getScoreText(result.overallScore).text}
-              </p>
-            </div>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+            <ScoreRing 
+              score={result.scores.overall} 
+              label="Overall Score" 
+              icon={CATEGORY_MAP.overall.icon} 
+              isLarge={true} 
+              delta={result.previousScores?.overall ? result.scores.overall - result.previousScores.overall : undefined}
+            />
+            {Object.keys(result.scores).filter(k => k !== 'overall').map((key) => {
+               const cat = CATEGORY_MAP[key]
+               if (!cat) return null
+               const delta = result.previousScores?.[key] ? result.scores[key] - result.previousScores[key] : undefined
+               return (
+                 <ScoreRing 
+                   key={key} 
+                   score={result.scores[key]} 
+                   label={cat.label} 
+                   icon={cat.icon}
+                   delta={delta}
+                   onClick={() => setActivePanel(key)}
+                 />
+               )
+            })}
+          </div>
 
-            {/* Check Cards */}
-            <div className="lg:col-span-2 grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-blue-500">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">SEO Score</p>
-                <p className={`text-2xl font-bold ${getScoreText(result.seoScore).color}`}>{result.seoScore}/100</p>
-              </div>
-              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-purple-500">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Performance</p>
-                <p className={`text-2xl font-bold ${getScoreText(result.performanceScore).color}`}>{result.performanceScore}/100</p>
-              </div>
-              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-cyan-500">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Speed Index</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{result.speed}</p>
-              </div>
-              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-orange-500">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Total Issues</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-white">{result.issues.length}</p>
-              </div>
-              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-red-500">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Critical Issues</p>
-                <p className="text-2xl font-bold text-red-600">{result.issues.filter(i => i.type === 'critical').length}</p>
-              </div>
-              <div className="bg-white dark:bg-[#1E293B] p-5 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 border-t-4 border-t-green-500">
-                <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1 uppercase tracking-wider">Connection</p>
-                <div className="flex items-center gap-2 mt-1">
-                  <span className="w-3 h-3 rounded-full bg-green-500"></span>
-                  <p className="text-lg font-bold text-slate-900 dark:text-white">Secure</p>
+          {/* Render Active Panel Below */}
+          {activePanel && result.issues[activePanel] && (
+             <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 animate-in slide-in-from-top-2">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    {(() => { const Icon = CATEGORY_MAP[activePanel]?.icon; return Icon ? <Icon className="w-6 h-6 text-blue-500" /> : null })()}
+                    {CATEGORY_MAP[activePanel]?.label} Diagnostics
+                  </h3>
+                  <button onClick={() => setActivePanel(null)} className="text-slate-400 hover:text-slate-600">Close</button>
                 </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Issues List */}
-          <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
-            <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
-              <h3 className="font-semibold text-slate-900 dark:text-white">Identified Issues (Top {result.issues.length})</h3>
-            </div>
-            {result.issues.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
-                <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
-                <p>Great job! No major issues were detected by Lighthouse.</p>
-              </div>
-            ) : (
-              <ul className="divide-y divide-slate-100 dark:divide-slate-800">
-                {result.issues.map((issue, idx) => (
-                  <li key={idx} className="p-4 sm:p-6 flex items-start gap-4 hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
-                    {issue.type === 'critical' ? (
-                      <XCircle className="w-5 h-5 text-red-600 mt-0.5 flex-shrink-0" />
-                    ) : (
-                      <AlertTriangle className="w-5 h-5 text-orange-600 mt-0.5 flex-shrink-0" />
-                    )}
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        {issue.type === 'critical' ? (
-                          <span className="bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Critical</span>
-                        ) : (
-                          <span className="bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400 text-xs font-bold px-2 py-0.5 rounded uppercase tracking-wider">Warning</span>
+                
+                {result.issues[activePanel].length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">
+                    <CheckCircle2 className="w-12 h-12 text-green-500 mx-auto mb-3" />
+                    <p>Perfect score! No issues found in this category.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-6">
+                    <ul className="space-y-4">
+                      {result.issues[activePanel].map((issue, idx) => (
+                        <li key={idx} className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700/50 flex flex-col gap-3">
+                          <div className="flex items-start gap-4">
+                            {issue.type === 'critical' ? <XCircle className="w-5 h-5 text-red-500 mt-1 shrink-0" /> : issue.type === 'info' ? <Info className="w-5 h-5 text-blue-500 mt-1 shrink-0" /> : <AlertTriangle className="w-5 h-5 text-orange-500 mt-1 shrink-0" />}
+                            <div className="flex-1">
+                              <h4 className="font-semibold text-slate-900 dark:text-white">{issue.title}</h4>
+                              <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">{issue.description}</p>
+                            </div>
+                          </div>
+                          {issue.fix && (
+                            <div className="ml-9 mt-2 p-3 bg-slate-100 dark:bg-slate-900 rounded-md border border-slate-200 dark:border-slate-800">
+                              <p className="text-xs font-mono text-slate-700 dark:text-slate-300 break-all">{issue.fix}</p>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    
+                    {/* Action Buttons based on Panel */}
+                    {activePanel === 'onPage' && (
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button 
+                          onClick={() => handleGenerate('meta', 'Extract from DOM if possible')}
+                          disabled={generating['meta']}
+                          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                        >
+                          {generating['meta'] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                          Generate Meta Description
+                        </button>
+                        {generated['meta'] && (
+                          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <h5 className="text-xs font-semibold text-slate-500 uppercase mb-2">Generated Output:</h5>
+                            <p className="text-sm text-slate-900 dark:text-white">{generated['meta']}</p>
+                          </div>
                         )}
-                        <h4 className="font-medium text-slate-900 dark:text-white">{issue.title}</h4>
                       </div>
-                      <p className="text-sm text-slate-600 dark:text-slate-400">{issue.description}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+                    )}
+
+                    {activePanel === 'aiReadability' && (
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-800 relative">
+                        {!isPro && (
+                          <div className="absolute inset-0 z-10 bg-white/60 dark:bg-[#1E293B]/60 backdrop-blur-[2px] flex items-center justify-center rounded-lg">
+                             <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 text-center">
+                               <Shield className="w-8 h-8 text-blue-500 mx-auto mb-2" />
+                               <h4 className="font-bold">AI Schema Generator</h4>
+                               <p className="text-xs text-slate-500 mb-3">Upgrade to Pro to auto-generate JSON-LD.</p>
+                               <button onClick={() => window.dispatchEvent(new CustomEvent('show-upgrade-modal', {}))} className="bg-blue-600 text-white px-4 py-1.5 text-sm rounded-md font-medium">Upgrade</button>
+                             </div>
+                          </div>
+                        )}
+                        <button 
+                          onClick={() => handleGenerate('schema', 'Website')}
+                          disabled={generating['schema']}
+                          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                        >
+                          {generating['schema'] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Code className="w-4 h-4" />}
+                          Generate JSON-LD Schema
+                        </button>
+                        {generated['schema'] && (
+                          <div className="mt-4 p-4 bg-slate-900 rounded-lg border border-slate-700 overflow-x-auto">
+                            <h5 className="text-xs font-semibold text-slate-500 uppercase mb-2">Next.js Snippet:</h5>
+                            <pre className="text-xs text-green-400"><code>{generated['schema']}</code></pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activePanel === 'social' && (
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-4">
+                        <div className="flex gap-4">
+                          <button 
+                            onClick={() => handleGenerate('og', 'WebSite')}
+                            disabled={generating['og']}
+                            className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm flex-1 justify-center"
+                          >
+                            {generating['og'] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Zap className="w-4 h-4" />}
+                            Generate OG Tags
+                          </button>
+                          <button 
+                            onClick={() => handleGenerate('og-image', 'Brand colors')}
+                            disabled={generating['og-image']}
+                            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm flex-1 justify-center"
+                          >
+                            {generating['og-image'] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Eye className="w-4 h-4" />}
+                            Generate OG Image
+                          </button>
+                        </div>
+                        {generated['og'] && (
+                          <div className="p-4 bg-slate-900 rounded-lg border border-slate-700 overflow-x-auto">
+                            <h5 className="text-xs font-semibold text-slate-500 uppercase mb-2">OG Tags (JSON):</h5>
+                            <pre className="text-xs text-blue-400"><code>{generated['og']}</code></pre>
+                          </div>
+                        )}
+                        {generated['og-image'] && (
+                          <div className="p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                            <h5 className="text-xs font-semibold text-slate-500 uppercase mb-2">Generated OpenGraph Image:</h5>
+                            <img src={generated['og-image']} alt="Generated OG" className="w-full h-auto rounded-md shadow-sm border border-slate-200 dark:border-slate-700" />
+                            <p className="text-xs text-slate-500 mt-2">Deploy at <code className="text-pink-500">/public/og/default.png</code></p>
+                          </div>
+                        )}
+                      </div>
+                    )}
+
+                    {activePanel === 'privacy' && (
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                        <button 
+                          onClick={() => handleGenerate('privacy', 'Vercel, React')}
+                          disabled={generating['privacy']}
+                          className="flex items-center gap-2 bg-purple-600 hover:bg-purple-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm"
+                        >
+                          {generating['privacy'] ? <Loader2 className="w-4 h-4 animate-spin" /> : <Shield className="w-4 h-4" />}
+                          Generate Privacy Policy (MDX)
+                        </button>
+                        {generated['privacy'] && (
+                          <div className="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700 max-h-64 overflow-y-auto">
+                            <pre className="text-xs text-slate-900 dark:text-white whitespace-pre-wrap">{generated['privacy']}</pre>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    
+                    {activePanel === 'technical' && (
+                      <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex gap-4">
+                        <div className="flex-1">
+                          <button 
+                            onClick={() => {
+                              if (!isAgency) {
+                                window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: 'One-click GitHub deployment requires an Agency plan.' } }))
+                                return
+                              }
+                              toast.error('GitHub integration coming soon!')
+                            }}
+                            className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 text-white px-6 py-2.5 rounded-lg text-sm font-semibold transition-all shadow-sm w-full justify-center"
+                          >
+                            <Code className="w-4 h-4" />
+                            Push Fixes to GitHub
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+             </div>
+          )}
+
         </div>
-        </PaywallBlur>
       )}
     </div>
   )
