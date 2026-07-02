@@ -1,13 +1,11 @@
-import { createOpenAI } from '@ai-sdk/openai';
+import { createGroq } from '@ai-sdk/groq';
 import { streamText } from 'ai';
 
-export const runtime = 'edge';
-export const maxDuration = 30;
-
-const nara = createOpenAI({
-  baseURL: 'https://router.bynara.id/v1',
-  apiKey: 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs',
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY || '',
 });
+
+export const maxDuration = 60;
 
 export async function POST(req: Request) {
   try {
@@ -26,8 +24,7 @@ Your Goal:
 6. Keep responses concise, punchy, and formatted with markdown when appropriate. NEVER use placeholders like "[insert link]", always provide the exact URL provided above.`;
 
     const result = await streamText({
-      // @ts-ignore
-      model: nara('mistral-large'),
+      model: groq('llama-3.3-70b-versatile'),
       system: systemPrompt,
       messages,
     });
