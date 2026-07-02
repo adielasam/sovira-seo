@@ -37,9 +37,9 @@ export async function checkUsageLimit(userId: string, actionType: 'generation' |
     
   const limits: Record<string, number> = {
     'generation': 3,
-    'audit': 2,
+    'audit': 5,
     'keyword': 5,
-    'insight': 1
+    'insight': 5
   }
   
   if (count !== null && count >= limits[actionType]) {
