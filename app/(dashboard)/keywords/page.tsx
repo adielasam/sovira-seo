@@ -213,7 +213,7 @@ export default function KeywordsPage() {
       </div>
 
       {results.length > 0 ? (
-      <PaywallBlur isPro={isPro}>
+      <div className="space-y-6">
       {/* Stats Row */}
       <div className="grid grid-cols-3 gap-4">
         {[
@@ -229,6 +229,7 @@ export default function KeywordsPage() {
       </div>
 
       {/* Results Table */}
+      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
         <div className="overflow-x-auto w-full">
           <table className="min-w-[600px] w-full divide-y divide-slate-200 dark:divide-slate-800">
@@ -361,6 +362,7 @@ export default function KeywordsPage() {
         </div>
       </div>
       </PaywallBlur>
+      </div>
       ) : (
         <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-12 text-center flex flex-col items-center justify-center min-h-[300px]">
           <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-4">
