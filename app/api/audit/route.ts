@@ -150,34 +150,47 @@ export async function POST(req: Request) {
     
     if (user) {
       // Get previous audit
-      const { data: prevAudit } = await supabase
+      const { data: prevAudit, error: prevError } = await supabase
         .from('audits')
         .select('scores')
         .eq('user_id', user.id)
         .eq('url', url)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
+        
+      if (prevError && prevError.code !== 'PGRST116') {
+        console.error('Error fetching prev audit:', prevError)
+      }
         
       if (prevAudit) {
         previousScores = prevAudit.scores
       }
 
-      const { data: auditRecord } = await supabase.from('audits').insert([{
+      const { data: auditRecord, error: insertError } = await supabase.from('audits').insert([{
         user_id: user.id,
         url: url,
         scores: scores,
         issues: issues
       }]).select('id').single()
       
+      if (insertError) {
+        console.error('Audit insert error:', insertError)
+        throw new Error(`Database Insert Error: ${insertError.message}`)
+      }
+      
       if (auditRecord) auditId = auditRecord.id
 
       // Also log to activity_logs for dashboard compatibility
-      await supabase.from('activity_logs').insert([{
+      const { error: logError } = await supabase.from('activity_logs').insert([{
         user_id: user.id,
         action: 'Audit Run',
         details: { url, overallScore: scores.overall }
       }])
+      
+      if (logError) {
+        console.error('Activity log error:', logError)
+      }
     }
 
     return NextResponse.json({
