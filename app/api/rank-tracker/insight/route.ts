@@ -32,7 +32,7 @@ export async function POST(req: Request) {
        // The prompt says "use Groq to generate a 2-3 sentence... to control API usage"
        // I'll gate it to pro/agency, or maybe free gets 1 per month via usage tracking. 
        // Let's just allow it for all but record usage.
-       const { limitReached } = await checkUsageLimit(user.id, 'audit')
+       const { limitReached } = await checkUsageLimit(user.id, 'insight')
        if (limitReached) {
          return NextResponse.json({ error: 'You have reached your Free plan usage limit.' }, { status: 403 })
        }

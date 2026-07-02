@@ -1,6 +1,6 @@
 import { createClient } from './supabase/server'
 
-export async function checkUsageLimit(userId: string, actionType: 'generation' | 'audit' | 'keyword'): Promise<{ allowed: boolean, limitReached: boolean }> {
+export async function checkUsageLimit(userId: string, actionType: 'generation' | 'audit' | 'keyword' | 'insight'): Promise<{ allowed: boolean, limitReached: boolean }> {
   const supabase = await createClient()
   
   // Get user profile
@@ -25,6 +25,7 @@ export async function checkUsageLimit(userId: string, actionType: 'generation' |
   if (actionType === 'generation') actionMatch = 'Content Generated'
   if (actionType === 'audit') actionMatch = 'Audit Run'
   if (actionType === 'keyword') actionMatch = 'Keyword Research'
+  if (actionType === 'insight') actionMatch = 'Generated Rank Insight'
   
   // This is a naive check. For production, we'd have a usage_metrics table.
   const { count } = await supabase
@@ -34,10 +35,11 @@ export async function checkUsageLimit(userId: string, actionType: 'generation' |
     .eq('action', actionMatch)
     .gte('created_at', thirtyDaysAgo.toISOString())
     
-  const limits = {
+  const limits: Record<string, number> = {
     'generation': 3,
     'audit': 2,
-    'keyword': 5
+    'keyword': 5,
+    'insight': 1
   }
   
   if (count !== null && count >= limits[actionType]) {
