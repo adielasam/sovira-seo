@@ -201,6 +201,6 @@ export async function POST(req: Request) {
     })
   } catch (error: any) {
     console.error('Audit Error:', error)
-    return NextResponse.json({ error: 'Failed to run audit. Ensure URL is publicly accessible.' }, { status: 500 })
+    return NextResponse.json({ error: error.message || 'Failed to run audit. Ensure URL is publicly accessible.' }, { status: 500 })
   }
 }
