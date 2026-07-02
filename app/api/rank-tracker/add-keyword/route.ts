@@ -40,7 +40,13 @@ export async function POST(req: Request) {
         target_url: targetUrl || '',
         search_volume: searchVolume || '0',
         country_code: countryCode || 'us',
-        is_active: true
+        is_active: true,
+        // Legacy column defaults to satisfy NOT NULL constraints
+        volume: searchVolume || '0',
+        difficulty: 0,
+        cpc: '$0.00',
+        trend: 'up',
+        intent: 'Informational'
       }])
       .select()
       .single()
