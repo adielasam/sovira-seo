@@ -32,6 +32,7 @@ export default async function DashboardPage() {
   // Fetch real tracked keywords count
   let trackedCount = 0
   let contentCount = 0
+  let backlinksCount = 0
   if (user) {
     const { count: keywordsCount } = await supabase
       .from('tracked_keywords')
@@ -46,6 +47,30 @@ export default async function DashboardPage() {
       .eq('user_id', user.id)
       
     contentCount = generationsCount || 0
+
+    const { count: bCount } = await supabase
+      .from('backlinks')
+      .select('*', { count: 'exact', head: true })
+      .eq('user_id', user.id)
+      
+    backlinksCount = bCount || 0
+  }
+
+  // Fetch latest SEO Audit score
+  let latestSeoScore: number | null = null
+  if (user) {
+    const { data: latestAudit } = await supabase
+      .from('activity_logs')
+      .select('details')
+      .eq('user_id', user.id)
+      .eq('action', 'Audit Run')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
+      
+    if (latestAudit?.details?.overallScore) {
+      latestSeoScore = latestAudit.details.overallScore
+    }
   }
 
   // Fetch real activity logs
@@ -93,9 +118,18 @@ export default async function DashboardPage() {
 
   // Inject real data into stats
   const dynamicStats = [
-    { name: 'SEO Score', value: '78', unit: '/100', change: '+5 from last week', trend: 'up', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30', href: '/audit' },
+    { 
+      name: 'SEO Score', 
+      value: latestSeoScore ? latestSeoScore.toString() : '-', 
+      unit: '/100', 
+      change: latestSeoScore ? 'Based on last audit' : 'No data yet', 
+      trend: 'up', 
+      color: latestSeoScore ? (latestSeoScore >= 70 ? 'text-green-600 dark:text-green-400' : latestSeoScore >= 50 ? 'text-orange-600 dark:text-orange-400' : 'text-red-600 dark:text-red-400') : 'text-slate-400', 
+      bg: latestSeoScore ? (latestSeoScore >= 70 ? 'bg-green-100 dark:bg-green-900/30' : latestSeoScore >= 50 ? 'bg-orange-100 dark:bg-orange-900/30' : 'bg-red-100 dark:bg-red-900/30') : 'bg-slate-100 dark:bg-slate-800', 
+      href: '/audit' 
+    },
     { name: 'Keywords Tracked', value: trackedCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30', href: '/keywords' },
-    { name: 'Backlinks', value: '1,847', unit: '', change: '23 new this week', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30', href: '/backlinks' },
+    { name: 'Backlinks', value: backlinksCount.toString(), unit: '', change: 'Real-time count', trend: 'up', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30', href: '/backlinks' },
     { name: 'Est. Monthly Traffic', value: '12,400', unit: '', change: '+8% from last month', trend: 'up', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30', href: '/integrations' },
   ]
 
