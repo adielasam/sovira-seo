@@ -1,9 +1,9 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
-const nara = createOpenAI({
-  baseURL: 'https://router.bynara.id/v1',
-  apiKey: process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs',
+const groq = createOpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  apiKey: process.env.GROQ_API_KEY,
 });
 
 export const maxDuration = 30;
@@ -26,7 +26,7 @@ Your Goal:
 
     const result = await streamText({
       // @ts-ignore
-      model: nara('mistral-large'),
+      model: groq('llama-3.3-70b-versatile'),
       system: systemPrompt,
       messages,
     });
