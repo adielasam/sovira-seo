@@ -1,12 +1,13 @@
 import { createOpenAI } from '@ai-sdk/openai';
 import { streamText } from 'ai';
 
-const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
-});
-
+export const runtime = 'edge';
 export const maxDuration = 30;
+
+const nara = createOpenAI({
+  baseURL: 'https://router.bynara.id/v1',
+  apiKey: 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs',
+});
 
 export async function POST(req: Request) {
   try {
@@ -26,7 +27,7 @@ Your Goal:
 
     const result = await streamText({
       // @ts-ignore
-      model: groq('llama-3.3-70b-versatile'),
+      model: nara('mistral-large'),
       system: systemPrompt,
       messages,
     });
