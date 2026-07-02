@@ -26,3 +26,13 @@ CREATE TABLE IF NOT EXISTS activity_logs (
 ALTER TABLE activity_logs ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own activity logs" ON activity_logs
   FOR ALL USING (auth.uid() = user_id);
+
+-- Grant privileges to authenticated users
+GRANT ALL ON TABLE public.audits TO authenticated;
+GRANT ALL ON TABLE public.audits TO service_role;
+
+GRANT ALL ON TABLE public.activity_logs TO authenticated;
+GRANT ALL ON TABLE public.activity_logs TO service_role;
+
+-- Reload PostgREST schema cache
+NOTIFY pgrst, 'reload schema';
