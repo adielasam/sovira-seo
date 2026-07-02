@@ -73,10 +73,10 @@ export default async function DashboardPage() {
   }
 
   const dynamicStats = [
-    { name: 'SEO Score', value: seoScore > 0 ? seoScore.toString() : '-', unit: '/100', change: seoScore > 0 ? 'Based on latest audit' : 'No data yet', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
-    { name: 'Keywords Tracked', value: keywordsCount.toString(), unit: '', change: 'Real-time count', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-    { name: 'Backlinks', value: backlinksCount.toString(), unit: '', change: 'Real-time count', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-    { name: 'Est. Monthly Traffic', value: '-', unit: '', change: 'Connect Analytics', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
+    { name: 'SEO Score', href: '/audit', value: seoScore > 0 ? seoScore.toString() : '-', unit: '/100', change: seoScore > 0 ? 'Based on latest audit' : 'No data yet', color: 'text-green-600 dark:text-green-400', bg: 'bg-green-100 dark:bg-green-900/30' },
+    { name: 'Keywords Tracked', href: '/keywords', value: keywordsCount.toString(), unit: '', change: 'Real-time count', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/30' },
+    { name: 'Backlinks', href: '/backlinks', value: backlinksCount.toString(), unit: '', change: 'Real-time count', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' },
+    { name: 'Est. Monthly Traffic', href: '/integrations', value: '-', unit: '', change: 'Connect Analytics', color: 'text-orange-600 dark:text-orange-400', bg: 'bg-orange-100 dark:bg-orange-900/30' },
   ]
 
   return (
@@ -84,19 +84,24 @@ export default async function DashboardPage() {
       {/* Stats Grid */}
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
         {dynamicStats.map((stat) => (
-          <div key={stat.name} className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 hover:shadow-md transition-all duration-200">
-            <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.name}</h3>
-            <div className="mt-2 flex items-baseline gap-2">
-              <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white">{stat.value}</span>
-              {stat.unit && <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.unit}</span>}
-            </div>
-            <div className={`mt-4 flex items-center gap-2 text-xs font-medium ${stat.color}`}>
-              <div className={`p-1 rounded-full ${stat.bg}`}>
-                <ArrowUpRight className="w-3 h-3" />
+          <Link key={stat.name} href={stat.href} className="block group h-full">
+            <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 group-hover:shadow-md group-hover:ring-blue-500/50 transition-all duration-200 h-full">
+              <div className="flex items-center justify-between">
+                <h3 className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.name}</h3>
+                <ArrowUpRight className="w-4 h-4 text-slate-300 dark:text-slate-600 group-hover:text-blue-500 transition-colors" />
               </div>
-              {stat.change}
+              <div className="mt-2 flex items-baseline gap-2">
+                <span className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{stat.value}</span>
+                {stat.unit && <span className="text-sm font-medium text-slate-500 dark:text-slate-400">{stat.unit}</span>}
+              </div>
+              <div className={`mt-4 flex items-center gap-2 text-xs font-medium ${stat.color}`}>
+                <div className={`p-1 rounded-full ${stat.bg}`}>
+                  <ArrowUpRight className="w-3 h-3" />
+                </div>
+                {stat.change}
+              </div>
             </div>
-          </div>
+          </Link>
         ))}
       </div>
 
