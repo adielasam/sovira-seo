@@ -33,8 +33,8 @@ export function Footer() {
             <li><Link href="/about" className="hover:text-blue-400 transition-colors">About Us</Link></li>
             <li><Link href="/careers" className="hover:text-blue-400 transition-colors">Careers</Link></li>
             <li><a href="https://wa.me/2348162337303" target="_blank" rel="noopener noreferrer" className="hover:text-blue-400 transition-colors">Contact</a></li>
-            <li><Link href="/privacy-policy" className="hover:text-blue-400 font-bold text-slate-200 transition-colors">Privacy Policy</Link></li>
-            <li><Link href="/terms" className="hover:text-blue-400 font-bold text-slate-200 transition-colors">Terms of Service</Link></li>
+            <li><Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
+            <li><Link href="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
           </ul>
         </div>
       </div>
