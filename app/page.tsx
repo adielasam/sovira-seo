@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { HeroVisual } from '@/components/marketing/HeroVisual'
 import { SocialProofBar } from '@/components/marketing/SocialProofBar'
-import { DashboardDemo } from '@/components/marketing/DashboardDemo'
+import { InteractiveShowcase } from '@/components/marketing/InteractiveShowcase'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
   CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote 
@@ -338,42 +338,8 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* ── Animated Dashboard Demo Section ────────────────────────── */}
-        <div className="bg-slate-50 dark:bg-[#0F172A] py-16 md:py-24">
-          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-              <FadeInSection>
-                <div className="text-left max-w-lg">
-                  <div className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center font-bold text-xl mb-6 shadow-sm">1</div>
-                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
-                    Research keywords. Rank faster.
-                  </h2>
-                  <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
-                    Discover high-value, low-competition keywords in seconds. Sovira AI analyzes search intent, volume, and difficulty to give you the best opportunities.
-                  </p>
-                  
-                  <ul className="space-y-4">
-                    <li className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      <div className="w-5 h-5 rounded-full border border-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></div>
-                      Real-time search volume and difficulty
-                    </li>
-                    <li className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      <div className="w-5 h-5 rounded-full border border-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></div>
-                      AI-powered intent analysis
-                    </li>
-                    <li className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
-                      <div className="w-5 h-5 rounded-full border border-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></div>
-                      Track competitors effortlessly
-                    </li>
-                  </ul>
-                </div>
-              </FadeInSection>
-              <FadeInSection delay={200} className="flex justify-center lg:justify-end">
-                <DashboardDemo />
-              </FadeInSection>
-            </div>
-          </div>
-        </div>
+        {/* ── Animated Dashboard Demo Showcase ────────────────────────── */}
+        <InteractiveShowcase />
 
         {/* Scrolling Stats Section */}
         <div className="border-y border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] py-12 relative z-20">
