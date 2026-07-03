@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { ArrowLeft, LogIn } from 'lucide-react'
+import { TrendingUp, ArrowRight } from 'lucide-react'
 
 export const metadata = {
   title: 'Privacy Policy | Sovira SEO',
@@ -8,111 +8,133 @@ export const metadata = {
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="bg-slate-50 dark:bg-[#0F172A] min-h-screen py-16 md:py-24 transition-colors duration-300">
-      <div className="mx-auto max-w-3xl px-6 lg:px-8">
-        
-        {/* Navigation */}
-        <div className="flex items-center justify-between mb-12">
-          <Link href="/" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold hover:underline">
-            <ArrowLeft className="w-4 h-4" /> Back to Home
-          </Link>
-          <Link href="/login" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold transition-colors shadow-sm">
-            <LogIn className="w-4 h-4" /> Log in
-          </Link>
+    <div className="min-h-screen bg-slate-50 dark:bg-[#0A101F] font-sans selection:bg-blue-500/30">
+      
+      {/* ── Navbar ── */}
+      <nav className="sticky top-0 z-50 w-full border-b border-slate-200/80 dark:border-slate-800/80 bg-white/80 dark:bg-[#0A101F]/80 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6 lg:px-8">
+          <div className="flex items-center gap-8">
+            <Link href="/" className="flex items-center gap-2.5 group">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-white transition-transform group-hover:scale-105">
+                <TrendingUp className="h-5 w-5" />
+              </div>
+              <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
+                Sovira SEO
+              </span>
+            </Link>
+          </div>
+          <div className="flex items-center gap-4">
+            <Link href="/login" className="text-sm font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white transition-colors">
+              Log in
+            </Link>
+            <Link href="/pricing" className="hidden sm:flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-all hover:bg-blue-700 hover:shadow-md hover:shadow-blue-500/20 active:scale-95">
+              Start Free Trial <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
         </div>
+      </nav>
 
-        {/* Header */}
-        <div className="mb-12">
-          <h1 className="text-4xl md:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
+      {/* ── Hero Section ── */}
+      <div className="relative overflow-hidden pt-16 pb-24 lg:pt-24 lg:pb-32">
+        {/* Soft gradient background matching brand color */}
+        <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-50/50 via-slate-50 to-slate-50 dark:from-blue-900/20 dark:via-[#0A101F] dark:to-[#0A101F]" />
+        
+        <div className="relative z-10 mx-auto max-w-4xl px-6 text-center lg:px-8">
+          <h1 className="text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-5xl lg:text-6xl mb-6">
             Privacy Policy
           </h1>
-          <p className="text-slate-500 dark:text-slate-400">
-            Last updated: 7/3/2026
+          <p className="text-base font-medium text-slate-500 dark:text-slate-400 uppercase tracking-widest">
+            Last updated: July 3, 2026
           </p>
         </div>
+      </div>
 
-        {/* Content */}
-        <div className="prose prose-slate dark:prose-invert prose-blue max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:font-semibold prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-500 bg-white dark:bg-[#1E293B] p-8 md:p-12 rounded-3xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+      {/* ── Content Card ── */}
+      <div className="relative z-20 mx-auto max-w-4xl px-6 pb-24 lg:px-8 -mt-8 lg:-mt-16">
+        <div className="rounded-3xl bg-white dark:bg-[#111827] px-6 py-10 shadow-xl shadow-slate-200/50 dark:shadow-none ring-1 ring-slate-100 dark:ring-slate-800 sm:px-12 sm:py-16">
           
-          <h2>Abstract & API Services Data Policy</h2>
-          <p>
-            At Sovira SEO, we value your privacy and are committed to protecting your personal information. Our platform strictly adheres to the data protection policies of the APIs and infrastructure providers we integrate with, including relevant User Data Policies and Limited Use requirements where applicable.
-          </p>
-          <p>
-            This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information when You use the Website and tells You about Your privacy rights and how the law protects You. By using the Website, You agree to the collection and use of information in accordance with this Privacy Policy.
-          </p>
+          <div className="prose prose-slate dark:prose-invert prose-blue max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:font-semibold prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-500 leading-relaxed">
+            
+            <h2 className="mt-0">Abstract & API Services Data Policy</h2>
+            <p>
+              At Sovira SEO, we value your privacy and are committed to protecting your personal information. Our platform strictly adheres to the data protection policies of the APIs and infrastructure providers we integrate with, including relevant User Data Policies and Limited Use requirements where applicable.
+            </p>
+            <p>
+              This Privacy Policy describes Our policies and procedures on the collection, use and disclosure of Your information when You use the Website and tells You about Your privacy rights and how the law protects You. By using the Website, You agree to the collection and use of information in accordance with this Privacy Policy.
+            </p>
 
-          <h2>Interpretation and Definitions</h2>
-          <p>
-            <strong>Company</strong> (referred to as either &quot;the Company&quot;, &quot;We&quot;, &quot;Us&quot; or &quot;Our&quot; in this Agreement) refers to Sovira SEO, operating under Dorvas Technologies.
-          </p>
-          <p>
-            <strong>Account</strong> means a unique account created for You to access our Website or parts of our Website.
-          </p>
-          <p>
-            <strong>Personal Data</strong> is any information that relates to an identified or identifiable individual.
-          </p>
-          <p>
-            <strong>Usage Data</strong> refers to data collected automatically, either generated by the use of the Website or from the Website infrastructure itself.
-          </p>
+            <h2>Interpretation and Definitions</h2>
+            <p>
+              <strong>Company</strong> (referred to as either &quot;the Company&quot;, &quot;We&quot;, &quot;Us&quot; or &quot;Our&quot; in this Agreement) refers to Sovira SEO, operating under Dorvas Technologies.
+            </p>
+            <p>
+              <strong>Account</strong> means a unique account created for You to access our Website or parts of our Website.
+            </p>
+            <p>
+              <strong>Personal Data</strong> is any information that relates to an identified or identifiable individual.
+            </p>
+            <p>
+              <strong>Usage Data</strong> refers to data collected automatically, either generated by the use of the Website or from the Website infrastructure itself.
+            </p>
 
-          <h2>Collecting and Using Your Personal Data</h2>
-          <p>
-            While using Our Website, We may ask You to provide Us with certain personally identifiable information, including but not limited to:
-          </p>
-          <ul>
-            <li>Email address</li>
-            <li>First name and last name</li>
-            <li>Usage Data (IP address, browser type, pages visited)</li>
-          </ul>
+            <h2>Collecting and Using Your Personal Data</h2>
+            <p>
+              While using Our Website, We may ask You to provide Us with certain personally identifiable information, including but not limited to:
+            </p>
+            <ul>
+              <li>Email address</li>
+              <li>First name and last name</li>
+              <li>Usage Data (IP address, browser type, pages visited)</li>
+            </ul>
 
-          <h2>2. Third-Party Data Processing</h2>
-          <p>We believe in transparency regarding the infrastructure that powers Sovira SEO.</p>
-          <ul>
-            <li><strong>Database & Authentication:</strong> Your account details and stored SEO data are encrypted and securely hosted through our trusted database and authentication provider.</li>
-            <li><strong>AI Infrastructure:</strong> To provide our content generation, keyword research, and audit analysis features, we share anonymized inputs (such as target URLs or keywords) with our secure AI infrastructure providers. Your personal identity, account details, and contact information are never shared with these providers — only the minimum contextual data needed to generate a response.</li>
-            <li><strong>Web Data & Technical Audits:</strong> We use trusted third-party services to perform real-time rank tracking, competitor analysis, and technical performance audits on your submitted domains.</li>
-            <li><strong>Payment Processing:</strong> Payments are handled by secure, PCI-compliant payment gateways, including Paystack and Stripe. We do not store your full credit card or raw payment details on our servers.</li>
-          </ul>
+            <h2>2. Third-Party Data Processing</h2>
+            <p>We believe in transparency regarding the infrastructure that powers Sovira SEO.</p>
+            <ul>
+              <li><strong>Database & Authentication:</strong> Your account details and stored SEO data are encrypted and securely hosted through our trusted database and authentication provider.</li>
+              <li><strong>AI Infrastructure:</strong> To provide our content generation, keyword research, and audit analysis features, we share anonymized inputs (such as target URLs or keywords) with our secure AI infrastructure providers. Your personal identity, account details, and contact information are never shared with these providers — only the minimum contextual data needed to generate a response.</li>
+              <li><strong>Web Data & Technical Audits:</strong> We use trusted third-party services to perform real-time rank tracking, competitor analysis, and technical performance audits on your submitted domains.</li>
+              <li><strong>Payment Processing:</strong> Payments are handled by secure, PCI-compliant payment gateways, including Paystack and Stripe. We do not store your full credit card or raw payment details on our servers.</li>
+            </ul>
 
-          <h2>Requesting Account & Data Deletion</h2>
-          <p>
-            We respect your right to privacy and provide every user with the ability to permanently delete their account and all personal information stored with Sovira SEO.
-          </p>
-          <p><strong>How to Submit a Deletion Request:</strong></p>
-          <p>
-            Send a WhatsApp message to our support line at <strong>+234 816 233 7303</strong> or email us with the subject line: &quot;Account Deletion Request&quot;. Please include the email address associated with your account.
-          </p>
-          <p>
-            Once we receive your request, we will verify your identity and permanently delete your account and all associated personal information from our active systems within 7 business days.
-          </p>
+            <h2>Requesting Account & Data Deletion</h2>
+            <p>
+              We respect your right to privacy and provide every user with the ability to permanently delete their account and all personal information stored with Sovira SEO.
+            </p>
+            <p><strong>How to Submit a Deletion Request:</strong></p>
+            <p>
+              Send a WhatsApp message to our support line at <strong>+234 816 233 7303</strong> or email us with the subject line: &quot;Account Deletion Request&quot;. Please include the email address associated with your account.
+            </p>
+            <p>
+              Once we receive your request, we will verify your identity and permanently delete your account and all associated personal information from our active systems within 7 business days.
+            </p>
 
-          <h2>Tracking Technologies and Cookies</h2>
-          <p>
-            We use Cookies and similar tracking technologies to track the activity on Our Website and store certain information. The technologies We use may include:
-          </p>
-          <ul>
-            <li><strong>Necessary / Essential Cookies:</strong> Essential to provide You with services available through the Website and to enable You to use some of its features.</li>
-            <li><strong>Functionality Cookies:</strong> Allow us to remember choices You make when You use the Website, such as your authentication state.</li>
-          </ul>
+            <h2>Tracking Technologies and Cookies</h2>
+            <p>
+              We use Cookies and similar tracking technologies to track the activity on Our Website and store certain information. The technologies We use may include:
+            </p>
+            <ul>
+              <li><strong>Necessary / Essential Cookies:</strong> Essential to provide You with services available through the Website and to enable You to use some of its features.</li>
+              <li><strong>Functionality Cookies:</strong> Allow us to remember choices You make when You use the Website, such as your authentication state.</li>
+            </ul>
 
-          <h2>GDPR & CCPA Privacy Rights</h2>
-          <p>
-            If you are a resident of the European Economic Area (EEA) or California, you have specific data protection rights, including:
-          </p>
-          <ul>
-            <li><strong>The right to access, update or delete</strong> the information We have on You.</li>
-            <li><strong>The right of rectification.</strong> You have the right to have your information rectified if that information is inaccurate or incomplete.</li>
-            <li><strong>The right to object.</strong> You have the right to object to our processing of your Personal Data.</li>
-            <li><strong>The right of restriction.</strong> You have the right to request that we restrict the processing of your personal information.</li>
-            <li><strong>The right to say no to the sale of Personal Data (CCPA).</strong> We do not sell your personal data.</li>
-          </ul>
+            <h2>GDPR & CCPA Privacy Rights</h2>
+            <p>
+              If you are a resident of the European Economic Area (EEA) or California, you have specific data protection rights, including:
+            </p>
+            <ul>
+              <li><strong>The right to access, update or delete</strong> the information We have on You.</li>
+              <li><strong>The right of rectification.</strong> You have the right to have your information rectified if that information is inaccurate or incomplete.</li>
+              <li><strong>The right to object.</strong> You have the right to object to our processing of your Personal Data.</li>
+              <li><strong>The right of restriction.</strong> You have the right to request that we restrict the processing of your personal information.</li>
+              <li><strong>The right to say no to the sale of Personal Data (CCPA).</strong> We do not sell your personal data.</li>
+            </ul>
 
-          <h2>Contact Us</h2>
-          <p>
-            If you have any questions about this Privacy Policy, You can contact us via WhatsApp: <a href="https://wa.me/2348162337303">+234 816 233 7303</a>
-          </p>
+            <h2>Contact Us</h2>
+            <p>
+              If you have any questions about this Privacy Policy, You can contact us via WhatsApp: <a href="https://wa.me/2348162337303">+234 816 233 7303</a>
+            </p>
 
+          </div>
         </div>
       </div>
     </div>
