@@ -6,7 +6,7 @@ import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { HeroVisual } from '@/components/marketing/HeroVisual'
 import { SocialProofBar } from '@/components/marketing/SocialProofBar'
-import { InteractiveShowcase } from '@/components/marketing/InteractiveShowcase'
+import { FullDashboardDemo } from '@/components/marketing/FullDashboardDemo'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
   CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote 
@@ -339,7 +339,21 @@ export default function LandingPage() {
         </div>
 
         {/* ── Animated Dashboard Demo Showcase ────────────────────────── */}
-        <InteractiveShowcase />
+        <div className="bg-slate-50 dark:bg-[#0F172A] py-16 md:py-24 border-b border-slate-200 dark:border-slate-800">
+          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16 text-center">
+            <FadeInSection>
+              <h2 className="text-3xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-6">
+                See Sovira in Action
+              </h2>
+              <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto mb-8">
+                Watch how easily you can audit sites, uncover keyword gaps, track competitors, and generate SEO-optimized content—all from one powerful dashboard.
+              </p>
+            </FadeInSection>
+            <FadeInSection delay={200}>
+              <FullDashboardDemo />
+            </FadeInSection>
+          </div>
+        </div>
 
         {/* Scrolling Stats Section */}
         <div className="border-y border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0F172A] py-12 relative z-20">
