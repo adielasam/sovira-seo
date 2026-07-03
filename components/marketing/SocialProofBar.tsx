@@ -1,14 +1,14 @@
 'use client'
 
+import Image from 'next/image'
 import { Star } from 'lucide-react'
 
-// Social proof avatars — initials + background colours, no external images
+// Social proof avatars — real African creator images
 const AVATARS = [
-  { initials: 'AO', bg: '#2563EB' },
-  { initials: 'CB', bg: '#7C3AED' },
-  { initials: 'NK', bg: '#059669' },
-  { initials: 'TH', bg: '#DC2626' },
-  { initials: 'EM', bg: '#D97706' },
+  { src: '/images/avatar-1.jpg', alt: 'Creator 1' },
+  { src: '/images/avatar-2.jpg', alt: 'Creator 2' },
+  { src: '/images/avatar-3.jpg', alt: 'Creator 3' },
+  { src: '/images/avatar-4.jpg', alt: 'Creator 4' },
 ]
 
 const TESTIMONIAL = {
@@ -29,18 +29,14 @@ export function SocialProofBar() {
           {AVATARS.map((a, i) => (
             <div
               key={i}
-              title={a.initials}
+              className="relative rounded-full overflow-hidden"
               style={{
                 width: 38, height: 38,
-                borderRadius: '50%',
-                background: a.bg,
                 border: '2.5px solid #FDFBF7',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 700, color: '#fff',
                 position: 'relative', zIndex: AVATARS.length - i,
               }}
             >
-              {a.initials}
+              <Image src={a.src} alt={a.alt} fill className="object-cover" />
             </div>
           ))}
           {/* "+520" overflow badge */}

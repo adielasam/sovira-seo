@@ -341,20 +341,37 @@ export default function LandingPage() {
         {/* ── Animated Dashboard Demo Section ────────────────────────── */}
         <div className="bg-slate-50 dark:bg-[#0F172A] py-16 md:py-24">
           <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16">
-            <FadeInSection>
-              <div className="text-center mb-10">
-                <p className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest mb-2">Live Product Demo</p>
-                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-                  Watch Sovira find your next ranking keyword
-                </h2>
-                <p className="mt-3 text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
-                  Real keyword data, AI-powered difficulty scores, and trend signals — all in seconds.
-                </p>
-              </div>
-            </FadeInSection>
-            <FadeInSection delay={200}>
-              <DashboardDemo />
-            </FadeInSection>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+              <FadeInSection>
+                <div className="text-left max-w-lg">
+                  <div className="w-12 h-12 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-xl flex items-center justify-center font-bold text-xl mb-6 shadow-sm">1</div>
+                  <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white mb-4">
+                    Research keywords. Rank faster.
+                  </h2>
+                  <p className="text-lg text-slate-600 dark:text-slate-400 mb-8 leading-relaxed">
+                    Discover high-value, low-competition keywords in seconds. Sovira AI analyzes search intent, volume, and difficulty to give you the best opportunities.
+                  </p>
+                  
+                  <ul className="space-y-4">
+                    <li className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <div className="w-5 h-5 rounded-full border border-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></div>
+                      Real-time search volume and difficulty
+                    </li>
+                    <li className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <div className="w-5 h-5 rounded-full border border-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></div>
+                      AI-powered intent analysis
+                    </li>
+                    <li className="flex items-center gap-3 text-sm font-semibold text-slate-700 dark:text-slate-300">
+                      <div className="w-5 h-5 rounded-full border border-emerald-500 flex items-center justify-center"><Check className="w-3 h-3 text-emerald-500" /></div>
+                      Track competitors effortlessly
+                    </li>
+                  </ul>
+                </div>
+              </FadeInSection>
+              <FadeInSection delay={200} className="flex justify-center lg:justify-end">
+                <DashboardDemo />
+              </FadeInSection>
+            </div>
           </div>
         </div>
 
@@ -510,89 +527,22 @@ export default function LandingPage() {
           </div>
         </div>
 
-        {/* Pricing Section with Scarcity Banner */}
-        <div id="pricing" className="py-24 bg-white dark:bg-[#0F172A]">
-          <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        {/* Pricing CTA Banner */}
+        <div className="py-24 bg-white dark:bg-[#0F172A]">
+          <div className="mx-auto max-w-4xl px-6 lg:px-8 text-center">
             <FadeInSection>
-              <div className="text-center">
-                <h2 className="text-base font-semibold leading-7 text-blue-600 dark:text-blue-400">Pricing</h2>
-                <p className="mt-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">Simple, transparent pricing</p>
+              <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                Ready to scale your organic traffic?
+              </h2>
+              <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
+                Join over 520+ African creators and businesses growing their audience with Sovira SEO.
+              </p>
+              <div className="mt-8 flex justify-center gap-4">
+                <Link href="/pricing" className="rounded-full bg-[#2563EB] px-8 py-3.5 text-base font-semibold text-white shadow-lg hover:bg-blue-500 hover:-translate-y-0.5 transition-all duration-200">
+                  See Pricing & Plans
+                </Link>
               </div>
             </FadeInSection>
-
-            {/* Scarcity Banner */}
-            <FadeInSection delay={200}>
-              <div className="mt-8 mx-auto max-w-2xl bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-full py-2 px-6 flex items-center justify-center gap-3 text-sm font-medium text-yellow-800 dark:text-yellow-500">
-                <span>🎉</span> Early access pricing — locked in forever for the first 100 users!
-              </div>
-            </FadeInSection>
-            
-            <FadeInSection delay={300}>
-              <div className="mt-10 flex justify-center">
-                <div className="flex items-center gap-3 bg-slate-100 dark:bg-[#1E293B] p-1 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
-                  <button onClick={() => setIsAnnual(false)} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${!isAnnual ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>Monthly</button>
-                  <button onClick={() => setIsAnnual(true)} className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors flex items-center gap-2 ${isAnnual ? 'bg-blue-600 text-white' : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'}`}>
-                    Annually <span className="bg-blue-100 text-blue-800 text-xs px-2 py-0.5 rounded-full dark:bg-blue-900 dark:text-blue-300">Save 20%</span>
-                  </button>
-                </div>
-              </div>
-            </FadeInSection>
-
-            {/* Pricing Cards */}
-            <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-              {/* Starter */}
-              <FadeInSection delay={400} className="bg-white dark:bg-[#1E293B] p-8 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Starter</h3>
-                <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Perfect for solo founders.</p>
-                <p className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">${isAnnual ? '23' : '29'}</span>
-                  <span className="text-sm font-semibold text-slate-500">/mo</span>
-                </p>
-                <button onClick={() => handleSubscribe('starter')} className="mt-8 w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Get Started</button>
-                <ul className="mt-8 space-y-4 text-sm text-slate-600 dark:text-slate-400 flex-grow">
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 5 Projects</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 100 Keywords</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 500 AI Credits</li>
-                </ul>
-              </FadeInSection>
-
-              {/* Pro */}
-              <FadeInSection delay={500} className="bg-white dark:bg-[#1E293B] p-8 rounded-3xl ring-2 ring-blue-600 shadow-xl relative md:scale-105 flex flex-col z-10">
-                <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                  <span className="bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Most Popular</span>
-                </div>
-                <h3 className="text-xl font-bold text-blue-600 dark:text-blue-400">Pro</h3>
-                <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">For scaling agencies.</p>
-                <p className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">${isAnnual ? '63' : '79'}</span>
-                  <span className="text-sm font-semibold text-slate-500">/mo</span>
-                </p>
-                <button onClick={() => handleSubscribe('pro')} className="mt-8 w-full bg-blue-600 text-white py-3 rounded-xl font-semibold hover:bg-blue-500 transition-colors shadow-md">Get Started</button>
-                <ul className="mt-8 space-y-4 text-sm text-slate-600 dark:text-slate-400 flex-grow">
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 25 Projects</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 500 Keywords</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> 2000 AI Credits</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Priority Support</li>
-                </ul>
-              </FadeInSection>
-
-              {/* Agency */}
-              <FadeInSection delay={600} className="bg-white dark:bg-[#1E293B] p-8 rounded-3xl ring-1 ring-slate-200 dark:ring-slate-800 shadow-sm flex flex-col">
-                <h3 className="text-xl font-bold text-slate-900 dark:text-white">Agency</h3>
-                <p className="mt-4 text-sm text-slate-500 dark:text-slate-400">Enterprise grade tools.</p>
-                <p className="mt-6 flex items-baseline gap-1">
-                  <span className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white">${isAnnual ? '159' : '199'}</span>
-                  <span className="text-sm font-semibold text-slate-500">/mo</span>
-                </p>
-                <button onClick={() => handleSubscribe('agency')} className="mt-8 w-full bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 py-3 rounded-xl font-semibold hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors">Get Started</button>
-                <ul className="mt-8 space-y-4 text-sm text-slate-600 dark:text-slate-400 flex-grow">
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Unlimited Projects</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Unlimited Keywords</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> Unlimited AI Credits</li>
-                  <li className="flex items-center gap-3"><CheckCircle2 className="w-5 h-5 text-blue-500" /> White-label Reporting</li>
-                </ul>
-              </FadeInSection>
-            </div>
           </div>
         </div>
 
