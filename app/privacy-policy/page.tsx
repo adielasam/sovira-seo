@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { TrendingUp, ArrowRight } from 'lucide-react'
+import { Footer } from '@/components/marketing/Footer'
 
 export const metadata = {
   title: 'Privacy Policy | Sovira SEO',
@@ -53,7 +54,7 @@ export default function PrivacyPolicyPage() {
       <div className="relative z-20 mx-auto max-w-4xl px-6 pb-24 lg:px-8 -mt-8 lg:-mt-16">
         <div className="rounded-3xl bg-white dark:bg-[#111827] px-6 py-10 shadow-xl shadow-slate-200/50 dark:shadow-none ring-1 ring-slate-100 dark:ring-slate-800 sm:px-12 sm:py-16">
           
-          <div className="prose prose-slate dark:prose-invert prose-blue max-w-none prose-headings:font-bold prose-headings:tracking-tight prose-a:font-semibold prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-500 leading-relaxed">
+          <div className="prose prose-slate dark:prose-invert prose-blue max-w-none prose-headings:font-extrabold prose-headings:tracking-tight prose-a:font-semibold prose-a:text-blue-600 dark:prose-a:text-blue-400 hover:prose-a:text-blue-500 leading-relaxed">
             
             <h2 className="mt-0">Abstract & API Services Data Policy</h2>
             <p>
@@ -137,6 +138,8 @@ export default function PrivacyPolicyPage() {
           </div>
         </div>
       </div>
+
+      <Footer />
     </div>
   )
 }
