@@ -2,12 +2,18 @@
 
 import Image from 'next/image'
 import { TrendingUp, Eye, Radio } from 'lucide-react'
+import { useState, useEffect } from 'react'
 
-// Swap creatorImageSrc to your real photo path once supplied.
-// The component is fully self-contained — no backend logic.
-interface HeroVisualProps {
-  creatorImageSrc?: string
-}
+// ── Image Slideshow ────────────────────────────────────────────────────────
+// Add/remove entries here to change the carousel.
+// Each entry accepts any path under /public.
+const CREATOR_IMAGES = [
+  { src: '/images/hero-creator.jpg',   alt: 'African male content creator filming at his desk with a ring light' },
+  { src: '/images/hero-creator-2.jpg', alt: 'African female content creator smiling at her laptop in a bright workspace' },
+  { src: '/images/hero-creator-3.jpg', alt: 'African male YouTuber at a dual monitor setup with ambient LED lighting' },
+]
+
+const SLIDE_INTERVAL = 4000 // ms per slide
 
 // Mini sparkline path — purely decorative SVG
 function Sparkline() {
@@ -25,37 +31,59 @@ function Sparkline() {
   )
 }
 
-export function HeroVisual({ creatorImageSrc = '/images/hero-creator.jpg' }: HeroVisualProps) {
+interface HeroVisualProps {
+  /** Override the first image. Defaults to CREATOR_IMAGES[0]. */
+  creatorImageSrc?: string
+}
+
+export function HeroVisual({ creatorImageSrc }: HeroVisualProps) {
+  const [active, setActive] = useState(0)
+  const [prev, setPrev] = useState<number | null>(null)
+
+  // Override first slot if a custom src is passed
+  const images = creatorImageSrc
+    ? [{ src: creatorImageSrc, alt: CREATOR_IMAGES[0].alt }, ...CREATOR_IMAGES.slice(1)]
+    : CREATOR_IMAGES
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setActive(curr => {
+        setPrev(curr)
+        return (curr + 1) % images.length
+      })
+    }, SLIDE_INTERVAL)
+    return () => clearInterval(timer)
+  }, [images.length])
+
   return (
     <div className="relative w-full max-w-2xl mx-auto select-none">
 
-      {/* ── Main creator photo ── */}
+      {/* ── Main image container ── */}
       <div className="relative rounded-3xl overflow-hidden aspect-[4/3] shadow-2xl ring-1 ring-slate-900/10 dark:ring-white/10">
-        <Image
-          src={creatorImageSrc}
-          alt="African content creator at their filming desk"
-          fill
-          className="object-cover object-center"
-          priority
-          // Graceful fallback if image not yet supplied
-          onError={(e) => {
-            const target = e.currentTarget as HTMLImageElement
-            target.style.display = 'none'
-          }}
-        />
-        {/* Warm overlay so cards pop even if photo is bright */}
-        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/30 via-transparent to-transparent" />
 
-        {/* Fallback illustrated background (shows while no real photo exists) */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-br from-amber-50 via-orange-50 to-rose-50 dark:from-slate-800 dark:via-slate-800 dark:to-slate-700 flex items-center justify-center">
-          <div className="text-center opacity-30 dark:opacity-20">
-            <div className="text-8xl mb-4">🎥</div>
-            <p className="text-slate-400 text-sm font-medium">hero-creator.jpg<br/>Drop your photo in /public/images/</p>
+        {/* Render all slides; only active one is visible */}
+        {images.map((img, i) => (
+          <div
+            key={img.src}
+            className="absolute inset-0 transition-opacity duration-700 ease-in-out"
+            style={{ opacity: i === active ? 1 : 0, zIndex: i === active ? 2 : 1 }}
+          >
+            <Image
+              src={img.src}
+              alt={img.alt}
+              fill
+              className="object-cover object-center"
+              priority={i === 0}
+              sizes="(max-width: 768px) 100vw, 50vw"
+            />
           </div>
-        </div>
+        ))}
+
+        {/* Warm overlay so stat cards pop */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-slate-900/30 via-transparent to-transparent z-10 pointer-events-none" />
 
         {/* ── Floating Card 1: Video Rank (top-left) ── */}
-        <div className="absolute top-5 left-5 hero-card-1">
+        <div className="absolute top-5 left-5 z-20 hero-card-1">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl px-4 py-3 flex flex-col gap-1.5 min-w-[148px] ring-1 ring-slate-200/60 dark:ring-slate-700/60">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Video Rank</span>
@@ -72,7 +100,7 @@ export function HeroVisual({ creatorImageSrc = '/images/hero-creator.jpg' }: Her
         </div>
 
         {/* ── Floating Card 2: Views This Week (bottom-right) ── */}
-        <div className="absolute bottom-5 right-5 hero-card-2">
+        <div className="absolute bottom-5 right-5 z-20 hero-card-2">
           <div className="bg-white/95 dark:bg-slate-900/95 backdrop-blur-xl rounded-2xl shadow-xl px-4 py-3 flex flex-col gap-1.5 min-w-[148px] ring-1 ring-slate-200/60 dark:ring-slate-700/60">
             <div className="flex items-center justify-between">
               <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Views This Week</span>
@@ -96,15 +124,31 @@ export function HeroVisual({ creatorImageSrc = '/images/hero-creator.jpg' }: Her
         </div>
 
         {/* ── Floating Pill 3: Published just now (top-right) ── */}
-        <div className="absolute top-5 right-5 hero-card-3">
+        <div className="absolute top-5 right-5 z-20 hero-card-3">
           <div className="bg-emerald-500 text-white rounded-full shadow-lg px-3.5 py-1.5 flex items-center gap-2">
             <Radio className="w-3 h-3 animate-pulse" />
             <span className="text-xs font-bold tracking-wide whitespace-nowrap">Published just now</span>
           </div>
         </div>
+
+        {/* ── Slide indicator dots ── */}
+        <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-20 flex gap-2">
+          {images.map((_, i) => (
+            <button
+              key={i}
+              onClick={() => { setPrev(active); setActive(i) }}
+              aria-label={`Show creator ${i + 1}`}
+              className={`rounded-full transition-all duration-300 ${
+                i === active
+                  ? 'w-6 h-2 bg-white shadow'
+                  : 'w-2 h-2 bg-white/50 hover:bg-white/80'
+              }`}
+            />
+          ))}
+        </div>
       </div>
 
-      {/* CSS keyframe animations — scoped, no framer-motion needed */}
+      {/* CSS keyframe animations — no framer-motion needed */}
       <style>{`
         @keyframes heroCardIn {
           from { opacity: 0; transform: translateY(12px) scale(0.95); }
@@ -123,7 +167,6 @@ export function HeroVisual({ creatorImageSrc = '/images/hero-creator.jpg' }: Her
         .hero-card-3 {
           animation: heroCardIn 0.5s ease-out 0.8s both, heroCardFloat 3.5s ease-in-out 1.2s infinite;
         }
-        /* On small screens, hide bottom-right card to avoid clutter */
         @media (max-width: 480px) {
           .hero-card-2 { display: none; }
         }
