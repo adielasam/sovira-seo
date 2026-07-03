@@ -232,7 +232,9 @@ export default function LandingPage() {
             radial-gradient(ellipse 60% 50% at 80% 20%, hsla(215,90%,60%,0.12) 0%, transparent 70%),
             radial-gradient(ellipse 50% 40% at 20% 80%, hsla(250,80%,60%,0.10) 0%, transparent 70%);
         }
-      `}}      <Navbar />
+      `}} />
+
+      <Navbar />
 
       <main>
         {/* ── Hero Section ─────────────────────────────────────────────── */}
