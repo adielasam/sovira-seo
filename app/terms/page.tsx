@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Shield } from 'lucide-react'
+import { Shield, ArrowLeft, LogIn } from 'lucide-react'
 
 export const metadata = {
   title: 'Terms of Service | Sovira SEO',
@@ -12,13 +12,22 @@ export default function TermsPage() {
       <div className="mx-auto max-w-3xl px-6 lg:px-8">
         
         {/* Header */}
+        <div className="flex items-center justify-between mb-12">
+          <Link href="/" className="inline-flex items-center gap-2 text-blue-600 dark:text-blue-400 font-semibold hover:underline">
+            <ArrowLeft className="w-4 h-4" /> Back to Home
+          </Link>
+          <Link href="/login" className="inline-flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-5 py-2 rounded-xl font-semibold transition-colors shadow-sm">
+            <LogIn className="w-4 h-4" /> Log in
+          </Link>
+        </div>
+
         <div className="text-center mb-16">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-8 group">
+          <div className="inline-flex items-center justify-center gap-2 mb-8 group cursor-default">
             <div className="p-2 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:scale-110 transition-transform">
               <Shield className="w-6 h-6" />
             </div>
             <span className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Sovira SEO</span>
-          </Link>
+          </div>
           <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl mb-4">
             Terms of Service
           </h1>
