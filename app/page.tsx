@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
+import { HeroVisual } from '@/components/marketing/HeroVisual'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
   CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote 
@@ -195,49 +196,37 @@ export default function LandingPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white transition-colors duration-300 overflow-hidden">
+    <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0F172A] text-slate-900 dark:text-white transition-colors duration-300 overflow-hidden">
       
       {/* Styles for custom animations */}
       <style dangerouslySetInnerHTML={{__html: `
-        @keyframes float {
-          0% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(-15px) rotate(1deg); }
-          100% { transform: translateY(0px) rotate(0deg); }
-        }
-        @keyframes float-delayed {
-          0% { transform: translateY(0px) rotate(0deg); }
-          50% { transform: translateY(12px) rotate(-1deg); }
-          100% { transform: translateY(0px) rotate(0deg); }
-        }
         @keyframes marquee {
           0% { transform: translateX(0%); }
           100% { transform: translateX(-50%); }
         }
-        .animate-float { animation: float 4s ease-in-out infinite; }
-        .animate-float-delayed { animation: float-delayed 5s ease-in-out infinite; }
         .animate-marquee { display: flex; width: max-content; animation: marquee 30s linear infinite; }
         .animate-marquee:hover { animation-play-state: paused; }
-        
-        .mesh-bg {
-          background-color: transparent;
-          background-image: 
-            radial-gradient(at 40% 20%, hsla(228,100%,74%,0.15) 0px, transparent 50%),
-            radial-gradient(at 80% 0%, hsla(189,100%,56%,0.15) 0px, transparent 50%),
-            radial-gradient(at 0% 50%, hsla(355,100%,93%,0.1) 0px, transparent 50%),
-            radial-gradient(at 80% 50%, hsla(340,100%,76%,0.15) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, hsla(22,100%,77%,0.1) 0px, transparent 50%),
-            radial-gradient(at 80% 100%, hsla(242,100%,70%,0.15) 0px, transparent 50%),
-            radial-gradient(at 0% 0%, hsla(343,100%,76%,0.1) 0px, transparent 50%);
+
+        /* Warm hero — subtle radial accent only, cream base */
+        .hero-bg {
+          background-color: #FDFBF7;
         }
-        .dark .mesh-bg {
-          background-image: 
-            radial-gradient(at 40% 20%, hsla(228,100%,74%,0.1) 0px, transparent 50%),
-            radial-gradient(at 80% 0%, hsla(250,100%,56%,0.15) 0px, transparent 50%),
-            radial-gradient(at 0% 50%, hsla(355,100%,93%,0.05) 0px, transparent 50%),
-            radial-gradient(at 80% 50%, hsla(280,100%,76%,0.1) 0px, transparent 50%),
-            radial-gradient(at 0% 100%, hsla(22,100%,77%,0.05) 0px, transparent 50%),
-            radial-gradient(at 80% 100%, hsla(242,100%,70%,0.15) 0px, transparent 50%),
-            radial-gradient(at 0% 0%, hsla(343,100%,76%,0.05) 0px, transparent 50%);
+        .dark .hero-bg {
+          background-color: #0F172A;
+        }
+        .hero-bg::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          background-image:
+            radial-gradient(ellipse 60% 50% at 80% 20%, hsla(215,90%,60%,0.08) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 40% at 20% 80%, hsla(35,90%,70%,0.07) 0%, transparent 70%);
+          pointer-events: none;
+        }
+        .dark .hero-bg::before {
+          background-image:
+            radial-gradient(ellipse 60% 50% at 80% 20%, hsla(215,90%,60%,0.12) 0%, transparent 70%),
+            radial-gradient(ellipse 50% 40% at 20% 80%, hsla(250,80%,60%,0.10) 0%, transparent 70%);
         }
       `}} />
 
@@ -292,90 +281,55 @@ export default function LandingPage() {
       </header>
 
       <main>
-        {/* Hero Section */}
-        <div className="relative pt-24 pb-16 md:pt-32 md:pb-24 lg:pt-40 lg:pb-32 mesh-bg">
-          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16 text-center relative z-10">
-            <FadeInSection>
-              <h1 className="mx-auto max-w-4xl font-display text-5xl font-extrabold tracking-tight text-slate-900 dark:text-white sm:text-7xl">
-                The only AI SEO tool with built-in <span className="text-[#2563EB]">ideation, tracking, and publishing.</span>
-              </h1>
-              <p className="mx-auto mt-6 max-w-2xl text-lg tracking-tight text-slate-600 dark:text-slate-400">
-                Connect with a purpose-driven platform ready to execute your SEO tasks at scale. Accelerate your organic growth with human-like AI content, localized tracking, and deep technical audits.
-              </p>
-              <div className="mt-10 flex justify-center gap-4">
-                <Link href="/auth/register" className="rounded-full bg-[#2563EB] px-8 py-3.5 text-base font-semibold text-white shadow-lg hover:bg-blue-500 hover:-translate-y-0.5 transition-all duration-200">
-                  Start Free Trial
-                </Link>
-              </div>
-            </FadeInSection>
-            
-            {/* Trust Bar directly under CTA */}
-            <FadeInSection delay={200}>
-              <div className="mt-16 flex flex-col items-center">
-                <p className="text-sm font-semibold text-slate-500 uppercase tracking-widest mb-6">Trusted by marketers worldwide</p>
-                <div className="flex flex-wrap justify-center gap-8 md:gap-16 opacity-50 grayscale hover:grayscale-0 transition-all duration-500">
-                  {/* Generic Placeholders for Trust Logos */}
-                  <div className="flex items-center gap-2 font-bold text-xl"><div className="w-6 h-6 bg-slate-900 dark:bg-white rounded-sm"></div> MarketWatch</div>
-                  <div className="flex items-center gap-2 font-bold text-xl"><div className="w-6 h-6 bg-blue-600 rounded-full"></div> MOZ</div>
-                  <div className="flex items-center gap-2 font-bold text-xl font-serif">Forbes</div>
-                  <div className="flex items-center gap-2 font-bold text-xl"><TrendingUp className="w-6 h-6" /> TechCrunch</div>
-                </div>
-              </div>
-            </FadeInSection>
+        {/* ── Hero Section ─────────────────────────────────────────────── */}
+        <div className="hero-bg relative pt-24 pb-16 md:pt-32 md:pb-24 lg:pt-40 lg:pb-32 overflow-hidden">
+          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16 relative z-10">
 
-            {/* Hero Mockup with Floating Cards */}
-            <FadeInSection delay={400} className="mt-20 relative max-w-5xl mx-auto">
-              
-              {/* Floating Card 1: SEO Score */}
-              <div className="absolute -left-4 md:-left-16 top-10 md:top-24 z-20 animate-float hidden md:block">
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700/50 flex flex-col items-center">
-                  <div className="text-xs font-semibold text-slate-500 uppercase mb-2">Live SEO Score</div>
-                  <div className="relative w-20 h-20 flex items-center justify-center">
-                    <svg className="w-full h-full transform -rotate-90">
-                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" className="text-slate-200 dark:text-slate-800" />
-                      <circle cx="40" cy="40" r="36" stroke="currentColor" strokeWidth="8" fill="transparent" strokeDasharray="226" strokeDashoffset="45" className="text-green-500" />
-                    </svg>
-                    <span className="absolute text-xl font-bold text-slate-900 dark:text-white">92</span>
+            {/* Two-column layout: text left, visual right */}
+            <div className="flex flex-col lg:flex-row items-center gap-12 lg:gap-16">
+
+              {/* ── Left: Headline + CTA ── */}
+              <div className="flex-1 text-center lg:text-left">
+                <FadeInSection>
+                  {/* Eyebrow */}
+                  <div className="inline-flex items-center gap-2 bg-[#2563EB]/8 dark:bg-[#2563EB]/15 border border-[#2563EB]/20 rounded-full px-4 py-1.5 mb-6">
+                    <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
+                    <span className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest">Built for African Creators</span>
                   </div>
-                </div>
+
+                  {/* Main headline — larger, editorial weight */}
+                  <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] text-slate-900 dark:text-white">
+                    The only AI SEO tool with built-in{' '}
+                    <span className="text-[#2563EB]">ideation, tracking, and publishing.</span>
+                  </h1>
+
+                  <p className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
+                    Connect with a purpose-driven platform ready to execute your SEO tasks at scale. Accelerate your organic growth with human-like AI content, localized tracking, and deep technical audits.
+                  </p>
+
+                  <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+                    <Link href="/auth/register" className="rounded-full bg-[#2563EB] px-8 py-3.5 text-base font-semibold text-white shadow-lg hover:bg-blue-500 hover:-translate-y-0.5 transition-all duration-200">
+                      Start Free Trial
+                    </Link>
+                    <Link href="#how-it-works" className="rounded-full border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 px-8 py-3.5 text-base font-semibold text-slate-700 dark:text-slate-200 hover:border-[#2563EB]/50 transition-all duration-200">
+                      See How It Works
+                    </Link>
+                  </div>
+
+                  {/* ── Trust Bar (Task 4) ── */}
+                  <div className="mt-10 flex flex-col items-center lg:items-start gap-2">
+                    <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-[0.18em]">
+                      Built for creators across&nbsp;&nbsp;Nigeria · Ghana · Kenya · South Africa
+                    </p>
+                  </div>
+                </FadeInSection>
               </div>
 
-              {/* Floating Card 2: Active Users */}
-              <div className="absolute -right-4 md:-right-12 bottom-10 md:bottom-32 z-20 animate-float-delayed hidden md:block">
-                <div className="bg-white/80 dark:bg-slate-900/80 backdrop-blur-xl p-4 rounded-2xl shadow-2xl border border-white/20 dark:border-slate-700/50">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                    <div className="text-xs font-semibold text-slate-500">Active Marketers</div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <div className="flex -space-x-3">
-                      <img className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800" src="https://i.pravatar.cc/100?u=a" alt="User" />
-                      <img className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800" src="https://i.pravatar.cc/100?u=b" alt="User" />
-                      <img className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800" src="https://i.pravatar.cc/100?u=c" alt="User" />
-                    </div>
-                    <div className="text-sm font-bold text-slate-900 dark:text-white">450+ ready</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="rounded-2xl bg-slate-900/5 dark:bg-white/5 p-2 ring-1 ring-inset ring-slate-900/10 dark:ring-white/10 lg:-m-4 lg:rounded-3xl lg:p-4">
-                <div className="rounded-xl bg-white dark:bg-[#1E293B] shadow-2xl ring-1 ring-slate-900/10 dark:ring-white/10 w-full relative overflow-hidden">
-                  <div className="absolute top-0 inset-x-0 h-10 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 flex items-center px-4 gap-2 z-10">
-                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-yellow-400"></div>
-                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
-                  </div>
-                  <Image 
-                    src="/newdashbaord.PNG" 
-                    alt="Sovira SEO Dashboard Interface" 
-                    width={1200} 
-                    height={800} 
-                    className="w-full h-auto object-cover object-top pt-10"
-                    priority
-                  />
-                </div>
-              </div>
-            </FadeInSection>
+              {/* ── Right: Lifestyle + Stat Cards Visual (Task 3) ── */}
+              <FadeInSection delay={300} className="flex-1 w-full">
+                <HeroVisual creatorImageSrc="/images/hero-creator.jpg" />
+              </FadeInSection>
+            </div>
           </div>
         </div>
 
@@ -501,21 +455,32 @@ export default function LandingPage() {
             </FadeInSection>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {testimonials.map((t, idx) => (
-                <FadeInSection key={idx} delay={idx * 100}>
-                  <div className="bg-white dark:bg-[#0F172A] p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow ring-1 ring-slate-200 dark:ring-slate-800 h-full flex flex-col">
-                    <Quote className="w-10 h-10 text-blue-100 dark:text-blue-900/50 mb-6" />
-                    <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed mb-8 flex-grow">"{t.quote}"</p>
-                    <div className="flex items-center gap-4 mt-auto">
-                      <img src={t.img} alt={t.name} className="w-12 h-12 rounded-full ring-2 ring-slate-100 dark:ring-slate-800" />
-                      <div>
-                        <div className="font-bold text-slate-900 dark:text-white">{t.name}</div>
-                        <div className="text-sm text-slate-500 dark:text-slate-400">{t.role}, {t.company}</div>
+              {testimonials.map((t, idx) => {
+                // Generate initials for avatar fallback
+                const initials = t.name.split(' ').map((n: string) => n[0]).join('')
+                const avatarColors = [
+                  'bg-blue-600','bg-indigo-600','bg-violet-600',
+                  'bg-teal-600','bg-rose-600','bg-amber-600'
+                ]
+                return (
+                  <FadeInSection key={idx} delay={idx * 100}>
+                    <div className="bg-white dark:bg-[#0F172A] p-8 rounded-3xl shadow-sm hover:shadow-md transition-shadow ring-1 ring-slate-200 dark:ring-slate-800 h-full flex flex-col">
+                      <Quote className="w-10 h-10 text-blue-100 dark:text-blue-900/50 mb-6" />
+                      <p className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed mb-8 flex-grow">&ldquo;{t.quote}&rdquo;</p>
+                      <div className="flex items-center gap-4 mt-auto">
+                        {/* Avatar: ring-2 in Sovira blue, initials fallback (Task 5) */}
+                        <div className={`w-14 h-14 rounded-full ring-2 ring-[#2563EB] ring-offset-2 ring-offset-white dark:ring-offset-[#0F172A] flex-shrink-0 flex items-center justify-center text-white font-bold text-base ${avatarColors[idx % avatarColors.length]}`}>
+                          {initials}
+                        </div>
+                        <div>
+                          <div className="font-bold text-slate-900 dark:text-white">{t.name}</div>
+                          <div className="text-sm text-slate-500 dark:text-slate-400">{t.role}, {t.company}</div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </FadeInSection>
-              ))}
+                  </FadeInSection>
+                )
+              })}
             </div>
           </div>
         </div>
