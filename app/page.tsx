@@ -5,6 +5,8 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
 import { HeroVisual } from '@/components/marketing/HeroVisual'
+import { SocialProofBar } from '@/components/marketing/SocialProofBar'
+import { DashboardDemo } from '@/components/marketing/DashboardDemo'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
   CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote 
@@ -316,12 +318,15 @@ export default function LandingPage() {
                     </Link>
                   </div>
 
-                  {/* ── Trust Bar (Task 4) ── */}
+                  {/* ── Trust Bar + Social Proof ── */}
                   <div className="mt-10 flex flex-col items-center lg:items-start gap-2">
                     <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-[0.18em]">
                       Built for creators across&nbsp;&nbsp;Nigeria · Ghana · Kenya · South Africa
                     </p>
                   </div>
+
+                  {/* ── Social proof: stacked avatars + testimonial card ── */}
+                  <SocialProofBar />
                 </FadeInSection>
               </div>
 
@@ -330,6 +335,26 @@ export default function LandingPage() {
                 <HeroVisual creatorImageSrc="/images/hero-creator.jpg" />
               </FadeInSection>
             </div>
+          </div>
+        </div>
+
+        {/* ── Animated Dashboard Demo Section ────────────────────────── */}
+        <div className="bg-slate-50 dark:bg-[#0F172A] py-16 md:py-24">
+          <div className="mx-auto max-w-7xl px-4 md:px-8 lg:px-16">
+            <FadeInSection>
+              <div className="text-center mb-10">
+                <p className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest mb-2">Live Product Demo</p>
+                <h2 className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+                  Watch Sovira find your next ranking keyword
+                </h2>
+                <p className="mt-3 text-slate-500 dark:text-slate-400 max-w-xl mx-auto">
+                  Real keyword data, AI-powered difficulty scores, and trend signals — all in seconds.
+                </p>
+              </div>
+            </FadeInSection>
+            <FadeInSection delay={200}>
+              <DashboardDemo />
+            </FadeInSection>
           </div>
         </div>
 
