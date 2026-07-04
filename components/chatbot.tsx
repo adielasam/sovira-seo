@@ -3,11 +3,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { useChat } from 'ai/react'
 import { usePathname } from 'next/navigation'
-import { MessageCircle, X, MoreVertical, Mic, ArrowUp, Bot } from 'lucide-react'
+import { MessageCircle, X, MoreVertical, Mic, ArrowUp, Bot, Minimize2, Maximize2 } from 'lucide-react'
 import Link from 'next/link'
 
 export function Chatbot() {
   const [isOpen, setIsOpen] = useState(false)
+  const [isExpanded, setIsExpanded] = useState(true)
   const pathname = usePathname()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -55,7 +56,7 @@ export function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-4 right-4 left-4 md:left-auto w-auto md:w-[400px] h-[500px] max-h-[80vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300">
+        <div className={`fixed bottom-4 right-4 left-4 md:left-auto w-auto md:w-[400px] ${isExpanded ? 'h-[600px] max-h-[85vh]' : 'h-[350px] max-h-[45vh]'} md:h-[600px] md:max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 transition-all`}>
           
           {/* Header */}
           <div className="bg-[#0099FF] text-white p-4 flex items-center justify-between shadow-md z-10">
@@ -67,7 +68,14 @@ export function Chatbot() {
               <span className="font-bold text-lg tracking-wide">Sovira Agent</span>
             </div>
             <div className="flex items-center gap-1">
-              <button className="p-2 hover:bg-white/20 rounded-full transition-colors">
+              <button 
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="md:hidden p-2 hover:bg-white/20 rounded-full transition-colors"
+                title={isExpanded ? "Reduce size" : "Expand size"}
+              >
+                {isExpanded ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
+              </button>
+              <button className="hidden md:block p-2 hover:bg-white/20 rounded-full transition-colors">
                 <MoreVertical className="w-5 h-5" />
               </button>
               <button onClick={() => setIsOpen(false)} className="p-2 hover:bg-white/20 rounded-full transition-colors">
