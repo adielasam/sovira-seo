@@ -56,7 +56,7 @@ export function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`fixed bottom-4 right-4 left-4 md:left-auto w-auto md:w-[400px] ${isExpanded ? 'h-[600px] max-h-[85vh]' : 'h-[350px] max-h-[45vh]'} md:h-[600px] md:max-h-[85vh] bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 transition-all`}>
+        <div className={`fixed bottom-4 right-4 left-4 md:left-auto w-auto md:w-[400px] ${isExpanded ? 'h-[600px] max-h-[85vh]' : 'h-[350px] max-h-[45vh]'} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 transition-all`}>
           
           {/* Header */}
           <div className="bg-[#0099FF] text-white p-4 flex items-center justify-between shadow-md z-10">
@@ -70,7 +70,7 @@ export function Chatbot() {
             <div className="flex items-center gap-1">
               <button 
                 onClick={() => setIsExpanded(!isExpanded)}
-                className="md:hidden p-2 hover:bg-white/20 rounded-full transition-colors"
+                className="p-2 hover:bg-white/20 rounded-full transition-colors"
                 title={isExpanded ? "Reduce size" : "Expand size"}
               >
                 {isExpanded ? <Minimize2 className="w-5 h-5" /> : <Maximize2 className="w-5 h-5" />}
