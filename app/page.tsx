@@ -9,6 +9,8 @@ import { SocialProofBar } from '@/components/marketing/SocialProofBar'
 import { FullDashboardDemo } from '@/components/marketing/FullDashboardDemo'
 import { Navbar } from '@/components/marketing/Navbar'
 import { Footer } from '@/components/marketing/Footer'
+import { SeoExploreLinks } from '@/components/marketing/SeoExploreLinks'
+import { SeoFaq } from '@/components/marketing/SeoFaq'
 import { 
   Search, BarChart, Users, Sparkles, TrendingUp, Link as LinkIcon, 
   CheckCircle2, Menu, X, Check, XCircle, Star, ChevronDown, Quote 
@@ -510,8 +512,12 @@ export default function LandingPage() {
                 </FadeInSection>
               ))}
             </div>
-          </div>
         </div>
+      </div>
+
+      {/* ── SEO internal linking and FAQ components ── */}
+      <SeoExploreLinks />
+      <SeoFaq />
 
       </main>
 
