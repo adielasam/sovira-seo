@@ -11,7 +11,7 @@ const tiers = [
   {
     name: 'Starter',
     id: 'tier-starter',
-    price: { monthly: 29, annually: 290 },
+    price: { monthly: 9900, annually: 99000 },
     description: 'Perfect for small websites and individual bloggers just getting started with SEO.',
     features: [
       'Track up to 50 keywords',
@@ -26,7 +26,7 @@ const tiers = [
   {
     name: 'Pro',
     id: 'tier-pro',
-    price: { monthly: 79, annually: 790 },
+    price: { monthly: 36300, annually: 363000 },
     description: 'Ideal for growing businesses and agencies needing comprehensive SEO tools.',
     features: [
       'Track up to 500 keywords',
@@ -44,7 +44,7 @@ const tiers = [
   {
     name: 'Agency',
     id: 'tier-agency',
-    price: { monthly: 199, annually: 1990 },
+    price: { monthly: 163350, annually: 1633500 },
     description: 'For large teams and enterprises requiring maximum power and limits.',
     features: [
       'Track up to 5,000 keywords',
@@ -90,9 +90,9 @@ export default function PricingPage() {
     // Map USD to NGN for Paystack logic
     let ngnAmount = 0
     const lowerPlan = planName.toLowerCase()
-    if (lowerPlan === 'starter') ngnAmount = annual ? 290000 : 29000
-    else if (lowerPlan === 'pro') ngnAmount = annual ? 790000 : 79000
-    else if (lowerPlan === 'agency') ngnAmount = annual ? 1990000 : 199000
+    if (lowerPlan === 'starter') ngnAmount = annual ? 99000 : 9900
+    else if (lowerPlan === 'pro') ngnAmount = annual ? 363000 : 36300
+    else if (lowerPlan === 'agency') ngnAmount = annual ? 1633500 : 163350
 
     try {
       const PaystackPop = (await import('@paystack/inline-js')).default
@@ -200,7 +200,7 @@ export default function PricingPage() {
               </p>
               <div className="mt-2 flex items-baseline gap-x-1">
                 <span className="text-5xl font-bold tracking-tight">
-                  ${Math.round(annual ? tier.price.annually / 12 : tier.price.monthly)}
+                  ₦{(annual ? Math.round(tier.price.annually / 12) : tier.price.monthly).toLocaleString()}
                 </span>
                 <span className={`text-sm font-semibold leading-6 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   /month
@@ -208,7 +208,7 @@ export default function PricingPage() {
               </div>
               {annual && (
                 <p className={`text-sm mt-1 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
-                  Billed ${tier.price.annually} annually
+                  Billed ₦{tier.price.annually.toLocaleString()} annually
                 </p>
               )}
               
