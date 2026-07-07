@@ -18,9 +18,9 @@ export function Navbar() {
               <Image
                 src="/soviraseologo.png"
                 alt="Sovira SEO"
-                width={140}
-                height={40}
-                className="h-9 w-auto object-contain dark:brightness-90"
+                width={200}
+                height={56}
+                className="h-12 w-auto object-contain dark:brightness-90"
                 priority
               />
             </Link>

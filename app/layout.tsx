@@ -37,6 +37,13 @@ export const metadata: Metadata = {
     description: 'Sovira AI is the ultimate SEO and content creation tool. Audit your site, generate optimized content, and track your rankings globally.',
     images: ['/dashboard-preview.png'],
   },
+  icons: {
+    icon: [
+      { url: '/soviraseologo.png', type: 'image/png' },
+    ],
+    apple: '/soviraseologo.png',
+    shortcut: '/soviraseologo.png',
+  },
 };
 
 export default function RootLayout({

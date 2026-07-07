@@ -101,9 +101,9 @@ export function Sidebar() {
             <Image
               src="/soviraseologo.png"
               alt="Sovira SEO"
-              width={130}
-              height={36}
-              className="h-8 w-auto object-contain brightness-0 invert"
+              width={160}
+              height={44}
+              className="h-10 w-auto object-contain brightness-0 invert"
               priority
             />
           </Link>
@@ -138,9 +138,9 @@ export function Sidebar() {
               <Image
                 src="/soviraseologo.png"
                 alt="Sovira SEO"
-                width={130}
-                height={36}
-                className="h-8 w-auto object-contain brightness-0 invert"
+                width={160}
+                height={44}
+                className="h-10 w-auto object-contain brightness-0 invert"
                 priority
               />
             </Link>

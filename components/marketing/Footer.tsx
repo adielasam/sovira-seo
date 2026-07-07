@@ -12,9 +12,9 @@ export function Footer() {
             <Image
               src="/soviraseologo.png"
               alt="Sovira SEO"
-              width={150}
-              height={44}
-              className="h-10 w-auto object-contain brightness-0 invert"
+              width={200}
+              height={56}
+              className="h-14 w-auto object-contain brightness-0 invert"
             />
           </Link>
           <p className="text-base text-slate-400 max-w-md leading-relaxed">
