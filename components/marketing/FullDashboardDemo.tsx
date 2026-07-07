@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import Image from 'next/image'
 import { 
   Shield, Search, Activity, Users, FileText, TrendingUp, Link2, 
   Settings, LogOut, Bell, Moon, ChevronDown, Plus, Globe, 
@@ -144,8 +145,13 @@ export function FullDashboardDemo() {
         {/* SIDEBAR (Dark Theme Always) */}
         <div className="w-[240px] bg-[#0A101F] flex flex-col shrink-0 text-slate-300">
           <div className="h-16 flex items-center px-6 gap-3 border-b border-white/5">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white"><Shield className="w-5 h-5" /></div>
-            <span className="font-bold text-white text-lg tracking-tight">Sovira SEO</span>
+            <Image
+              src="/soviraseologo.png"
+              alt="Sovira SEO"
+              width={110}
+              height={30}
+              className="h-7 w-auto object-contain brightness-0 invert"
+            />
           </div>
           
           <div className="flex-1 py-4 px-3 space-y-1">

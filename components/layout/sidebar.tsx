@@ -1,6 +1,7 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
@@ -96,11 +97,15 @@ export function Sidebar() {
         `}
       >
         <div className="flex h-16 shrink-0 items-center justify-between mt-2">
-          <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-            <span className="bg-blue-600 rounded-lg p-1.5">
-              <TrendingUp className="w-5 h-5 text-white" />
-            </span>
-            Sovira SEO
+          <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center">
+            <Image
+              src="/soviraseologo.png"
+              alt="Sovira SEO"
+              width={130}
+              height={36}
+              className="h-8 w-auto object-contain brightness-0 invert"
+              priority
+            />
           </Link>
           <button onClick={() => setMobileOpen(false)} className="text-slate-400 hover:text-white transition-colors">
             <X className="w-5 h-5" />
@@ -129,11 +134,15 @@ export function Sidebar() {
       <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
         <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 border-r border-slate-800 px-6 pb-4">
           <div className="flex h-16 shrink-0 items-center mt-2">
-            <Link href="/dashboard" className="text-xl font-bold tracking-tight text-white flex items-center gap-2">
-              <span className="bg-blue-600 rounded-lg p-1.5">
-                <TrendingUp className="w-5 h-5 text-white" />
-              </span>
-              Sovira SEO
+            <Link href="/dashboard" className="flex items-center">
+              <Image
+                src="/soviraseologo.png"
+                alt="Sovira SEO"
+                width={130}
+                height={36}
+                className="h-8 w-auto object-contain brightness-0 invert"
+                priority
+              />
             </Link>
           </div>
           <nav className="flex flex-1 flex-col">

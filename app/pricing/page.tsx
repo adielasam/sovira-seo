@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { Check, ArrowRight, Zap, Shield, Sparkles, Building2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
 
@@ -130,11 +131,15 @@ export default function PricingPage() {
         
         {/* Header */}
         <div className="mx-auto max-w-4xl text-center">
-          <Link href="/" className="inline-flex items-center justify-center gap-2 mb-8 group">
-            <div className="p-2 rounded-full bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:scale-110 transition-transform">
-              <Shield className="w-6 h-6" />
-            </div>
-            <span className="text-xl font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">Sovira SEO</span>
+          <Link href="/" className="inline-flex items-center justify-center mb-8 group">
+            <Image
+              src="/soviraseologo.png"
+              alt="Sovira SEO"
+              width={160}
+              height={46}
+              className="h-11 w-auto object-contain"
+              priority
+            />
           </Link>
           <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
             Pricing that scales with your growth

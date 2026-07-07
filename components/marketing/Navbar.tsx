@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ThemeToggle } from '@/components/theme-toggle'
-import { TrendingUp, Menu, X } from 'lucide-react'
+import { Menu, X } from 'lucide-react'
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -13,11 +14,15 @@ export function Navbar() {
       <header className="absolute inset-x-0 top-0 z-50 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
         <nav className="flex items-center justify-between h-16 px-4 md:px-8 lg:px-16 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-3 shrink-0">
-            <Link href="/" className="flex items-center gap-2">
-              <span className="bg-[#2563EB] rounded-lg p-1.5 flex items-center justify-center">
-                <TrendingUp className="w-6 h-6 text-white" />
-              </span>
-              <span className="text-xl font-bold tracking-tight text-[#0F172A] dark:text-white">Sovira SEO</span>
+            <Link href="/" className="flex items-center">
+              <Image
+                src="/soviraseologo.png"
+                alt="Sovira SEO"
+                width={140}
+                height={40}
+                className="h-9 w-auto object-contain dark:brightness-90"
+                priority
+              />
             </Link>
           </div>
           

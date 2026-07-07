@@ -1,18 +1,21 @@
 'use client'
 
 import Link from 'next/link'
-import { TrendingUp } from 'lucide-react'
+import Image from 'next/image'
 
 export function Footer() {
   return (
     <footer className="bg-slate-900 text-white py-16 border-t border-slate-800">
       <div className="mx-auto max-w-7xl px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
         <div className="col-span-1 md:col-span-2">
-          <Link href="/" className="flex items-center gap-2 mb-6 group">
-            <span className="bg-blue-600 rounded-lg p-2 transition-transform group-hover:scale-105">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </span>
-            <span className="text-2xl font-bold tracking-tight">Sovira SEO</span>
+          <Link href="/" className="flex items-center mb-6 group">
+            <Image
+              src="/soviraseologo.png"
+              alt="Sovira SEO"
+              width={150}
+              height={44}
+              className="h-10 w-auto object-contain brightness-0 invert"
+            />
           </Link>
           <p className="text-base text-slate-400 max-w-md leading-relaxed">
             The premium ecosystem for professional marketers. High-converting audits, semantic SEO research, and localized rank tracking.

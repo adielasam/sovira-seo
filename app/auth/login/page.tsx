@@ -1,9 +1,10 @@
 'use client'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { loginAction } from '@/app/auth/actions'
-import { TrendingUp, Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff } from 'lucide-react'
 import { AuthMessages } from '@/components/auth-messages'
 import { Suspense } from 'react'
 
@@ -18,11 +19,15 @@ export default function LoginPage() {
       <div className="w-full max-w-md p-8 space-y-8 bg-white dark:bg-[#1E293B] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 transition-all duration-300">
         
         <div className="flex flex-col items-center text-center">
-          <Link href="/" className="flex items-center gap-2 mb-6">
-            <span className="bg-blue-600 rounded-lg p-1.5">
-              <TrendingUp className="w-6 h-6 text-white" />
-            </span>
-            <span className="text-2xl font-bold tracking-tight text-blue-600 dark:text-blue-500">Sovira SEO v2</span>
+          <Link href="/" className="flex items-center mb-6">
+            <Image
+              src="/soviraseologo.png"
+              alt="Sovira SEO"
+              width={160}
+              height={46}
+              className="h-11 w-auto object-contain"
+              priority
+            />
           </Link>
           <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white mb-2">Welcome back</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">Sign in to your account</p>
