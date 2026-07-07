@@ -133,7 +133,7 @@ export default function PricingPage() {
         <div className="mx-auto max-w-4xl text-center">
           <Link href="/" className="inline-flex items-center justify-center mb-8 group">
             <Image
-              src="/soviraseologo.png"
+              src="/sovira-logo.png"
               alt="Sovira SEO"
               width={160}
               height={46}

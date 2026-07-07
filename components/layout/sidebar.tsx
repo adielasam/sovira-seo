@@ -99,7 +99,7 @@ export function Sidebar() {
         <div className="flex h-16 shrink-0 items-center justify-between mt-2">
           <Link href="/dashboard" onClick={() => setMobileOpen(false)} className="flex items-center">
             <Image
-              src="/soviraseologo.png"
+              src="/sovira-logo.png"
               alt="Sovira SEO"
               width={160}
               height={44}
@@ -136,7 +136,7 @@ export function Sidebar() {
           <div className="flex h-16 shrink-0 items-center mt-2">
             <Link href="/dashboard" className="flex items-center">
               <Image
-                src="/soviraseologo.png"
+                src="/sovira-logo.png"
                 alt="Sovira SEO"
                 width={160}
                 height={44}

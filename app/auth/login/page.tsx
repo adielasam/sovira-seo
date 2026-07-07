@@ -21,7 +21,7 @@ export default function LoginPage() {
         <div className="flex flex-col items-center text-center">
           <Link href="/" className="flex items-center mb-6">
             <Image
-              src="/soviraseologo.png"
+              src="/sovira-logo.png"
               alt="Sovira SEO"
               width={200}
               height={56}

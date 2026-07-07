@@ -10,7 +10,7 @@ export function Footer() {
         <div className="col-span-1 md:col-span-2">
           <Link href="/" className="flex items-center mb-6 group">
             <Image
-              src="/soviraseologo.png"
+              src="/sovira-logo.png"
               alt="Sovira SEO"
               width={200}
               height={56}

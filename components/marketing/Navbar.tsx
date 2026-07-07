@@ -16,7 +16,7 @@ export function Navbar() {
           <div className="flex items-center gap-3 shrink-0">
             <Link href="/" className="flex items-center">
               <Image
-                src="/soviraseologo.png"
+                src="/sovira-logo.png"
                 alt="Sovira SEO"
                 width={280}
                 height={80}

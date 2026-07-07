@@ -146,7 +146,7 @@ export function FullDashboardDemo() {
         <div className="w-[240px] bg-[#0A101F] flex flex-col shrink-0 text-slate-300">
           <div className="h-16 flex items-center px-6 gap-3 border-b border-white/5">
             <Image
-              src="/soviraseologo.png"
+              src="/sovira-logo.png"
               alt="Sovira SEO"
               width={110}
               height={30}
