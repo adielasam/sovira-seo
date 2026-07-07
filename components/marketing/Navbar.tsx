@@ -12,15 +12,15 @@ export function Navbar() {
   return (
     <>
       <header className="absolute inset-x-0 top-0 z-50 bg-white/80 dark:bg-[#0F172A]/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-800">
-        <nav className="flex items-center justify-between h-16 px-4 md:px-8 lg:px-16 max-w-7xl mx-auto w-full">
+        <nav className="flex items-center justify-between h-20 px-4 md:px-8 lg:px-16 max-w-7xl mx-auto w-full">
           <div className="flex items-center gap-3 shrink-0">
             <Link href="/" className="flex items-center">
               <Image
                 src="/soviraseologo.png"
                 alt="Sovira SEO"
-                width={200}
-                height={56}
-                className="h-12 w-auto object-contain dark:brightness-90"
+                width={280}
+                height={80}
+                className="h-16 w-auto object-contain dark:brightness-90"
                 priority
               />
             </Link>

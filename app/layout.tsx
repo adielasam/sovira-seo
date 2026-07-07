@@ -39,10 +39,11 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
+      { url: '/favicon.ico', sizes: '64x64', type: 'image/x-icon' },
       { url: '/soviraseologo.png', type: 'image/png' },
     ],
     apple: '/soviraseologo.png',
-    shortcut: '/soviraseologo.png',
+    shortcut: '/favicon.ico',
   },
 };
 
