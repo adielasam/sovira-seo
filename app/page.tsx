@@ -252,7 +252,7 @@ export default function LandingPage() {
                   {/* Eyebrow */}
                   <div className="inline-flex items-center gap-2 bg-[#2563EB]/8 dark:bg-[#2563EB]/15 border border-[#2563EB]/20 rounded-full px-4 py-1.5 mb-6">
                     <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
-                    <span className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest">Built for African Creators</span>
+                    <span className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest">Built for Creators Worldwide</span>
                   </div>
 
                   {/* Main headline — larger, editorial weight */}
@@ -471,7 +471,7 @@ export default function LandingPage() {
                 Ready to scale your organic traffic?
               </h2>
               <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-                Join over 520+ African creators and businesses growing their audience with Sovira SEO.
+                Join over 520+ creators and businesses worldwide growing their audience with Sovira SEO.
               </p>
               <div className="mt-8 flex justify-center gap-4">
                 <Link href="/pricing" className="rounded-full bg-[#2563EB] px-8 py-3.5 text-base font-semibold text-white shadow-lg hover:bg-blue-500 hover:-translate-y-0.5 transition-all duration-200">

@@ -8,19 +8,19 @@ import { useState, useEffect } from 'react'
 // Each slide has its own creator story + realistic SEO/content metrics
 const SLIDES = [
   {
-    img: { src: '/images/hero-creator.jpg', alt: 'African male content creator filming at his desk' },
+    img: { src: '/images/hero-creator.jpg', alt: 'Male content creator filming at his desk' },
     pill: '🎬 Content Published',
     rank:  { label: 'Keyword Rank', position: '#3', change: '+12 positions', sparkline: [30,45,38,60,55,72,90] },
     stat:  { label: 'Organic Traffic', value: '24.7k', delta: '↑ 38%', bars: [40,55,35,70,60,85,100] },
   },
   {
-    img: { src: '/images/hero-creator-2.jpg', alt: 'African female content creator at her laptop' },
+    img: { src: '/images/hero-creator-2.jpg', alt: 'Female content creator at her laptop' },
     pill: '✍️ Blog Post Live',
     rank:  { label: 'SEO Score', position: '92/100', change: '+18 pts this week', sparkline: [50,58,62,70,74,80,92] },
     stat:  { label: 'Views This Week', value: '11.2k', delta: '↑ 61%', bars: [20,35,28,50,44,68,88] },
   },
   {
-    img: { src: '/images/hero-creator-3.jpg', alt: 'African male YouTuber at a dual monitor setup' },
+    img: { src: '/images/hero-creator-3.jpg', alt: 'YouTuber at a dual monitor setup' },
     pill: '🔗 Backlinks Found',
     rank:  { label: 'Backlinks Added', position: '+47', change: '3 toxic removed', sparkline: [5,12,18,22,28,38,47] },
     stat:  { label: 'Domain Authority', value: 'DA 41', delta: '↑ 9 pts', bars: [30,32,35,36,38,40,41] },
