@@ -5,8 +5,6 @@ import { Navbar } from '@/components/marketing/Navbar'
 import { Footer } from '@/components/marketing/Footer'
 import { Calendar, User, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
-import ReactMarkdown from 'react-markdown'
-import remarkGfm from 'remark-gfm'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -151,11 +149,10 @@ export default async function BlogPostPage({ params }: Props) {
             </div>
           )}
 
-          <div className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-blue-600">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {post.content}
-            </ReactMarkdown>
-          </div>
+          <div 
+            className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-blue-600"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
           
         </article>
       </main>

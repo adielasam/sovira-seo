@@ -2,6 +2,8 @@ import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import { Plus, Edit, Trash2, Eye } from 'lucide-react'
 
+import DeleteBlogButton from './DeleteBlogButton'
+
 export const dynamic = 'force-dynamic'
 
 export default async function AdminBlogPage() {
@@ -89,6 +91,7 @@ export default async function AdminBlogPage() {
                         >
                           <Edit className="w-4 h-4" />
                         </Link>
+                        <DeleteBlogButton id={blog.id} />
                       </div>
                     </td>
                   </tr>

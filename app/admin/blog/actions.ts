@@ -121,3 +121,36 @@ export async function updateBlogPost(id: string, formData: FormData) {
   revalidatePath(`/blog/${slug}`)
   redirect('/admin/blog')
 }
+
+export async function deleteBlogPost(id: string) {
+  const supabase = await createClient()
+
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Unauthorized' }
+
+  // Verify admin status
+  const { data: profile } = await supabase
+    .from('user_profiles')
+    .select('role')
+    .eq('id', user.id)
+    .single()
+
+  if (profile?.role !== 'admin' && user.email !== 'microsoftportharcourt@gmail.com') {
+    return { error: 'Unauthorized' }
+  }
+
+  const { error } = await supabase
+    .from('blog_posts')
+    .delete()
+    .eq('id', id)
+
+  if (error) {
+    console.error('Error deleting blog post:', JSON.stringify(error, null, 2))
+    return { error: `Failed to delete blog post: ${error.message}` }
+  }
+
+  revalidatePath('/admin/blog')
+  revalidatePath('/blog')
+  return { success: true }
+}
+

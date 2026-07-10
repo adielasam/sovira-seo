@@ -6,6 +6,7 @@ import { ArrowLeft, Save, LayoutTemplate, Image as ImageIcon, Sparkles, Upload }
 import { saveBlogPost } from '../actions'
 import { toast } from 'react-hot-toast'
 import { createClient } from '@/lib/supabase/client'
+import RichTextEditor from '../RichTextEditor'
 
 export default function NewBlogPage() {
   const [error, setError] = useState<string | null>(null)
@@ -173,19 +174,10 @@ export default function NewBlogPage() {
 
               <div className="space-y-2">
                 <label htmlFor="content" className="flex items-center justify-between text-sm font-medium text-slate-700 dark:text-slate-300">
-                  <span>Content (Markdown Supported) *</span>
-                  <a href="https://www.markdownguide.org/cheat-sheet/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs">Markdown Guide</a>
+                  <span>Content *</span>
                 </label>
-                <textarea
-                  id="content"
-                  name="content"
-                  required
-                  value={content}
-                  onChange={(e) => setContent(e.target.value)}
-                  rows={20}
-                  placeholder="Write your amazing content here... Use # for headings, ** for bold, and []() for links."
-                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none resize-y"
-                />
+                <RichTextEditor value={content} onChange={setContent} />
+                <input type="hidden" name="content" value={content} />
               </div>
             </div>
           </div>

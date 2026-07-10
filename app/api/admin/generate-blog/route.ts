@@ -44,10 +44,10 @@ Requirements:
 2. **Slug**: Short, keyword-rich, hyphen-separated, lowercase.
 3. **Meta Title**: Max 60 characters, highly optimized for search engines.
 4. **Meta Description**: 150-160 characters, compelling, includes a call-to-action (CTA), and naturally contains the main keyword.
-5. **Content (Markdown)**:
+5. **Content (HTML)**:
    - Must be incredibly valuable, original, and deeply informative.
-   - Use proper headings (H2, H3) for structure and readability.
-   - Include bullet points, bold text for emphasis, and short paragraphs.
+   - Use proper HTML headings (<h2>, <h3>) for structure and readability.
+   - Include HTML lists (<ul>, <ol>, <li>), bold text (<strong>) for emphasis, and short paragraphs (<p>).
    - Write in a professional yet engaging tone.
    - Naturally weave in LSI (Latent Semantic Indexing) keywords related to the topic.
    - Provide actionable advice, not just fluff.
@@ -64,7 +64,7 @@ DO NOT include any placeholder text (e.g. "[Insert Image Here]"). The admin will
         slug: z.string().describe('The URL slug for the post (e.g., best-seo-strategies).'),
         meta_title: z.string().describe('The SEO meta title (max 60 chars).'),
         meta_description: z.string().describe('The SEO meta description (150-160 chars).'),
-        content: z.string().describe('The full blog post content formatted in Markdown.'),
+        content: z.string().describe('The full blog post content formatted in rich HTML (e.g., <p>, <h2>, <ul>).'),
       }),
     });
 
