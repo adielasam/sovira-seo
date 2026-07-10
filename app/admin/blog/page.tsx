@@ -75,7 +75,7 @@ export default async function AdminBlogPage() {
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
                         <Link 
-                          href={`/blog/${blog.slug}`}
+                          href={`https://www.sovira.com.ng/blog/${blog.slug}`}
                           target="_blank"
                           title="View Live" 
                           className="p-1.5 text-slate-400 hover:text-blue-600 transition-colors"
