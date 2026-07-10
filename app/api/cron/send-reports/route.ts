@@ -59,7 +59,7 @@ export async function GET(request: Request) {
               Log in to your dashboard to view the full detailed report.
             </p>
             <div style="text-align: center; margin-top: 20px;">
-              <a href="https://sovira-seo.vercel.app/dashboard" style="background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Full Dashboard</a>
+              <a href="https://www.sovira.com.ng/dashboard" style="background-color: #2563eb; color: white; text-decoration: none; padding: 12px 24px; border-radius: 6px; font-weight: bold; font-size: 14px; display: inline-block;">View Full Dashboard</a>
             </div>
           </div>
           
