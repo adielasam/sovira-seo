@@ -23,6 +23,7 @@ export default function EditBlogPage() {
   const [title, setTitle] = useState('')
   const [content, setContent] = useState('')
   const [slug, setSlug] = useState('')
+  const [category, setCategory] = useState('')
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
   const [imageUrl, setImageUrl] = useState('')
@@ -40,6 +41,7 @@ export default function EditBlogPage() {
           setTitle(data.title || '');
           setContent(data.content || '');
           setSlug(data.slug || '');
+          setCategory(data.category || '');
           setMetaTitle(data.meta_title || '');
           setMetaDescription(data.meta_description || '');
           setImageUrl(data.image_url || '');
@@ -225,6 +227,19 @@ export default function EditBlogPage() {
                 SEO Settings (Yoast Style)
               </h3>
               
+              <div className="space-y-2">
+                <label htmlFor="category" className="text-sm font-medium text-slate-700 dark:text-slate-300">Category</label>
+                <input
+                  type="text"
+                  id="category"
+                  name="category"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="e.g. Real Estate Investment"
+                  className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
+                />
+              </div>
+
               <div className="space-y-2">
                 <label htmlFor="slug" className="text-sm font-medium text-slate-700 dark:text-slate-300">URL Slug</label>
                 <input

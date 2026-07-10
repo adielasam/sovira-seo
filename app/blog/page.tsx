@@ -17,7 +17,7 @@ export default async function BlogPage() {
 
   const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select('title, slug, meta_description, image_url, created_at')
+    .select('title, slug, meta_description, image_url, created_at, category, author:user_profiles!blog_posts_author_id_fkey(full_name, email)')
     .eq('published', true)
     .order('created_at', { ascending: false })
     
@@ -64,6 +64,9 @@ export default async function BlogPage() {
                   )}
                   
                   <div className="p-6 flex flex-col flex-1">
+                    <div className="mb-3">
+                      <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">{post.category || 'Uncategorized'}</span>
+                    </div>
                     <h2 className="text-xl font-bold text-slate-900 dark:text-white mb-3 line-clamp-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">
                       {post.title}
                     </h2>
@@ -76,6 +79,9 @@ export default async function BlogPage() {
                         <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {((post as any).author)?.full_name || 'Sovira Team'}</span>
                         <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {new Date(post.created_at).toLocaleDateString()}</span>
                       </div>
+                    </div>
+                    <div className="mt-4 font-bold text-slate-900 dark:text-white group-hover:text-blue-600 transition-colors">
+                      Read Post »
                     </div>
                   </div>
                 </Link>

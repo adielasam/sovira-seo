@@ -108,49 +108,59 @@ export default async function BlogPostPage({ params }: Props) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-
-      <main className="flex-1 mt-20">
-        <article className="max-w-3xl mx-auto px-6 py-12 lg:py-20">
+      
+      <main className="flex-1 mt-20 pb-20">
+        {/* Hero Section */}
+        <div className="bg-slate-900 text-white pt-20 pb-32 px-6 relative overflow-hidden">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-900/40 to-indigo-900/40" />
           
-          <Link href="/blog" className="inline-flex items-center gap-2 text-sm text-blue-600 dark:text-blue-400 hover:underline mb-8 font-medium">
-            <ArrowLeft className="w-4 h-4" /> Back to Blog
-          </Link>
+          <div className="max-w-3xl mx-auto relative z-10">
+            <Link href="/blog" className="inline-flex items-center gap-2 text-blue-400 hover:text-blue-300 font-medium mb-8 transition-colors">
+              <ArrowLeft className="w-4 h-4" />
+              Back to Blog
+            </Link>
+            
+            <div className="mb-4">
+              <span className="inline-block px-3 py-1 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-full text-xs font-bold uppercase tracking-wider">
+                {post.category || 'Uncategorized'}
+              </span>
+            </div>
 
-          <header className="space-y-6 mb-12">
-            <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 dark:text-white tracking-tight leading-tight">
+            <h1 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-6 leading-tight">
               {post.title}
             </h1>
             
-            <div className="flex flex-wrap items-center gap-6 text-sm text-slate-600 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800 py-4">
+            <div className="flex flex-wrap items-center gap-6 text-sm text-slate-300">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                <span className="font-medium">{((post as any).author)?.full_name || 'Sovira Team'}</span>
+                <span>{((post as any).author)?.full_name || 'Sovira Team'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />
-                <time dateTime={post.created_at}>
-                  {new Date(post.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'long',
-                    day: 'numeric'
-                  })}
-                </time>
+                <span>{new Date(post.created_at).toLocaleDateString('en-US', {
+                  month: 'long',
+                  day: 'numeric',
+                  year: 'numeric'
+                })}</span>
               </div>
             </div>
-          </header>
+          </div>
+        </div>
 
+        {/* Content Section */}
+        <article className="max-w-3xl mx-auto px-6 -mt-16 relative z-20">
           {post.image_url && (
-            <div className="mb-12 rounded-2xl overflow-hidden shadow-lg border border-slate-200 dark:border-slate-800">
+            <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden shadow-2xl mb-12 bg-slate-800 border-4 border-white dark:border-slate-800">
               <img 
                 src={post.image_url} 
-                alt={post.title} 
-                className="w-full h-auto max-h-[500px] object-cover"
+                alt={post.title}
+                className="w-full h-full object-cover"
               />
             </div>
           )}
 
           <div 
-            className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-blue-600"
+            className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline"
             dangerouslySetInnerHTML={{ __html: post.content }}
           />
           

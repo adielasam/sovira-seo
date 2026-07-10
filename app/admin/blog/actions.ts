@@ -27,6 +27,7 @@ export async function saveBlogPost(formData: FormData) {
   const meta_title = formData.get('meta_title') as string
   const meta_description = formData.get('meta_description') as string
   const image_url = formData.get('image_url') as string
+  const category = formData.get('category') as string || 'Uncategorized'
   const published = formData.get('published') === 'on'
 
   if (!title || !content) {
@@ -44,6 +45,7 @@ export async function saveBlogPost(formData: FormData) {
     meta_title,
     meta_description,
     image_url,
+    category,
     published,
     author_id: user.id
   })
@@ -84,6 +86,7 @@ export async function updateBlogPost(id: string, formData: FormData) {
   const meta_title = formData.get('meta_title') as string
   const meta_description = formData.get('meta_description') as string
   const image_url = formData.get('image_url') as string
+  const category = formData.get('category') as string || 'Uncategorized'
   const published = formData.get('published') === 'on'
 
   if (!title || !content) {
@@ -103,6 +106,7 @@ export async function updateBlogPost(id: string, formData: FormData) {
       meta_title,
       meta_description,
       image_url,
+      category,
       published,
       updated_at: new Date().toISOString()
     })
