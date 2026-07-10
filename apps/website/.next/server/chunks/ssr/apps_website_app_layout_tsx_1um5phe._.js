@@ -1,3 +1,0 @@
-module.exports=[91140,a=>{"use strict";var b=a.i(8606);a.s(["default",0,function({children:a}){return(0,b.jsx)("html",{lang:"en",children:(0,b.jsx)("body",{children:a})})},"metadata",0,{title:"Sovira AI - AI SEO Tools for Creators Worldwide",description:"The ultimate AI SEO platform for creators and businesses."}])},83659,a=>{a.n(a.i(91140))}];
-
-//# sourceMappingURL=apps_website_app_layout_tsx_1um5phe._.js.map
