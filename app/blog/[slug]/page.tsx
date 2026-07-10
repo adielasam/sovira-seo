@@ -97,7 +97,7 @@ export default async function BlogPostPage({ params }: Props) {
     dateModified: post.updated_at,
     author: [{
       '@type': 'Person',
-      name: (post.author as any)?.full_name || 'Sovira Team',
+      name: ((post as any).author)?.full_name || 'Sovira Team',
     }]
   }
 
@@ -126,7 +126,7 @@ export default async function BlogPostPage({ params }: Props) {
             <div className="flex flex-wrap items-center gap-6 text-sm text-slate-600 dark:text-slate-400 border-y border-slate-200 dark:border-slate-800 py-4">
               <div className="flex items-center gap-2">
                 <User className="w-4 h-4" />
-                <span className="font-medium">{(post.author as any)?.full_name || 'Sovira Team'}</span>
+                <span className="font-medium">{((post as any).author)?.full_name || 'Sovira Team'}</span>
               </div>
               <div className="flex items-center gap-2">
                 <Calendar className="w-4 h-4" />

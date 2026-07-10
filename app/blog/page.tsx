@@ -73,7 +73,7 @@ export default async function BlogPage() {
                     
                     <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400 pt-4 border-t border-slate-100 dark:border-slate-700">
                       <div className="flex items-center gap-4">
-                        <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {(post.author as any)?.full_name || 'Sovira Team'}</span>
+                        <span className="flex items-center gap-1.5"><User className="w-3.5 h-3.5" /> {((post as any).author)?.full_name || 'Sovira Team'}</span>
                         <span className="flex items-center gap-1.5"><Calendar className="w-3.5 h-3.5" /> {new Date(post.created_at).toLocaleDateString()}</span>
                       </div>
                     </div>

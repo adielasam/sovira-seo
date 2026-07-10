@@ -70,7 +70,7 @@ export default async function AdminBlogPage() {
                         {blog.published ? 'Live' : 'Draft'}
                       </span>
                     </td>
-                    <td className="px-6 py-4">{(blog.author as any)?.full_name || (blog.author as any)?.email || 'Unknown'}</td>
+                    <td className="px-6 py-4">{((blog as any).author)?.full_name || ((blog as any).author)?.email || 'Unknown'}</td>
                     <td className="px-6 py-4">{new Date(blog.created_at).toLocaleDateString()}</td>
                     <td className="px-6 py-4 text-right">
                       <div className="flex items-center justify-end gap-2">
