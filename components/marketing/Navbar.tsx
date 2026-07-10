@@ -31,6 +31,7 @@ export function Navbar() {
               <Link href="/#features" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">Features</Link>
               <Link href="/#how-it-works" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">How it Works</Link>
               <Link href="/pricing" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">Pricing</Link>
+              <Link href="/contact" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-blue-400">Contact</Link>
             </div>
             
             <ThemeToggle />
@@ -60,6 +61,7 @@ export function Navbar() {
             <Link href="/#features" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium">Features</Link>
             <Link href="/#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium">How it Works</Link>
             <Link href="/pricing" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium">Pricing</Link>
+            <Link href="/contact" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium">Contact</Link>
             <Link href="/auth/login" onClick={() => setMobileMenuOpen(false)} className="text-base font-medium">Log in</Link>
         </div>
       )}
