@@ -15,11 +15,15 @@ export const revalidate = 60 // Revalidate every 60 seconds
 export default async function BlogPage() {
   const supabase = await createClient()
 
-  const { data: posts } = await supabase
+  const { data: posts, error } = await supabase
     .from('blog_posts')
-    .select('title, slug, meta_description, image_url, created_at, author:user_profiles(full_name)')
+    .select('title, slug, meta_description, image_url, created_at')
     .eq('published', true)
     .order('created_at', { ascending: false })
+    
+  if (error) {
+    console.error('Error fetching blogs:', error)
+  }
 
   return (
     <div className="min-h-screen flex flex-col bg-slate-50 dark:bg-[#0F172A]">

@@ -72,12 +72,16 @@ export default async function BlogPostPage({ params }: Props) {
   const slug = resolvedParams.slug
   const supabase = await createClient()
 
-  const { data: post } = await supabase
+  const { data: post, error } = await supabase
     .from('blog_posts')
-    .select('*, author:user_profiles(full_name, email)')
+    .select('*')
     .eq('slug', slug)
     .eq('published', true)
     .single()
+    
+  if (error) {
+    console.error('Error fetching blog post:', error)
+  }
 
   if (!post) {
     notFound()

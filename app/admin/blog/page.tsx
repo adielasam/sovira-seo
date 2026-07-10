@@ -7,11 +7,15 @@ export const dynamic = 'force-dynamic'
 export default async function AdminBlogPage() {
   const supabase = await createClient()
 
-  // Fetch blogs with author info
-  const { data: blogs } = await supabase
+  // Fetch blogs
+  const { data: blogs, error } = await supabase
     .from('blog_posts')
-    .select('*, author:user_profiles(full_name, email)')
+    .select('*')
     .order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching blogs:', error)
+  }
 
   return (
     <div className="space-y-6">
