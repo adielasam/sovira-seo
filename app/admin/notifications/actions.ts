@@ -30,7 +30,7 @@ export async function sendGlobalNotification(title: string, message: string, typ
 
   if (error) {
     console.error('Error sending notification:', error)
-    return { error: 'Failed to send global notification' }
+    return { error: `Failed: ${error.message} ${error.details || ''}` }
   }
 
   return { success: true }

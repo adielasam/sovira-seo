@@ -20,7 +20,7 @@ export default function AdminNotificationsPage() {
     setIsSending(false)
 
     if (error) {
-      toast.error('Failed to send global notification')
+      toast.error(error)
     } else {
       toast.success('Global notification sent to all users!')
       setTitle('')
