@@ -2,9 +2,10 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { ArrowLeft, Save, LayoutTemplate, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { ArrowLeft, Save, LayoutTemplate, Image as ImageIcon, Sparkles, Upload } from 'lucide-react'
 import { saveBlogPost } from '../actions'
 import { toast } from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
 
 export default function NewBlogPage() {
   const [error, setError] = useState<string | null>(null)
@@ -18,6 +19,42 @@ export default function NewBlogPage() {
   const [slug, setSlug] = useState('')
   const [metaTitle, setMetaTitle] = useState('')
   const [metaDescription, setMetaDescription] = useState('')
+  const [imageUrl, setImageUrl] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      const supabase = createClient();
+      
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError, data } = await supabase.storage
+        .from('blog-images')
+        .upload(filePath, file);
+
+      if (uploadError) {
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('blog-images')
+        .getPublicUrl(filePath);
+
+      setImageUrl(publicUrl);
+      toast.success('Image uploaded successfully!');
+    } catch (error: any) {
+      toast.error(error.message || 'Error uploading image');
+      console.error('Error uploading image:', error);
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!aiTopic.trim()) {
@@ -215,9 +252,35 @@ export default function NewBlogPage() {
                   type="url"
                   id="image_url"
                   name="image_url"
+                  value={imageUrl}
+                  onChange={(e) => setImageUrl(e.target.value)}
                   placeholder="https://example.com/image.jpg"
                   className="w-full px-3 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:outline-none"
                 />
+                
+                <div className="relative py-2">
+                  <div className="absolute inset-0 flex items-center">
+                    <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+                  </div>
+                  <div className="relative flex justify-center text-xs">
+                    <span className="bg-white dark:bg-slate-800 px-2 text-slate-500">OR</span>
+                  </div>
+                </div>
+
+                <div>
+                  <label htmlFor="image_upload" className="w-full flex items-center justify-center gap-2 py-2 px-3 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-600 dark:text-slate-400 hover:border-blue-500 hover:text-blue-500 transition-colors cursor-pointer bg-slate-50 dark:bg-slate-900/50">
+                    <Upload className="w-4 h-4" />
+                    {isUploading ? 'Uploading...' : 'Upload Image'}
+                  </label>
+                  <input
+                    type="file"
+                    id="image_upload"
+                    accept="image/*"
+                    onChange={handleImageUpload}
+                    disabled={isUploading}
+                    className="hidden"
+                  />
+                </div>
               </div>
             </div>
 
