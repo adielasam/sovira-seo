@@ -35,3 +35,26 @@ export async function toggleUserSuspension(userId: string, currentRole: string) 
   revalidatePath('/admin/users')
   return { success: true }
 }
+
+export async function promoteToAdmin(userId: string) {
+  const supabase = await createClient()
+
+  // Verify SUPER admin
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user || user.email !== 'microsoftportharcourt@gmail.com') {
+    return { success: false, error: 'Unauthorized. Only the Superadmin can promote users.' }
+  }
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({ role: 'admin' })
+    .eq('id', userId)
+
+  if (error) {
+    console.error('Error promoting user:', error)
+    return { success: false, error: 'Failed to promote user to Admin.' }
+  }
+
+  revalidatePath('/admin/users')
+  return { success: true }
+}

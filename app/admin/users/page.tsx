@@ -7,6 +7,9 @@ export const dynamic = 'force-dynamic'
 export default async function AdminUsersPage() {
   const supabase = await createClient()
 
+  const { data: { user } } = await supabase.auth.getUser()
+  const isSuperAdmin = user?.email === 'microsoftportharcourt@gmail.com'
+
   const { data: users } = await supabase
     .from('user_profiles')
     .select('*')
@@ -69,7 +72,7 @@ export default async function AdminUsersPage() {
                   <td className="px-6 py-4 capitalize">{u.plan || 'Free'}</td>
                   <td className="px-6 py-4">{new Date(u.created_at).toLocaleDateString()}</td>
                   <td className="px-6 py-4 text-right">
-                    <UserActions user={u} />
+                    <UserActions user={u} isSuperAdmin={isSuperAdmin} />
                   </td>
                 </tr>
               ))}

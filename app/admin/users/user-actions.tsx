@@ -1,12 +1,12 @@
 'use client'
 
-import { Ban, Activity, CheckCircle } from 'lucide-react'
-import { toggleUserSuspension } from './actions'
+import { Ban, Activity, CheckCircle, ShieldUser } from 'lucide-react'
+import { toggleUserSuspension, promoteToAdmin } from './actions'
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-export function UserActions({ user }: { user: any }) {
+export function UserActions({ user, isSuperAdmin }: { user: any, isSuperAdmin?: boolean }) {
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const isSuspended = user.role === 'suspended'
@@ -31,6 +31,19 @@ export function UserActions({ user }: { user: any }) {
     setLoading(false)
   }
 
+  const handleMakeAdmin = async () => {
+    if (!confirm('Are you sure you want to promote this user to an Admin? They will have full access to manage users, blogs, and content.')) return
+    
+    setLoading(true)
+    const res = await promoteToAdmin(user.id)
+    if (res.error) {
+      alert(res.error)
+    } else {
+      alert('User successfully promoted to Admin!')
+    }
+    setLoading(false)
+  }
+
   return (
     <div className="flex items-center justify-end gap-2">
       <Link 
@@ -40,6 +53,17 @@ export function UserActions({ user }: { user: any }) {
       >
         <Activity className="w-4 h-4" />
       </Link>
+      
+      {isSuperAdmin && user.role !== 'admin' && (
+        <button
+          onClick={handleMakeAdmin}
+          disabled={loading}
+          title="Make Admin"
+          className="p-1.5 text-slate-400 hover:text-purple-600 transition-colors disabled:opacity-50"
+        >
+          <ShieldUser className="w-4 h-4" />
+        </button>
+      )}
       
       <button 
         onClick={handleToggleSuspend}

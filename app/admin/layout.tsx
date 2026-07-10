@@ -1,7 +1,7 @@
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
-import { Users, Activity, Bell, CreditCard, LayoutDashboard, Settings } from 'lucide-react'
+import { Users, Activity, Bell, CreditCard, LayoutDashboard, Settings, FileText } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 
 export default async function AdminLayout({
@@ -33,6 +33,7 @@ export default async function AdminLayout({
     { name: 'Activity Logs', href: '/admin/activity', icon: Activity },
     { name: 'Notifications', href: '/admin/notifications', icon: Bell },
     { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+    { name: 'Blog', href: '/admin/blog', icon: FileText },
   ]
 
   return (
