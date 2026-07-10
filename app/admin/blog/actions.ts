@@ -52,8 +52,8 @@ export async function saveBlogPost(formData: FormData) {
     if (error.code === '23505') {
       return { error: 'A blog post with this URL slug already exists.' }
     }
-    console.error('Error saving blog post:', error)
-    return { error: 'Failed to save blog post' }
+    console.error('Error saving blog post:', JSON.stringify(error, null, 2))
+    return { error: `Failed to save blog post: ${error.message} - ${error.details || ''} - ${error.hint || ''}` }
   }
 
   revalidatePath('/admin/blog')
