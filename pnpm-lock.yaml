@@ -68,6 +68,9 @@ importers:
       resend:
         specifier: ^6.16.0
         version: 6.17.1
+      zod:
+        specifier: ^4.4.3
+        version: 4.4.3
     devDependencies:
       '@tailwindcss/postcss':
         specifier: ^4
@@ -93,150 +96,6 @@ importers:
       typescript:
         specifier: ^5
         version: 5.9.3
-
-  apps/app:
-    dependencies:
-      '@ai-sdk/google':
-        specifier: ^0.0.52
-        version: 0.0.52(zod@4.4.3)
-      '@ai-sdk/groq':
-        specifier: ^0.0.1
-        version: 0.0.1(zod@4.4.3)
-      '@ai-sdk/openai':
-        specifier: ^4.0.5
-        version: 4.0.9(zod@4.4.3)
-      '@google/generative-ai':
-        specifier: ^0.24.1
-        version: 0.24.1
-      '@paystack/inline-js':
-        specifier: ^2.23.1
-        version: 2.23.1
-      '@supabase/ssr':
-        specifier: ^0.12.0
-        version: 0.12.0(@supabase/supabase-js@2.110.1)
-      '@supabase/supabase-js':
-        specifier: ^2.108.2
-        version: 2.110.1
-      ai:
-        specifier: ^3.4.12
-        version: 3.4.33(react@19.2.4)(sswr@2.2.0(svelte@5.56.4(@typescript-eslint/types@8.63.0)))(svelte@5.56.4(@typescript-eslint/types@8.63.0))(vue@3.5.39(typescript@5.9.3))(zod@4.4.3)
-      apify-client:
-        specifier: ^2.23.4
-        version: 2.23.4
-      cheerio:
-        specifier: ^1.2.0
-        version: 1.2.0
-      lucide-react:
-        specifier: ^1.21.0
-        version: 1.23.0(react@19.2.4)
-      next:
-        specifier: 16.2.9
-        version: 16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-themes:
-        specifier: ^0.4.6
-        version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      react-hot-toast:
-        specifier: ^2.6.0
-        version: 2.6.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react-markdown:
-        specifier: ^10.1.0
-        version: 10.1.0(@types/react@19.2.17)(react@19.2.4)
-      recharts:
-        specifier: ^3.9.0
-        version: 3.9.2(@types/react@19.2.17)(react-dom@19.2.4(react@19.2.4))(react-is@16.13.1)(react@19.2.4)(redux@5.0.1)
-      remark-gfm:
-        specifier: ^4.0.1
-        version: 4.0.1
-      resend:
-        specifier: ^6.16.0
-        version: 6.17.1
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.2
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      '@types/react':
-        specifier: ^19
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.17)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.9
-        version: 16.2.9(@typescript-eslint/parser@8.63.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.2
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  apps/website:
-    dependencies:
-      '@supabase/ssr':
-        specifier: ^0.12.0
-        version: 0.12.0(@supabase/supabase-js@2.110.1)
-      '@supabase/supabase-js':
-        specifier: ^2.108.2
-        version: 2.110.1
-      lucide-react:
-        specifier: ^1.21.0
-        version: 1.23.0(react@19.2.4)
-      next:
-        specifier: 16.2.9
-        version: 16.2.9(@babel/core@7.29.7)(@opentelemetry/api@1.9.0)(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      next-themes:
-        specifier: ^0.4.6
-        version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      react:
-        specifier: 19.2.4
-        version: 19.2.4
-      react-dom:
-        specifier: 19.2.4
-        version: 19.2.4(react@19.2.4)
-      react-hot-toast:
-        specifier: ^2.6.0
-        version: 2.6.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-    devDependencies:
-      '@tailwindcss/postcss':
-        specifier: ^4
-        version: 4.3.2
-      '@types/node':
-        specifier: ^20
-        version: 20.19.43
-      '@types/react':
-        specifier: ^19
-        version: 19.2.17
-      '@types/react-dom':
-        specifier: ^19
-        version: 19.2.3(@types/react@19.2.17)
-      eslint:
-        specifier: ^9
-        version: 9.39.4(jiti@2.7.0)
-      eslint-config-next:
-        specifier: 16.2.9
-        version: 16.2.9(@typescript-eslint/parser@8.63.0(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)
-      tailwindcss:
-        specifier: ^4
-        version: 4.3.2
-      typescript:
-        specifier: ^5
-        version: 5.9.3
-
-  packages/config: {}
-
-  packages/ui: {}
 
 packages:
 
