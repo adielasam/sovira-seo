@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { sendGlobalNotification } from './actions'
 import toast from 'react-hot-toast'
 import { Send, Globe } from 'lucide-react'
 
@@ -15,15 +15,7 @@ export default function AdminNotificationsPage() {
     e.preventDefault()
     setIsSending(true)
     
-    const supabase = createClient()
-    const { error } = await supabase
-      .from('notifications')
-      .insert([{
-        title,
-        message,
-        type,
-        is_global: true
-      }])
+    const { error } = await sendGlobalNotification(title, message, type)
 
     setIsSending(false)
 
