@@ -12,14 +12,22 @@ export const metadata: Metadata = {
 
 export const revalidate = 60 // Revalidate every 60 seconds
 
-export default async function BlogPage() {
+export default async function BlogPage({ searchParams }: { searchParams: Promise<{ search?: string }> }) {
+  const resolvedParams = await searchParams
+  const search = resolvedParams?.search || ''
   const supabase = await createClient()
 
-  const { data: posts, error } = await supabase
+  let query = supabase
     .from('blog_posts')
-    .select('title, slug, meta_description, image_url, created_at, category, author:user_profiles!blog_posts_author_id_fkey(full_name, email)')
+    .select('title, slug, meta_description, image_url, created_at, category')
     .eq('published', true)
     .order('created_at', { ascending: false })
+
+  if (search) {
+    query = query.ilike('title', `%${search}%`)
+  }
+
+  const { data: posts, error } = await query
     
   if (error) {
     console.error('Error fetching blogs:', error)
