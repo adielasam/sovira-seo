@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 
 export async function sendGlobalNotification(title: string, message: string, type: string) {
   const supabase = await createClient()
@@ -19,7 +19,10 @@ export async function sendGlobalNotification(title: string, message: string, typ
     return { error: 'Unauthorized' }
   }
 
-  const { error } = await supabase
+  // Use admin client to bypass RLS for inserting into notifications
+  const adminClient = await createAdminClient()
+
+  const { error } = await adminClient
     .from('notifications')
     .insert([{
       title,
