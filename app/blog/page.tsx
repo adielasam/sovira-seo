@@ -49,9 +49,26 @@ export default async function BlogPage({ searchParams }: { searchParams: Promise
         </div>
 
         <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
+            <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Latest Articles</h2>
+            
+            <form action="/blog" method="GET" className="w-full md:w-96 flex">
+              <input
+                type="text"
+                name="search"
+                defaultValue={search}
+                placeholder="Search articles..."
+                className="flex-1 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <button type="submit" className="px-4 py-2 bg-slate-900 dark:bg-blue-600 text-white rounded-r-lg hover:bg-slate-800 dark:hover:bg-blue-500 transition-colors">
+                Search
+              </button>
+            </form>
+          </div>
+
           {(!posts || posts.length === 0) ? (
             <div className="text-center py-20 text-slate-500">
-              <p className="text-xl">No posts available yet. Check back soon!</p>
+              <p className="text-xl">No posts found. Try a different search term!</p>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
