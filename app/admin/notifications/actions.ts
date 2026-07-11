@@ -19,10 +19,7 @@ export async function sendGlobalNotification(title: string, message: string, typ
     return { error: 'Unauthorized' }
   }
 
-  // Use admin client to bypass RLS for inserting into notifications
-  const adminClient = await createAdminClient()
-
-  const { error } = await adminClient
+  const { error } = await supabase
     .from('notifications')
     .insert([{
       title,
