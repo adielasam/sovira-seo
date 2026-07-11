@@ -171,8 +171,9 @@ export default async function BlogPostPage({ params }: Props) {
             )}
 
             <div 
-              className="prose prose-lg dark:prose-invert max-w-none prose-blue text-justify break-words prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline"
-              dangerouslySetInnerHTML={{ __html: post.content.replace(/&nbsp;/g, ' ') }}
+              className="prose prose-lg dark:prose-invert max-w-[100%] prose-blue text-justify break-words prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline overflow-hidden"
+              style={{ wordBreak: 'break-word', overflowWrap: 'break-word', whiteSpace: 'pre-wrap' }}
+              dangerouslySetInnerHTML={{ __html: post.content.replace(/(&nbsp;|\u00A0)/g, ' ') }}
             />
             
             <ShareWidget title={post.title} url={`https://www.sovira.com.ng/blog/${slug}`} />
