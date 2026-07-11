@@ -3,8 +3,12 @@ import { Metadata, ResolvingMetadata } from 'next'
 import { notFound } from 'next/navigation'
 import { Navbar } from '@/components/marketing/Navbar'
 import { Footer } from '@/components/marketing/Footer'
+import { ShareWidget } from '@/components/blog/ShareWidget'
+import { CommentsSection } from '@/components/blog/CommentsSection'
+import { SidebarWidgets } from '@/components/blog/SidebarWidgets'
 import { Calendar, User, ArrowLeft } from 'lucide-react'
 import Link from 'next/link'
+import { getComments } from '@/app/actions/blog'
 
 type Props = {
   params: Promise<{ slug: string }>
@@ -85,6 +89,8 @@ export default async function BlogPostPage({ params }: Props) {
     notFound()
   }
 
+  const comments = await getComments(post.id)
+
   // Generate structured data for Google (Article Schema)
   const jsonLd = {
     '@context': 'https://schema.org',
@@ -148,23 +154,37 @@ export default async function BlogPostPage({ params }: Props) {
         </div>
 
         {/* Content Section */}
-        <article className="max-w-3xl mx-auto px-6 -mt-16 relative z-20">
-          {post.image_url && (
-            <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden shadow-2xl mb-12 bg-slate-800 border-4 border-white dark:border-slate-800">
-              <img 
-                src={post.image_url} 
-                alt={post.title}
-                className="w-full h-full object-cover"
-              />
-            </div>
-          )}
-
-          <div 
-            className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline"
-            dangerouslySetInnerHTML={{ __html: post.content }}
-          />
+        <div className="max-w-7xl mx-auto px-6 -mt-16 relative z-20 flex flex-col lg:flex-row gap-12 items-start">
           
-        </article>
+          {/* Main Article Content */}
+          <article className="flex-1 w-full lg:max-w-[800px]">
+            {post.image_url && (
+              <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden shadow-2xl mb-12 bg-slate-800 border-4 border-white dark:border-slate-800">
+                <img 
+                  src={post.image_url} 
+                  alt={post.title}
+                  className="w-full h-full object-cover"
+                />
+              </div>
+            )}
+
+            <div 
+              className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline"
+              dangerouslySetInnerHTML={{ __html: post.content }}
+            />
+            
+            <ShareWidget title={post.title} url={`https://www.sovira.com.ng/blog/${slug}`} />
+            
+            <CommentsSection postId={post.id} slug={slug} initialComments={comments} />
+            
+          </article>
+
+          {/* Sidebar */}
+          <aside className="w-full lg:w-80 shrink-0">
+            <SidebarWidgets />
+          </aside>
+          
+        </div>
       </main>
 
       <Footer />
