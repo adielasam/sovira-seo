@@ -157,7 +157,7 @@ export default async function BlogPostPage({ params }: Props) {
         <div className="max-w-7xl mx-auto px-6 -mt-16 relative z-20 flex flex-col lg:flex-row gap-12 items-start">
           
           {/* Main Article Content */}
-          <article className="flex-1 w-full lg:max-w-[800px]">
+          <article className="flex-1 w-full lg:max-w-[800px] min-w-0">
             {post.image_url && (
               <div className="w-full h-64 md:h-96 rounded-2xl overflow-hidden shadow-2xl mb-12 bg-slate-800 border-4 border-white dark:border-slate-800">
                 <img 
@@ -169,7 +169,7 @@ export default async function BlogPostPage({ params }: Props) {
             )}
 
             <div 
-              className="prose prose-lg dark:prose-invert max-w-none prose-blue prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline"
+              className="prose prose-lg dark:prose-invert max-w-none prose-blue text-justify break-words prose-img:rounded-xl prose-headings:font-bold prose-a:text-black dark:prose-a:text-white hover:prose-a:text-blue-600 dark:hover:prose-a:text-blue-400 prose-a:transition-colors prose-a:no-underline hover:prose-a:underline"
               dangerouslySetInnerHTML={{ __html: post.content }}
             />
             
