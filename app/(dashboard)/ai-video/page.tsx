@@ -9,6 +9,7 @@ export default function AiVideoPage() {
   const [imageUrl, setImageUrl] = useState('')
   const [aspectRatio, setAspectRatio] = useState('16:9')
   const [mode, setMode] = useState<'text-to-video' | 'image-to-video'>('text-to-video')
+    const [imageFile, setImageFile] = useState<File | null>(null)
   
   const [isGenerating, setIsGenerating] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
@@ -32,7 +33,7 @@ export default function AiVideoPage() {
 
         if (res.ok) {
           if (data.status === 'success' || data.status === 'completed') {
-            setVideoUrl(data.result_url || data.video_url || data.url) // Adapting to possible ShortAPI schemas
+            setVideoUrl(data.result_url || data.video_url || data.url)
             setIsGenerating(false)
             setJobId(null)
             toast.success('Video generation complete!')
@@ -50,7 +51,7 @@ export default function AiVideoPage() {
     }
 
     if (jobId && isGenerating) {
-      interval = setInterval(checkStatus, 5000) // Poll every 5 seconds
+      interval = setInterval(checkStatus, 5000)
     }
 
     return () => {
@@ -65,24 +66,51 @@ export default function AiVideoPage() {
       toast.error('Please enter a prompt')
       return
     }
-    if (mode === 'image-to-video' && !imageUrl) {
-      toast.error('Please enter an image URL')
+    if (mode === 'image-to-video' && !imageFile) {
+      toast.error('Please upload an image')
       return
     }
 
     setIsGenerating(true)
     setVideoUrl(null)
     setJobId(null)
-    setStatusText('Submitting job to ShortAPI...')
+    setStatusText(mode === 'image-to-video' ? 'Uploading image...' : 'Submitting job to ShortAPI...')
 
     try {
+      let finalImageUrl = ''
+      if (mode === 'image-to-video' && imageFile) {
+        // Upload image
+        const reader = new FileReader()
+        const base64Promise = new Promise<string>((resolve) => {
+          reader.onload = () => resolve(reader.result as string)
+          reader.readAsDataURL(imageFile)
+        })
+        
+        const base64Data = await base64Promise
+        
+        const uploadRes = await fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ base64Image: base64Data, fileName: imageFile.name })
+        })
+        
+        const uploadData = await uploadRes.json()
+        if (!uploadRes.ok || !uploadData.url) {
+          toast.error(uploadData.error || 'Failed to upload image')
+          setIsGenerating(false)
+          return
+        }
+        finalImageUrl = uploadData.url
+        setStatusText('Submitting job to ShortAPI...')
+      }
+
       const res = await fetch('/api/generate/video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
           prompt: mode === 'text-to-video' ? prompt : undefined,
-          image_url: mode === 'image-to-video' ? imageUrl : undefined,
+          image_url: mode === 'image-to-video' ? finalImageUrl : undefined,
           aspect_ratio: aspectRatio
         })
       })
@@ -147,17 +175,23 @@ export default function AiVideoPage() {
               </div>
             ) : (
               <div>
-                <label htmlFor="imageUrl" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Image URL
+                <label htmlFor="imageFile" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Upload Image
                 </label>
                 <input
-                  id="imageUrl"
-                  type="url"
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                  id="imageFile"
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    if (e.target.files && e.target.files[0]) {
+                      setImageFile(e.target.files[0])
+                    }
+                  }}
+                  className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400 cursor-pointer border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A]"
                 />
+                {imageFile && (
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Selected: {imageFile.name}</p>
+                )}
               </div>
             )}
 

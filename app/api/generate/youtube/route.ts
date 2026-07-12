@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 
 export async function POST(req: Request) {
   try {
-    const { type, topic, keywords } = await req.json()
+    const { type, topic, keywords, niche, format } = await req.json()
     
     if (!type || !topic) {
       return NextResponse.json({ error: 'Type and topic are required' }, { status: 400 })
@@ -24,7 +24,10 @@ export async function POST(req: Request) {
       prompt = `Generate a YouTube description for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
     } else if (type === 'script') {
       systemPrompt = 'You are a viral YouTube scriptwriter. Generate a high-retention video script/storyboard. Include a strong hook for the first 10 seconds, an intro, the main body separated by visual cues [B-ROLL: ...], and a strong Call to Action (CTA) at the end. Format using markdown.'
-      prompt = `Generate a YouTube script/story outline about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+      prompt = `Generate a YouTube script/story outline about: "${topic}".
+      Target keywords: ${keywords || 'none provided'}.
+      Niche: ${niche || 'General'}
+      Script Format: ${format || 'Standard'}`
     } else if (type === 'title') {
       systemPrompt = 'You are a YouTube CTR optimization expert. Generate 5 highly clickable, SEO-optimized YouTube video titles. Do not use clickbait, but make them irresistible. Output as a bulleted list.'
       prompt = `Generate 5 YouTube titles for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
