@@ -21,16 +21,20 @@ export async function POST(req: Request) {
 
     if (type === 'description') {
       systemPrompt = 'You are a master YouTube SEO expert. Generate a highly optimized, engaging YouTube video description. Include a catchy intro, a 2-paragraph summary incorporating the keywords naturally, a bulleted list of timestamps (chapters), and placeholders for social links. Format using markdown.'
-      prompt = `Generate a YouTube description for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+      prompt = `Generate a YouTube description for a video about: "${topic}".
+      Target keywords: ${keywords || 'none provided'}.
+      Niche: ${niche || 'General'}`
     } else if (type === 'script') {
-      systemPrompt = 'You are a viral YouTube scriptwriter. Generate a high-retention video script/storyboard. Include a strong hook for the first 10 seconds, an intro, the main body separated by visual cues [B-ROLL: ...], and a strong Call to Action (CTA) at the end. Format using markdown.'
-      prompt = `Generate a YouTube script/story outline about: "${topic}".
+      systemPrompt = 'You are a viral YouTube scriptwriter. Generate a high-retention video script/storyboard. Include a strong hook for the first 10 seconds, an intro, the main body separated by visual cues [B-ROLL: ...], and a strong Call to Action (CTA) at the end. Format using markdown. IN ADDITION, ALWAYS START BY PROVIDING 3 HIGHLY CLICKABLE TITLES FOR THIS SCRIPT.'
+      prompt = `Generate 3 titles AND a YouTube script/story outline about: "${topic}".
       Target keywords: ${keywords || 'none provided'}.
       Niche: ${niche || 'General'}
       Script Format: ${format || 'Standard'}`
     } else if (type === 'title') {
       systemPrompt = 'You are a YouTube CTR optimization expert. Generate 5 highly clickable, SEO-optimized YouTube video titles. Do not use clickbait, but make them irresistible. Output as a bulleted list.'
-      prompt = `Generate 5 YouTube titles for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+      prompt = `Generate 5 YouTube titles for a video about: "${topic}".
+      Target keywords: ${keywords || 'none provided'}.
+      Niche: ${niche || 'General'}`
     } else if (type === 'tags') {
       systemPrompt = 'You are a YouTube SEO expert. Generate a comma-separated list of the top 20-30 high-volume, low-competition tags (keywords) for the given topic. Output ONLY the tags separated by commas.'
       prompt = `Generate YouTube tags for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`

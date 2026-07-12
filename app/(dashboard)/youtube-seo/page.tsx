@@ -187,27 +187,28 @@ export default function YouTubeSeoPage() {
               </div>
             </div>
 
-            {type === 'script' && (
-              <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
-                <div>
-                  <label htmlFor="niche" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                    Video Niche
-                  </label>
-                  <select
-                    id="niche"
-                    value={niche}
-                    onChange={(e) => setNiche(e.target.value)}
-                    className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
-                  >
-                    <option value="General">General / Other</option>
-                    <option value="Tech & Gadgets">Tech & Gadgets</option>
-                    <option value="Finance & Business">Finance & Business</option>
-                    <option value="Gaming">Gaming</option>
-                    <option value="Educational">Educational</option>
-                    <option value="Vlogging & Lifestyle">Vlogging & Lifestyle</option>
-                    <option value="Entertainment">Entertainment</option>
-                  </select>
-                </div>
+            <div className="space-y-4 pt-4 border-t border-slate-200 dark:border-slate-800">
+              <div>
+                <label htmlFor="niche" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Video Niche
+                </label>
+                <select
+                  id="niche"
+                  value={niche}
+                  onChange={(e) => setNiche(e.target.value)}
+                  className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-red-500 transition-all"
+                >
+                  <option value="General">General / Other</option>
+                  <option value="Tech & Gadgets">Tech & Gadgets</option>
+                  <option value="Finance & Business">Finance & Business</option>
+                  <option value="Gaming">Gaming</option>
+                  <option value="Educational">Educational</option>
+                  <option value="Vlogging & Lifestyle">Vlogging & Lifestyle</option>
+                  <option value="Entertainment">Entertainment</option>
+                </select>
+              </div>
+
+              {type === 'script' && (
                 <div>
                   <label htmlFor="format" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                     Script Format
@@ -225,8 +226,8 @@ export default function YouTubeSeoPage() {
                     <option value="Tutorial / Screen Recording">Tutorial / Screen Recording</option>
                   </select>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
             <button
               type="submit"
