@@ -77,7 +77,7 @@ export default function AiVideoPage() {
     setIsGenerating(true)
     setVideoUrl(null)
     setJobId(null)
-    setStatusText(mode === 'image-to-video' ? 'Uploading image...' : 'Submitting job to Magic Hour...')
+    setStatusText(mode === 'image-to-video' ? 'Uploading image...' : 'Initializing Sovira Engine...')
 
     try {
       let finalImageUrl = ''
@@ -112,7 +112,7 @@ export default function AiVideoPage() {
           return
         }
         finalImageUrl = uploadData.url
-        setStatusText('Submitting job to ShortAPI...')
+        setStatusText('Initializing Sovira Engine...')
       }
 
       const res = await fetch('/api/generate/video', {
@@ -150,16 +150,7 @@ export default function AiVideoPage() {
           <Video className="w-8 h-8 text-indigo-500" />
           AI Generation Studio
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Powered by <span className="font-semibold text-indigo-500">Magic Hour AI</span> — generate cinematic videos for YouTube &amp; TikTok.</p>
-      </div>
-
-      {/* Watermark / Upgrade Notice */}
-      <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl">
-        <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
-        <div className="text-sm">
-          <p className="font-semibold text-amber-800 dark:text-amber-300">Free Plan Limitations</p>
-          <p className="text-amber-700 dark:text-amber-400 mt-0.5">Videos include a Magic Hour watermark on the free tier. To remove it, <a href="https://magichour.ai/pricing" target="_blank" className="underline font-medium">upgrade your Magic Hour plan</a>. Character dialogue/audio requires the paid Lip Sync feature.</p>
-        </div>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Generate cinematic videos for YouTube & TikTok using our proprietary AI engine.</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -192,8 +183,8 @@ export default function AiVideoPage() {
           <form onSubmit={handleGenerate} className="space-y-6">
             
             <div className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
-              <span className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider">⚡ Magic Hour AI</span>
-              <span className="text-xs text-indigo-500 dark:text-indigo-400 ml-auto">Veo 3.1 · Kling · Wan</span>
+              <span className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider">✨ Sovira Cinematic Engine</span>
+              <span className="text-xs text-indigo-500 dark:text-indigo-400 ml-auto">Ultra-realistic 4K</span>
             </div>
 
             <div>
@@ -265,10 +256,6 @@ export default function AiVideoPage() {
                 >
                   <Volume2 className="w-3.5 h-3.5" /> Preview voice
                 </button>
-              )}
-              <p className="mt-1.5 text-xs text-slate-400">
-                💡 After generating, use <a href="https://magichour.ai/create" target="_blank" className="underline text-indigo-500">Magic Hour Lip Sync</a> to add this dialogue to your video.
-              </p>
             </div>
 
             {mode !== 'text-to-image' && (
