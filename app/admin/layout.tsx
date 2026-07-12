@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { Users, Activity, Bell, CreditCard, LayoutDashboard, Settings, FileText } from 'lucide-react'
 import { ThemeToggle } from '@/components/theme-toggle'
 
+import { AdminUserMenu } from '@/components/admin-user-menu'
+
 export default async function AdminLayout({
   children,
 }: {
@@ -26,6 +28,8 @@ export default async function AdminLayout({
   if (profile?.role !== 'admin' && user.email !== 'microsoftportharcourt@gmail.com') {
     redirect('/dashboard') // Not an admin
   }
+
+  const initial = user.email ? user.email.charAt(0).toUpperCase() : 'A'
 
   const navigation = [
     { name: 'Overview', href: '/admin', icon: LayoutDashboard },
@@ -63,9 +67,7 @@ export default async function AdminLayout({
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">Admin Panel — Sovira SEO</h2>
           <div className="flex items-center gap-4">
             <ThemeToggle />
-            <div className="h-8 w-8 rounded-full bg-purple-600 flex items-center justify-center text-white font-bold text-sm">
-              A
-            </div>
+            <AdminUserMenu initial={initial} />
           </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
