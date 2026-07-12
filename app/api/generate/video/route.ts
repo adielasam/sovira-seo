@@ -41,12 +41,27 @@ export async function POST(req: Request) {
 
     // Action: Create Job
     if (action === 'create') {
+      const { modelType, customModel, mode } = body
+      
       if (!prompt && !image_url) {
         return NextResponse.json({ error: 'Prompt or image_url is required' }, { status: 400 })
       }
 
-      // Use correct model name
-      const model = image_url ? 'google/veo-3.1/image-to-video' : 'google/veo-3.1/text-to-video'
+      // Map model names based on UI selection and mode
+      let model = 'google/veo-3.1/text-to-video'
+      
+      if (modelType === 'custom' && customModel) {
+        model = customModel
+      } else if (modelType === 'poppy') {
+        model = 'shortapi/poppy-v1.0/text-to-video'
+      } else if (modelType === 'kling') {
+        model = image_url ? 'kwaivgi/kling-o3/image-to-video' : 'kwaivgi/kling-o3/text-to-video'
+      } else if (modelType === 'gpt-image' || mode === 'text-to-image') {
+        model = 'shortapi/gpt-image-2/text-to-image'
+      } else {
+        // default veo3
+        model = image_url ? 'google/veo-3.1/image-to-video' : 'google/veo-3.1/text-to-video'
+      }
 
       const payload = {
         model,

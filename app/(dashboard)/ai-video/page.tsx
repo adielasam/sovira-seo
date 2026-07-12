@@ -8,8 +8,11 @@ export default function AiVideoPage() {
   const [prompt, setPrompt] = useState('')
   const [imageUrl, setImageUrl] = useState('')
   const [aspectRatio, setAspectRatio] = useState('16:9')
-  const [mode, setMode] = useState<'text-to-video' | 'image-to-video'>('text-to-video')
-    const [imageFile, setImageFile] = useState<File | null>(null)
+  const [mode, setMode] = useState<'text-to-video' | 'image-to-video' | 'text-to-image'>('text-to-video')
+  const [imageFile, setImageFile] = useState<File | null>(null)
+  
+  const [modelType, setModelType] = useState('veo3') // veo3, poppy, custom
+  const [customModel, setCustomModel] = useState('')
   
   const [isGenerating, setIsGenerating] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
@@ -109,9 +112,12 @@ export default function AiVideoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          prompt: mode === 'text-to-video' ? prompt : undefined,
+          prompt: (mode === 'text-to-video' || mode === 'text-to-image') ? prompt : undefined,
           image_url: mode === 'image-to-video' ? finalImageUrl : undefined,
-          aspect_ratio: aspectRatio
+          aspect_ratio: aspectRatio,
+          modelType,
+          customModel,
+          mode
         })
       })
       const data = await res.json()
@@ -135,31 +141,69 @@ export default function AiVideoPage() {
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
           <Video className="w-8 h-8 text-indigo-500" />
-          AI Video Studio (Veo 3)
+          AI Generation Studio
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Generate high-quality short videos for YouTube and TikTok.</p>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Generate high-quality short videos and images for your content.</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left Panel - Inputs */}
         <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 xl:col-span-1 h-fit">
-          <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
+          <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
             <button
+              type="button"
               onClick={() => setMode('text-to-video')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'text-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 min-w-max text-xs sm:text-sm font-medium rounded-md transition-all ${mode === 'text-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <FileText className="w-4 h-4" /> Text
+              <FileText className="w-3.5 h-3.5" /> Text Video
             </button>
             <button
+              type="button"
               onClick={() => setMode('image-to-video')}
-              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'image-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 min-w-max text-xs sm:text-sm font-medium rounded-md transition-all ${mode === 'image-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <ImageIcon className="w-4 h-4" /> Image
+              <ImageIcon className="w-3.5 h-3.5" /> Img Video
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('text-to-image')}
+              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 min-w-max text-xs sm:text-sm font-medium rounded-md transition-all ${mode === 'text-to-image' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <ImageIcon className="w-3.5 h-3.5" /> Text Image
             </button>
           </div>
 
           <form onSubmit={handleGenerate} className="space-y-6">
-            {mode === 'text-to-video' ? (
+            
+            <div>
+              <label htmlFor="modelType" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                AI Model
+              </label>
+              <select
+                id="modelType"
+                value={modelType}
+                onChange={(e) => setModelType(e.target.value)}
+                className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all mb-3"
+              >
+                <option value="veo3">Google Veo 3.1 (High Quality Video)</option>
+                <option value="poppy">Poppy V1.0 (Free/Cheap Video Test)</option>
+                <option value="kling">Kling O3 (Video)</option>
+                <option value="gpt-image">GPT Image 2 (Image Gen)</option>
+                <option value="custom">Custom Model (Advanced)</option>
+              </select>
+              
+              {modelType === 'custom' && (
+                <input
+                  type="text"
+                  value={customModel}
+                  onChange={(e) => setCustomModel(e.target.value)}
+                  placeholder="e.g. shortapi/poppy-v1.0/text-to-video"
+                  className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
+                />
+              )}
+            </div>
+
+            {mode === 'text-to-video' || mode === 'text-to-image' ? (
               <div>
                 <label htmlFor="prompt" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
                   Video Prompt
@@ -236,7 +280,7 @@ export default function AiVideoPage() {
               className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
             >
               {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
-              {isGenerating ? 'Generating...' : 'Generate Video'}
+              {isGenerating ? 'Generating...' : (mode === 'text-to-image' ? 'Generate Image' : 'Generate Video')}
             </button>
           </form>
         </div>
