@@ -57,8 +57,7 @@ export async function POST(req: Request) {
     }
 
     const { text } = await generateText({
-      // @ts-ignore
-      model: groq('mixtral-8x7b-32768'),
+      model: groq('llama3-8b-8192'),
       system: systemPrompt,
       prompt: prompt
     })

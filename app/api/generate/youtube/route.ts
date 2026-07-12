@@ -32,13 +32,18 @@ export async function POST(req: Request) {
     } else if (type === 'script') {
       systemPrompt = 'You are a viral YouTube scriptwriter. Generate a high-retention video script/storyboard. Include a strong hook for the first 10 seconds, an intro, the main body separated by visual cues [B-ROLL: ...], and a strong Call to Action (CTA) at the end. Format using markdown.'
       prompt = `Generate a YouTube script/story outline about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+    } else if (type === 'title') {
+      systemPrompt = 'You are a YouTube CTR optimization expert. Generate 5 highly clickable, SEO-optimized YouTube video titles. Do not use clickbait, but make them irresistible. Output as a bulleted list.'
+      prompt = `Generate 5 YouTube titles for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+    } else if (type === 'tags') {
+      systemPrompt = 'You are a YouTube SEO expert. Generate a comma-separated list of the top 20-30 high-volume, low-competition tags (keywords) for the given topic. Output ONLY the tags separated by commas.'
+      prompt = `Generate YouTube tags for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
     } else {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }
 
     const { text } = await generateText({
-      // @ts-ignore
-      model: groq('mixtral-8x7b-32768'),
+      model: groq('llama3-8b-8192'),
       system: systemPrompt,
       prompt: prompt
     })

@@ -141,6 +141,47 @@ export default function YouTubeSeoPage() {
                     <p className="text-xs mt-0.5 opacity-80">High retention hook, intro, and storyboard.</p>
                   </div>
                 </label>
+                <label className={`
+                  flex items-center px-4 py-3 border rounded-lg cursor-pointer transition-colors
+                  ${type === 'title' 
+                    ? 'bg-red-50 border-red-600 text-red-700 dark:bg-red-900/30 dark:border-red-500 dark:text-red-400' 
+                    : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }
+                `}>
+                  <input 
+                    type="radio" 
+                    name="type" 
+                    value="title" 
+                    checked={type === 'title'}
+                    onChange={() => setType('title')}
+                    className="sr-only" 
+                  />
+                  <div>
+                    <p className="font-semibold text-sm">Optimized Titles</p>
+                    <p className="text-xs mt-0.5 opacity-80">5 high-CTR title variations.</p>
+                  </div>
+                </label>
+
+                <label className={`
+                  flex items-center px-4 py-3 border rounded-lg cursor-pointer transition-colors
+                  ${type === 'tags' 
+                    ? 'bg-red-50 border-red-600 text-red-700 dark:bg-red-900/30 dark:border-red-500 dark:text-red-400' 
+                    : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                  }
+                `}>
+                  <input 
+                    type="radio" 
+                    name="type" 
+                    value="tags" 
+                    checked={type === 'tags'}
+                    onChange={() => setType('tags')}
+                    className="sr-only" 
+                  />
+                  <div>
+                    <p className="font-semibold text-sm">SEO Tags / Keywords</p>
+                    <p className="text-xs mt-0.5 opacity-80">Top 20-30 ranking tags for your video.</p>
+                  </div>
+                </label>
               </div>
             </div>
 

@@ -35,8 +35,7 @@ Format the output in clean markdown.`
     const prompt = `Rewrite and optimize the following content for Generative AI Search engines. Focus area: ${focus || 'General Information Retrieval'}.\n\nContent:\n${text}`
 
     const { text: resultText } = await generateText({
-      // @ts-ignore
-      model: groq('mixtral-8x7b-32768'),
+      model: groq('llama3-8b-8192'),
       system: systemPrompt,
       prompt: prompt
     })
