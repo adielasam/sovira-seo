@@ -1,12 +1,5 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { createOpenAI } from '@ai-sdk/openai'
-import { generateText } from 'ai'
-
-const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
-})
 
 export async function POST(req: Request) {
   try {
@@ -23,27 +16,51 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const systemPrompt = `You are a Generative Engine Optimization (GEO) Expert. Your job is to optimize content so that AI search engines (like ChatGPT, Perplexity, Google SGE) can easily extract, cite, and recommend it.
-Rules for GEO:
-1. Clearly define entities and concepts early.
-2. Use structured data formats (lists, tables, Q&A) heavily.
-3. Cite authoritative statistics or facts if applicable.
-4. Keep paragraphs short and semantic.
-5. Provide a clear "TL;DR" or summary at the top.
-Format the output in clean markdown.`
+    const systemPrompt = `You are an expert in Generative Engine Optimization (GEO). Your task is to rewrite the provided content so that it is highly favored by Large Language Models (LLMs) and AI Search Engines like ChatGPT, Perplexity, and Gemini.
+
+Key GEO strategies to apply:
+- Use clear, unambiguous language.
+- Structure with markdown (H2, H3) and bullet points.
+- Define key concepts explicitly.
+- Add an "Executive Summary" or "Key Takeaways" at the top.
+- Remove fluff and filler words; prioritize information density.
+- Maintain a factual, objective, and authoritative tone.`
 
     const prompt = `Rewrite and optimize the following content for Generative AI Search engines. Focus area: ${focus || 'General Information Retrieval'}.\n\nContent:\n${text}`
 
-    const { text: resultText } = await generateText({
-      model: groq('llama3-8b-8192'),
-      system: systemPrompt,
-      prompt: prompt
+    const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
+    
+    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${NARA_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: 'mistral-large',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.7,
+        max_tokens: 2500
+      })
     })
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
+    }
+
+    const data = await response.json()
+    const resultText = data.choices?.[0]?.message?.content
+
+    if (!resultText) throw new Error('No content returned from Nara')
 
     // Log the AI usage
     await supabase.from('activity_logs').insert([{
       user_id: user.id,
-      action: `GEO Content Optimized`,
+      action: 'GEO Optimization Generated',
       details: { focus }
     }])
 
