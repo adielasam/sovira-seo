@@ -59,6 +59,13 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Prompt or image is required' }, { status: 400 })
       }
 
+      // Boost user prompt with cinematic quality keywords for best output
+      const enhancePrompt = (userPrompt: string) => {
+        const quality = 'Ultra-realistic photorealistic quality, cinematic 4K, professional film production, dramatic lighting, shallow depth of field, film grain, hyper-detailed textures, award-winning cinematography, Hollywood-grade visual effects.'
+        const negative = 'No cartoon style, no anime, no low-resolution, no blurry output, no childish visuals, no CGI artifacts, no watermark.'
+        return `${userPrompt.trim()}. ${quality} ${negative}`
+      }
+
       const endSeconds = Number(duration) || 5
       let endpoint = ''
       let payload: Record<string, unknown> = {}
@@ -70,7 +77,7 @@ export async function POST(req: Request) {
           name: `Sovira Video - ${new Date().toISOString()}`,
           end_seconds: endSeconds,
           assets: { image_file_path: image_url },
-          style: { prompt: prompt || 'Animate this image cinematically' },
+          style: { prompt: enhancePrompt(prompt || 'Animate this image with smooth, cinematic camera movement') },
           aspect_ratio: aspect_ratio || '16:9',
         }
       } else {
@@ -79,7 +86,7 @@ export async function POST(req: Request) {
         payload = {
           name: `Sovira Video - ${new Date().toISOString()}`,
           end_seconds: endSeconds,
-          style: { prompt: prompt || '' },
+          style: { prompt: enhancePrompt(prompt || '') },
           aspect_ratio: aspect_ratio || '16:9',
         }
       }

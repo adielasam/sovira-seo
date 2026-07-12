@@ -78,6 +78,14 @@ export default function AiVideoPage() {
 
     try {
       let finalImageUrl = ''
+      
+      // Enhance the user prompt with cinematic quality descriptors
+      const enhancePrompt = (userPrompt: string) => {
+        const qualityBoost = 'Ultra-realistic, cinematic 4K quality, professional film production, dramatic lighting, shallow depth of field, photorealistic textures, film grain, IMAX quality, hyper-detailed, award-winning cinematography.'
+        const negative = 'Avoid: cartoon, anime, low quality, blurry, childish, toy-like, CGI artifacts, watermark, text overlay.'
+        return `${userPrompt.trim()}. ${qualityBoost} ${negative}`
+      }
+
       if (mode === 'image-to-video' && imageFile) {
         // Upload image
         const reader = new FileReader()
@@ -305,19 +313,33 @@ export default function AiVideoPage() {
                   src={videoUrl} 
                   controls 
                   autoPlay 
-                  loop 
+                  loop
+                  playsInline
                   className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
+                  style={{ outline: 'none' }}
                 />
-                
-                <a 
-                  href={videoUrl} 
-                  download="sovira-ai-video.mp4"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity bg-black/60 hover:bg-black text-white p-3 rounded-full backdrop-blur-md"
-                >
-                  <Download className="w-5 h-5" />
-                </a>
+
+                {/* Floating action bar */}
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                  <a 
+                    href={videoUrl} 
+                    download="sovira-ai-video.mp4"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="flex items-center gap-2 bg-black/70 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-full backdrop-blur-md transition-colors"
+                  >
+                    <Download className="w-4 h-4" /> Download MP4
+                  </a>
+                  <button
+                    onClick={() => {
+                      const v = document.querySelector('video')
+                      if (v) v.muted = !v.muted
+                    }}
+                    className="bg-black/70 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-full backdrop-blur-md transition-colors"
+                  >
+                    🔊 Toggle Sound
+                  </button>
+                </div>
               </div>
             ) : null}
           </div>
