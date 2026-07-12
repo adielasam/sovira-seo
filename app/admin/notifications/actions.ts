@@ -25,6 +25,7 @@ export async function sendGlobalNotification(title: string, message: string, typ
   const { error } = await adminClient
     .from('notifications')
     .insert([{
+      user_id: user.id,
       title,
       message,
       type,
