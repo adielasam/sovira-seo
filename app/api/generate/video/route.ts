@@ -25,10 +25,11 @@ export async function POST(req: Request) {
     if (action === 'status') {
       if (!jobId) return NextResponse.json({ error: 'jobId required' }, { status: 400 })
 
-      // jobId format: "type:id" e.g. "text-to-video:abc123"
+      // jobId format: "type:id" e.g. "text-to-video:abc123" or "ai-image-generator:abc123"
       const [jobType, projectId] = jobId.split(':')
       
-      const res = await fetch(`${MAGIC_HOUR_API}/video-projects/${projectId}`, { headers })
+      const statusEndpoint = jobType === 'ai-image-generator' ? `/image-projects/${projectId}` : `/video-projects/${projectId}`
+      const res = await fetch(`${MAGIC_HOUR_API}${statusEndpoint}`, { headers })
       const data = await res.json()
 
       if (!res.ok) {
@@ -78,6 +79,15 @@ export async function POST(req: Request) {
           end_seconds: endSeconds,
           assets: { image_file_path: image_url },
           style: { prompt: enhancePrompt(prompt || 'Animate this image with smooth, cinematic camera movement') },
+          aspect_ratio: aspect_ratio || '16:9',
+        }
+      } else if (mode === 'text-to-image') {
+        // Text-to-Image
+        endpoint = '/ai-image-generator'
+        payload = {
+          name: `Sovira Image - ${new Date().toISOString()}`,
+          image_count: 1,
+          style: { prompt: enhancePrompt(prompt || '') },
           aspect_ratio: aspect_ratio || '16:9',
         }
       } else {

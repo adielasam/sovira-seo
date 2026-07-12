@@ -9,7 +9,7 @@ export default function AiVideoPage() {
   const [dialogue, setDialogue] = useState('')
   const [aspectRatio, setAspectRatio] = useState('16:9')
   const [duration, setDuration] = useState(5)
-  const [mode, setMode] = useState<'text-to-video' | 'image-to-video'>('text-to-video')
+  const [mode, setMode] = useState<'text-to-video' | 'image-to-video' | 'text-to-image'>('text-to-video')
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [isMuted, setIsMuted] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
@@ -171,14 +171,21 @@ export default function AiVideoPage() {
               onClick={() => setMode('text-to-video')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'text-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <FileText className="w-4 h-4" /> Text
+              <FileText className="w-4 h-4" /> Text Video
             </button>
             <button
               type="button"
               onClick={() => setMode('image-to-video')}
               className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'image-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <ImageIcon className="w-4 h-4" /> Image
+              <ImageIcon className="w-4 h-4" /> Image Video
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode('text-to-image')}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'text-to-image' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+            >
+              <ImageIcon className="w-4 h-4" /> Text Image
             </button>
           </div>
 
@@ -191,13 +198,13 @@ export default function AiVideoPage() {
 
             <div>
               <label htmlFor="prompt" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                {mode === 'image-to-video' ? 'Animation Prompt (Optional)' : 'Video Prompt'}
+                {mode === 'image-to-video' ? 'Animation Prompt (Optional)' : (mode === 'text-to-image' ? 'Image Generation Prompt' : 'Video Prompt')}
               </label>
               <textarea
                 id="prompt"
                 value={prompt}
                 onChange={(e) => setPrompt(e.target.value)}
-                placeholder={mode === 'image-to-video' ? 'Describe how to animate the image...' : 'e.g. Ultra-realistic 3D cinematic Nigerian woman, standing in a modern living room, looking worried, wearing a red dress...'}
+                placeholder={mode === 'image-to-video' ? 'Describe how to animate the image...' : 'e.g. Ultra-realistic 3D cinematic Nigerian woman, standing in a modern living room...'}
                 rows={5}
                 className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
               />
@@ -264,23 +271,25 @@ export default function AiVideoPage() {
               </p>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                Duration: <span className="text-indigo-500 font-bold">{duration}s</span>
-              </label>
-              <input
-                type="range"
-                min={3}
-                max={10}
-                step={1}
-                value={duration}
-                onChange={(e) => setDuration(Number(e.target.value))}
-                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
-              />
-              <div className="flex justify-between text-xs text-slate-400 mt-1">
-                <span>3s</span><span>5s</span><span>7s</span><span>10s</span>
+            {mode !== 'text-to-image' && (
+              <div>
+                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                  Duration: <span className="text-indigo-500 font-bold">{duration}s</span>
+                </label>
+                <input
+                  type="range"
+                  min={3}
+                  max={10}
+                  step={1}
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                />
+                <div className="flex justify-between text-xs text-slate-400 mt-1">
+                  <span>3s</span><span>5s</span><span>7s</span><span>10s</span>
+                </div>
               </div>
-            </div>
+            )}
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -360,17 +369,25 @@ export default function AiVideoPage() {
               </div>
             ) : videoUrl ? (
               <div className="w-full h-full flex flex-col items-center justify-center relative group">
-                <video 
-                  ref={videoRef}
-                  src={videoUrl} 
-                  controls 
-                  autoPlay 
-                  loop
-                  playsInline
-                  muted={isMuted}
-                  className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
-                  style={{ outline: 'none' }}
-                />
+                {videoUrl.endsWith('.png') || videoUrl.endsWith('.jpg') || videoUrl.endsWith('.jpeg') || mode === 'text-to-image' ? (
+                  <img 
+                    src={videoUrl} 
+                    alt="Generated output"
+                    className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
+                  />
+                ) : (
+                  <video 
+                    ref={videoRef}
+                    src={videoUrl} 
+                    controls 
+                    autoPlay 
+                    loop
+                    playsInline
+                    muted={isMuted}
+                    className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
+                    style={{ outline: 'none' }}
+                  />
+                )}
 
                 {/* Floating action bar */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
