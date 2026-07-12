@@ -1,8 +1,10 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { Video, Image as ImageIcon, Play, Loader2, Download, FileText, Volume2, VolumeX, AlertTriangle } from 'lucide-react'
+import { Video, Image as ImageIcon, Play, Loader2, Download, FileText, Volume2, VolumeX, AlertTriangle, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { createClient } from '@/lib/supabase/client'
+import Link from 'next/link'
 
 export default function AiVideoPage() {
   const [prompt, setPrompt] = useState('')
@@ -18,6 +20,22 @@ export default function AiVideoPage() {
   const [jobId, setJobId] = useState<string | null>(null)
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
   const [statusText, setStatusText] = useState('')
+  const [userPlan, setUserPlan] = useState<string>('free')
+  const [isCheckingPlan, setIsCheckingPlan] = useState(true)
+
+  // Check user plan
+  useEffect(() => {
+    const checkPlan = async () => {
+      const supabase = createClient()
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        const { data } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+        if (data?.plan) setUserPlan(data.plan)
+      }
+      setIsCheckingPlan(false)
+    }
+    checkPlan()
+  }, [])
 
   // Polling mechanism
   useEffect(() => {
@@ -313,14 +331,24 @@ export default function AiVideoPage() {
               </div>
             </div>
 
-            <button
-              type="submit"
-              disabled={isGenerating}
-              className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
-            >
-              {isGenerating ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
-              {isGenerating ? 'Generating...' : (mode === 'text-to-image' ? 'Generate Image' : 'Generate Video')}
-            </button>
+            {userPlan !== 'pro' && !isCheckingPlan ? (
+              <Link 
+                href="/pricing"
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-3 rounded-lg font-semibold transition-all shadow-sm"
+              >
+                <Lock className="w-5 h-5" />
+                Upgrade to Pro to Generate
+              </Link>
+            ) : (
+              <button
+                type="submit"
+                disabled={isGenerating || isCheckingPlan}
+                className="w-full flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600"
+              >
+                {isGenerating || isCheckingPlan ? <Loader2 className="w-5 h-5 animate-spin" /> : <Play className="w-5 h-5" />}
+                {isGenerating ? 'Generating...' : (mode === 'text-to-image' ? 'Generate Image' : 'Generate Video')}
+              </button>
+            )}
           </form>
         </div>
 

@@ -60,6 +60,12 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Prompt or image is required' }, { status: 400 })
       }
 
+      // Pro Plan Check
+      const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+      if (profile?.plan !== 'pro') {
+        return NextResponse.json({ error: 'Upgrade to Pro to use AI Generation Studio' }, { status: 403 })
+      }
+
       // Boost user prompt with cinematic quality keywords for best output
       const enhancePrompt = (userPrompt: string) => {
         const quality = 'Ultra-realistic photorealistic quality, cinematic 4K, professional film production, dramatic lighting, shallow depth of field, film grain, hyper-detailed textures, award-winning cinematography, Hollywood-grade visual effects.'
