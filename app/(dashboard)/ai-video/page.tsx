@@ -1,15 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { Video, Image as ImageIcon, Play, Loader2, Download, FileText } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Video, Image as ImageIcon, Play, Loader2, Download, FileText, Volume2, VolumeX, AlertTriangle } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function AiVideoPage() {
   const [prompt, setPrompt] = useState('')
+  const [dialogue, setDialogue] = useState('')
   const [aspectRatio, setAspectRatio] = useState('16:9')
   const [duration, setDuration] = useState(5)
   const [mode, setMode] = useState<'text-to-video' | 'image-to-video'>('text-to-video')
   const [imageFile, setImageFile] = useState<File | null>(null)
+  const [isMuted, setIsMuted] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
   
   const [isGenerating, setIsGenerating] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
@@ -147,7 +150,16 @@ export default function AiVideoPage() {
           <Video className="w-8 h-8 text-indigo-500" />
           AI Generation Studio
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Powered by <span className="font-semibold text-indigo-500">Magic Hour AI</span> — generate cinematic videos for YouTube & TikTok.</p>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Powered by <span className="font-semibold text-indigo-500">Magic Hour AI</span> — generate cinematic videos for YouTube &amp; TikTok.</p>
+      </div>
+
+      {/* Watermark / Upgrade Notice */}
+      <div className="flex items-start gap-3 p-4 bg-amber-50 dark:bg-amber-900/20 border border-amber-300 dark:border-amber-700 rounded-xl">
+        <AlertTriangle className="w-5 h-5 text-amber-500 mt-0.5 shrink-0" />
+        <div className="text-sm">
+          <p className="font-semibold text-amber-800 dark:text-amber-300">Free Plan Limitations</p>
+          <p className="text-amber-700 dark:text-amber-400 mt-0.5">Videos include a Magic Hour watermark on the free tier. To remove it, <a href="https://magichour.ai/pricing" target="_blank" className="underline font-medium">upgrade your Magic Hour plan</a>. Character dialogue/audio requires the paid Lip Sync feature.</p>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
@@ -212,6 +224,45 @@ export default function AiVideoPage() {
                 )}
               </div>
             )}
+
+            {/* Dialogue / Narration */}
+            <div>
+              <label htmlFor="dialogue" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Character Dialogue / Narration
+                <span className="ml-2 text-xs text-slate-400">(for voice preview & lip sync)</span>
+              </label>
+              <textarea
+                id="dialogue"
+                value={dialogue}
+                onChange={(e) => setDialogue(e.target.value)}
+                placeholder="Write what the character says... e.g. 'Good morning! I prepared breakfast for you. How are you feeling today?'"
+                rows={3}
+                className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
+              />
+              {dialogue && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    if ('speechSynthesis' in window) {
+                      window.speechSynthesis.cancel()
+                      const utterance = new SpeechSynthesisUtterance(dialogue)
+                      utterance.rate = 0.9
+                      utterance.pitch = 1.1
+                      window.speechSynthesis.speak(utterance)
+                      toast.success('Playing voice preview...')
+                    } else {
+                      toast.error('Speech synthesis not supported in this browser')
+                    }
+                  }}
+                  className="mt-2 flex items-center gap-2 text-xs text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 font-medium transition-colors"
+                >
+                  <Volume2 className="w-3.5 h-3.5" /> Preview voice
+                </button>
+              )}
+              <p className="mt-1.5 text-xs text-slate-400">
+                💡 After generating, use <a href="https://magichour.ai/create" target="_blank" className="underline text-indigo-500">Magic Hour Lip Sync</a> to add this dialogue to your video.
+              </p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
@@ -310,11 +361,13 @@ export default function AiVideoPage() {
             ) : videoUrl ? (
               <div className="w-full h-full flex flex-col items-center justify-center relative group">
                 <video 
+                  ref={videoRef}
                   src={videoUrl} 
                   controls 
                   autoPlay 
                   loop
                   playsInline
+                  muted={isMuted}
                   className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
                   style={{ outline: 'none' }}
                 />
@@ -331,13 +384,16 @@ export default function AiVideoPage() {
                     <Download className="w-4 h-4" /> Download MP4
                   </a>
                   <button
+                    type="button"
                     onClick={() => {
-                      const v = document.querySelector('video')
-                      if (v) v.muted = !v.muted
+                      const newMuted = !isMuted
+                      setIsMuted(newMuted)
+                      if (videoRef.current) videoRef.current.muted = newMuted
                     }}
-                    className="bg-black/70 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-full backdrop-blur-md transition-colors"
+                    className="flex items-center gap-2 bg-black/70 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-full backdrop-blur-md transition-colors"
                   >
-                    🔊 Toggle Sound
+                    {isMuted ? <VolumeX className="w-4 h-4" /> : <Volume2 className="w-4 h-4" />}
+                    {isMuted ? 'Unmute' : 'Mute'}
                   </button>
                 </div>
               </div>
