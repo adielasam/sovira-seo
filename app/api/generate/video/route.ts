@@ -13,7 +13,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const apiKey = process.env.SHORTAPI_KEY
+    const apiKey = process.env.SHORTAPI_KEY || 'ak-bc4e61327d7611f19901def407a1c451'
     if (!apiKey) {
       return NextResponse.json({ error: 'SHORTAPI_KEY is not configured in Vercel' }, { status: 500 })
     }
