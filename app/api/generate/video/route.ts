@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
+const MAGIC_HOUR_API = 'https://api.magichour.ai/v1'
+const MAGIC_HOUR_KEY = process.env.MAGIC_HOUR_API_KEY || 'mhk_live_i3nniUOy8sYlv5Teu5C1F208T7Gu8V2klrz81kviSCmNl0Gaya8xi3oYpxD711zVEoErvX1GHm4JmAFd'
+
 export async function POST(req: Request) {
   try {
     const body = await req.json()
-    const { action, jobId, prompt, image_url, aspect_ratio } = body
+    const { action, jobId, prompt, image_url, aspect_ratio, mode, modelType, duration } = body
 
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -13,107 +16,108 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const apiKey = process.env.SHORTAPI_KEY || 'ak-bc4e61327d7611f19901def407a1c451'
-    if (!apiKey) {
-      return NextResponse.json({ error: 'SHORTAPI_KEY is not configured in Vercel' }, { status: 500 })
+    const headers = {
+      'Authorization': `Bearer ${MAGIC_HOUR_KEY}`,
+      'Content-Type': 'application/json'
     }
 
-    // Action: Check Status
+    // ─── STATUS CHECK ──────────────────────────────────────────────
     if (action === 'status') {
       if (!jobId) return NextResponse.json({ error: 'jobId required' }, { status: 400 })
+
+      // jobId format: "type:id" e.g. "text-to-video:abc123"
+      const [jobType, projectId] = jobId.split(':')
       
-      const res = await fetch(`https://api.shortapi.ai/api/v1/job/status?id=${jobId}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
-      })
-      
-      if (!res.ok) {
-        const err = await res.text()
-        return NextResponse.json({ error: `ShortAPI error: ${err}` }, { status: res.status })
-      }
-      
+      const res = await fetch(`${MAGIC_HOUR_API}/video-projects/${projectId}`, { headers })
       const data = await res.json()
-      return NextResponse.json(data)
+
+      if (!res.ok) {
+        return NextResponse.json({ error: data.message || 'Failed to get status' }, { status: res.status })
+      }
+
+      // Map Magic Hour status to standard format
+      const statusMap: Record<string, string> = {
+        queued: 'pending',
+        in_progress: 'processing',
+        processing: 'processing',
+        complete: 'completed',
+        failed: 'failed',
+        error: 'failed',
+      }
+
+      return NextResponse.json({
+        status: statusMap[data.status] || data.status,
+        video_url: data.download?.url || data.downloads?.[0]?.url || null,
+        error: data.error || null,
+        raw: data
+      })
     }
 
-    // Action: Create Job
+    // ─── CREATE JOB ───────────────────────────────────────────────
     if (action === 'create') {
-      const { modelType, customModel, mode } = body
-      
       if (!prompt && !image_url) {
-        return NextResponse.json({ error: 'Prompt or image_url is required' }, { status: 400 })
+        return NextResponse.json({ error: 'Prompt or image is required' }, { status: 400 })
       }
 
-      // Map model names based on UI selection and mode
-      let model = 'google/veo-3.1/text-to-video'
-      
-      if (modelType === 'custom' && customModel) {
-        model = customModel
-      } else if (modelType === 'poppy') {
-        model = 'shortapi/poppy-v1.0/text-to-video'
-      } else if (modelType === 'kling') {
-        model = image_url ? 'kwaivgi/kling-o3/image-to-video' : 'kwaivgi/kling-o3/text-to-video'
-      } else if (modelType === 'gpt-image' || mode === 'text-to-image') {
-        model = 'shortapi/gpt-image-2/text-to-image'
+      const endSeconds = Number(duration) || 5
+      let endpoint = ''
+      let payload: Record<string, unknown> = {}
+
+      if (mode === 'image-to-video' && image_url) {
+        // Image-to-Video
+        endpoint = '/image-to-video'
+        payload = {
+          name: `Sovira Video - ${new Date().toISOString()}`,
+          end_seconds: endSeconds,
+          assets: { image_file_path: image_url },
+          style: { prompt: prompt || 'Animate this image cinematically' },
+          aspect_ratio: aspect_ratio || '16:9',
+        }
       } else {
-        // default veo3
-        model = image_url ? 'google/veo-3.1/image-to-video' : 'google/veo-3.1/text-to-video'
-      }
-
-      const payload = {
-        model,
-        args: {
-          prompt: prompt || '',
-          image_url: image_url || '',
-          aspect_ratio: aspect_ratio || '16:9'
+        // Text-to-Video (default)
+        endpoint = '/text-to-video'
+        payload = {
+          name: `Sovira Video - ${new Date().toISOString()}`,
+          end_seconds: endSeconds,
+          style: { prompt: prompt || '' },
+          aspect_ratio: aspect_ratio || '16:9',
         }
       }
 
-      const res = await fetch('https://api.shortapi.ai/api/v1/job/create', {
+      const res = await fetch(`${MAGIC_HOUR_API}${endpoint}`, {
         method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        },
+        headers,
         body: JSON.stringify(payload)
       })
 
-      if (!res.ok) {
-        const err = await res.text()
-        return NextResponse.json({ error: `ShortAPI HTTP error: ${err}` }, { status: res.status })
-      }
-
       const data = await res.json()
-      
-      // ShortAPI returns errors as 200 OK with code !== 0
-      if (data.code !== undefined && data.code !== 0 && data.code !== 200) {
-        return NextResponse.json({ error: `ShortAPI Error: ${data.info || data.message || 'Unknown error'}` }, { status: 400 })
-      }
-      
-      // Extract job_id to send back to frontend
-      const returnedJobId = data.job_id || data.data?.job_id || data.id || data.data?.task_id;
-      if (!returnedJobId) {
-        return NextResponse.json({ error: 'No job ID returned from API' }, { status: 500 })
-      }
-      data.id = returnedJobId;
 
-      // Log the AI usage
+      if (!res.ok) {
+        return NextResponse.json({ error: data.message || 'Failed to create video job' }, { status: res.status })
+      }
+
+      const projectId = data.id
+      if (!projectId) {
+        return NextResponse.json({ error: 'No job ID returned from Magic Hour' }, { status: 500 })
+      }
+
+      // Compose job id with type prefix for polling
+      const composedJobId = `${endpoint.slice(1)}:${projectId}`
+
+      // Log AI usage
       await supabase.from('activity_logs').insert([{
         user_id: user.id,
-        action: `AI Video Job Started`,
-        details: { model, aspect_ratio }
+        action: 'AI Video Job Started (Magic Hour)',
+        details: { endpoint, aspect_ratio, end_seconds: endSeconds }
       }])
 
-      return NextResponse.json(data)
+      return NextResponse.json({ id: composedJobId, projectId, credits_charged: data.credits_charged })
     }
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
 
   } catch (error: any) {
-    console.error('Generate Video Error:', error)
+    console.error('Magic Hour Video Error:', error)
     return NextResponse.json({ error: error.message || 'Video generation failed' }, { status: 500 })
   }
 }

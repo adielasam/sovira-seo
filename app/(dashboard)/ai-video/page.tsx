@@ -6,13 +6,10 @@ import toast from 'react-hot-toast'
 
 export default function AiVideoPage() {
   const [prompt, setPrompt] = useState('')
-  const [imageUrl, setImageUrl] = useState('')
   const [aspectRatio, setAspectRatio] = useState('16:9')
-  const [mode, setMode] = useState<'text-to-video' | 'image-to-video' | 'text-to-image'>('text-to-video')
+  const [duration, setDuration] = useState(5)
+  const [mode, setMode] = useState<'text-to-video' | 'image-to-video'>('text-to-video')
   const [imageFile, setImageFile] = useState<File | null>(null)
-  
-  const [modelType, setModelType] = useState('veo3') // veo3, poppy, custom
-  const [customModel, setCustomModel] = useState('')
   
   const [isGenerating, setIsGenerating] = useState(false)
   const [jobId, setJobId] = useState<string | null>(null)
@@ -77,7 +74,7 @@ export default function AiVideoPage() {
     setIsGenerating(true)
     setVideoUrl(null)
     setJobId(null)
-    setStatusText(mode === 'image-to-video' ? 'Uploading image...' : 'Submitting job to ShortAPI...')
+    setStatusText(mode === 'image-to-video' ? 'Uploading image...' : 'Submitting job to Magic Hour...')
 
     try {
       let finalImageUrl = ''
@@ -112,11 +109,10 @@ export default function AiVideoPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'create',
-          prompt: (mode === 'text-to-video' || mode === 'text-to-image') ? prompt : undefined,
+          prompt: mode === 'text-to-video' ? prompt : (prompt || undefined),
           image_url: mode === 'image-to-video' ? finalImageUrl : undefined,
           aspect_ratio: aspectRatio,
-          modelType,
-          customModel,
+          duration,
           mode
         })
       })
@@ -143,84 +139,54 @@ export default function AiVideoPage() {
           <Video className="w-8 h-8 text-indigo-500" />
           AI Generation Studio
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Generate high-quality short videos and images for your content.</p>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Powered by <span className="font-semibold text-indigo-500">Magic Hour AI</span> — generate cinematic videos for YouTube & TikTok.</p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left Panel - Inputs */}
         <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 xl:col-span-1 h-fit">
-          <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg overflow-x-auto">
+          <div className="flex gap-2 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">
             <button
               type="button"
               onClick={() => setMode('text-to-video')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 min-w-max text-xs sm:text-sm font-medium rounded-md transition-all ${mode === 'text-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'text-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <FileText className="w-3.5 h-3.5" /> Text Video
+              <FileText className="w-4 h-4" /> Text
             </button>
             <button
               type="button"
               onClick={() => setMode('image-to-video')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 min-w-max text-xs sm:text-sm font-medium rounded-md transition-all ${mode === 'image-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 text-sm font-medium rounded-md transition-all ${mode === 'image-to-video' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
             >
-              <ImageIcon className="w-3.5 h-3.5" /> Img Video
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode('text-to-image')}
-              className={`flex-1 flex items-center justify-center gap-1.5 py-2 px-2 min-w-max text-xs sm:text-sm font-medium rounded-md transition-all ${mode === 'text-to-image' ? 'bg-white dark:bg-slate-700 shadow-sm text-indigo-600 dark:text-indigo-400' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
-            >
-              <ImageIcon className="w-3.5 h-3.5" /> Text Image
+              <ImageIcon className="w-4 h-4" /> Image
             </button>
           </div>
 
           <form onSubmit={handleGenerate} className="space-y-6">
             
-            <div>
-              <label htmlFor="modelType" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                AI Model
-              </label>
-              <select
-                id="modelType"
-                value={modelType}
-                onChange={(e) => setModelType(e.target.value)}
-                className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all mb-3"
-              >
-                <option value="veo3">Google Veo 3.1 (High Quality Video)</option>
-                <option value="poppy">Poppy V1.0 (Free/Cheap Video Test)</option>
-                <option value="kling">Kling O3 (Video)</option>
-                <option value="gpt-image">GPT Image 2 (Image Gen)</option>
-                <option value="custom">Custom Model (Advanced)</option>
-              </select>
-              
-              {modelType === 'custom' && (
-                <input
-                  type="text"
-                  value={customModel}
-                  onChange={(e) => setCustomModel(e.target.value)}
-                  placeholder="e.g. shortapi/poppy-v1.0/text-to-video"
-                  className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all"
-                />
-              )}
+            <div className="flex items-center gap-2 p-3 bg-indigo-50 dark:bg-indigo-900/20 rounded-lg border border-indigo-200 dark:border-indigo-800">
+              <span className="text-indigo-600 dark:text-indigo-400 text-xs font-semibold uppercase tracking-wider">⚡ Magic Hour AI</span>
+              <span className="text-xs text-indigo-500 dark:text-indigo-400 ml-auto">Veo 3.1 · Kling · Wan</span>
             </div>
 
-            {mode === 'text-to-video' || mode === 'text-to-image' ? (
-              <div>
-                <label htmlFor="prompt" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Video Prompt
-                </label>
-                <textarea
-                  id="prompt"
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="e.g. A cinematic drone shot of a futuristic city at sunset..."
-                  rows={4}
-                  className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
-                />
-              </div>
-            ) : (
+            <div>
+              <label htmlFor="prompt" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                {mode === 'image-to-video' ? 'Animation Prompt (Optional)' : 'Video Prompt'}
+              </label>
+              <textarea
+                id="prompt"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                placeholder={mode === 'image-to-video' ? 'Describe how to animate the image...' : 'e.g. Ultra-realistic 3D cinematic Nigerian woman, standing in a modern living room, looking worried, wearing a red dress...'}
+                rows={5}
+                className="block w-full px-4 py-2.5 border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A] text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all resize-none"
+              />
+            </div>
+
+            {mode === 'image-to-video' && (
               <div>
                 <label htmlFor="imageFile" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-                  Upload Image
+                  Reference Image
                 </label>
                 <input
                   id="imageFile"
@@ -234,10 +200,28 @@ export default function AiVideoPage() {
                   className="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-400 cursor-pointer border border-slate-300 dark:border-slate-700 rounded-lg bg-slate-50 dark:bg-[#0F172A]"
                 />
                 {imageFile && (
-                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">Selected: {imageFile.name}</p>
+                  <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">✅ {imageFile.name}</p>
                 )}
               </div>
             )}
+
+            <div>
+              <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
+                Duration: <span className="text-indigo-500 font-bold">{duration}s</span>
+              </label>
+              <input
+                type="range"
+                min={3}
+                max={10}
+                step={1}
+                value={duration}
+                onChange={(e) => setDuration(Number(e.target.value))}
+                className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+              />
+              <div className="flex justify-between text-xs text-slate-400 mt-1">
+                <span>3s</span><span>5s</span><span>7s</span><span>10s</span>
+              </div>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">
