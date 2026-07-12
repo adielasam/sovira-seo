@@ -45,8 +45,8 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Prompt or image_url is required' }, { status: 400 })
       }
 
-      // Default model mapping (Veo 3 or Kling depending on the user request)
-      const model = 'google/veo-3.1/generate'
+      // Use correct model name
+      const model = image_url ? 'google/veo-3.1/image-to-video' : 'google/veo-3.1/text-to-video'
 
       const payload = {
         model,
@@ -68,10 +68,22 @@ export async function POST(req: Request) {
 
       if (!res.ok) {
         const err = await res.text()
-        return NextResponse.json({ error: `ShortAPI error: ${err}` }, { status: res.status })
+        return NextResponse.json({ error: `ShortAPI HTTP error: ${err}` }, { status: res.status })
       }
 
       const data = await res.json()
+      
+      // ShortAPI returns errors as 200 OK with code !== 0
+      if (data.code !== undefined && data.code !== 0 && data.code !== 200) {
+        return NextResponse.json({ error: `ShortAPI Error: ${data.info || data.message || 'Unknown error'}` }, { status: 400 })
+      }
+      
+      // Extract job_id to send back to frontend
+      const returnedJobId = data.job_id || data.data?.job_id || data.id || data.data?.task_id;
+      if (!returnedJobId) {
+        return NextResponse.json({ error: 'No job ID returned from API' }, { status: 500 })
+      }
+      data.id = returnedJobId;
 
       // Log the AI usage
       await supabase.from('activity_logs').insert([{
