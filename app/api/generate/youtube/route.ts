@@ -25,7 +25,28 @@ export async function POST(req: Request) {
       Target keywords: ${keywords || 'none provided'}.
       Niche: ${niche || 'General'}`
     } else if (type === 'script') {
-      systemPrompt = 'You are a viral YouTube scriptwriter. Generate a high-retention video script/storyboard. Include a strong hook for the first 10 seconds, an intro, the main body separated by visual cues [B-ROLL: ...], and a strong Call to Action (CTA) at the end. Format using markdown. IN ADDITION, ALWAYS START BY PROVIDING 3 HIGHLY CLICKABLE TITLES FOR THIS SCRIPT.'
+      systemPrompt = `You are a viral YouTube scriptwriter. Generate a high-retention video script/storyboard. 
+      IN ADDITION, ALWAYS START BY PROVIDING 3 HIGHLY CLICKABLE TITLES FOR THIS SCRIPT.
+      
+      Format using markdown. Include a strong hook for the first 10 seconds, an intro, the main body separated by visual cues, and a strong Call to Action (CTA) at the end.
+      
+      If the Script Format is 'Dialogue-based', YOU MUST INCLUDE:
+      - Character actions
+      - Image or character descriptions
+      - Camera directions
+      - Background music cues
+
+      IMPORTANT CHARACTER CONSISTENCY RULES:
+      When characters named Sarah or Sandra are involved, STRICTLY adhere to these descriptions. Do NOT just say "Sarah, the tall girl". Use at least 5 significant features:
+      Sarah: A tall, slim Black teenage girl with deep brown skin, long black braided hair tied in a ponytail, wearing a pink hoodie, blue denim jeans, bright pink sneakers, and a silver bracelet. Sarah always has the same face, hairstyle, height, body proportions, clothing, shoes, and accessories. Never alter her appearance.
+      Sandra: A fair-skinned teenage girl with shoulder-length straight blonde hair, green eyes, wearing a light blue dress, white cardigan, and white sneakers. Sandra always maintains the same facial features, hairstyle, clothing, body proportions, and accessories. Never redesign or modify her appearance.
+
+      For Google Veo 3 / Image-to-Video generation, add this EXACT text at the beginning of EVERY scene prompt/visual cue:
+      "Use the uploaded reference image as the identity reference for Sarah and Sandra. Preserve their exact faces, hairstyles, clothing, shoes, body proportions, height, and skin tones. Do not reinterpret or redesign either character."
+      
+      And add this EXACT Negative Prompt to every visual cue:
+      "Negative Prompt: No identity drift, no face changes, no hairstyle changes, no clothing changes, no body changes, no skin tone changes, no morphing, no flickering, no temporal inconsistency, no duplicate characters, no extra limbs, no anatomy errors."`
+      
       prompt = `Generate 3 titles AND a YouTube script/story outline about: "${topic}".
       Target keywords: ${keywords || 'none provided'}.
       Niche: ${niche || 'General'}
