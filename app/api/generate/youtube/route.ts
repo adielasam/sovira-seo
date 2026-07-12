@@ -36,13 +36,20 @@ export async function POST(req: Request) {
       - Camera directions
       - Background music cues
 
-      IMPORTANT CHARACTER CONSISTENCY RULES:
-      When characters named Sarah or Sandra are involved, STRICTLY adhere to these descriptions. Do NOT just say "Sarah, the tall girl". Use at least 5 significant features:
-      Sarah: A tall, slim Black teenage girl with deep brown skin, long black braided hair tied in a ponytail, wearing a pink hoodie, blue denim jeans, bright pink sneakers, and a silver bracelet. Sarah always has the same face, hairstyle, height, body proportions, clothing, shoes, and accessories. Never alter her appearance.
-      Sandra: A fair-skinned teenage girl with shoulder-length straight blonde hair, green eyes, wearing a light blue dress, white cardigan, and white sneakers. Sandra always maintains the same facial features, hairstyle, clothing, body proportions, and accessories. Never redesign or modify her appearance.
+      IMPORTANT CHARACTER CONSISTENCY RULES (ESPECIALLY FOR DIALOGUE-BASED):
+      1. Generate random English names for the characters.
+      2. For each character, provide an ULTRA-DETAILED visual description that can be directly copied as an image/video generation prompt.
+      3. Include at least 5 significant features:
+         - Art style (e.g., "3D Pixar style", "Ultra-realistic 3D cinematic")
+         - Ethnicity/Nationality, Age, and Gender (e.g., "Nigerian woman", "African teenage boy")
+         - Environment/Action/Emotion (e.g., "standing inside her room, looking worried")
+         - Exact Clothing and Colors (e.g., "wearing a red short skirt and white long sleeves")
+         - Hairstyle and Accessories (e.g., "braided hair with natural texture")
+      
+      Write the script like a professional screenwriter with a unique, compelling storyline.
 
-      For Google Veo 3 / Image-to-Video generation, add this EXACT text at the beginning of EVERY scene prompt/visual cue:
-      "Use the uploaded reference image as the identity reference for Sarah and Sandra. Preserve their exact faces, hairstyles, clothing, shoes, body proportions, height, and skin tones. Do not reinterpret or redesign either character."
+      For Google Veo 3 / Image-to-Video generation, add this EXACT text at the beginning of EVERY scene prompt/visual cue to maintain consistency:
+      "Use the uploaded reference image as the identity reference for [Insert Character Names]. Preserve their exact faces, hairstyles, clothing, shoes, body proportions, height, and skin tones. Do not reinterpret or redesign the characters."
       
       And add this EXACT Negative Prompt to every visual cue:
       "Negative Prompt: No identity drift, no face changes, no hairstyle changes, no clothing changes, no body changes, no skin tone changes, no morphing, no flickering, no temporal inconsistency, no duplicate characters, no extra limbs, no anatomy errors."`
