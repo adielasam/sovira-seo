@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, CreditCard, Bell, Key, Settings as SettingsIcon, Save, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
-import { getUserProfile, updateUserPlan } from './actions'
+import { getUserProfile, updateUserPlan, deleteAccountAction } from './actions'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -26,6 +26,7 @@ export default function SettingsPage() {
   const [showCurrentPw, setShowCurrentPw] = useState(false)
   const [showNewPw, setShowNewPw] = useState(false)
   const [showConfirmPw, setShowConfirmPw] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -35,6 +36,23 @@ export default function SettingsPage() {
     }
     fetchUser()
   }, [])
+
+  const handleDeleteAccount = async () => {
+    if (!window.confirm('Are you absolutely sure you want to delete your account? This action is irreversible and all your data will be permanently lost.')) {
+      return
+    }
+    
+    setIsDeleting(true)
+    const { error } = await deleteAccountAction()
+    setIsDeleting(false)
+    
+    if (error) {
+      toast.error(error)
+    } else {
+      toast.success('Account successfully deleted.')
+      router.push('/auth/login')
+    }
+  }
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault()
@@ -336,6 +354,35 @@ export default function SettingsPage() {
                   <button className="px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors">
                     Update Password
                   </button>
+                </div>
+              </div>
+
+              {/* Danger Zone */}
+              <div className="mt-8 border-t border-slate-200 dark:border-slate-800">
+                <div className="p-6">
+                  <div className="border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 rounded-xl p-6">
+                    <h3 className="text-lg font-semibold text-red-600 dark:text-red-400 mb-1">Danger Zone</h3>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 mb-6">
+                      Irreversible actions. Please proceed with caution.
+                    </p>
+                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                      <div>
+                        <h4 className="font-medium text-slate-900 dark:text-white">Delete Account</h4>
+                        <p className="text-sm text-slate-500 mt-0.5">Permanently remove your account and all associated data</p>
+                      </div>
+                      <button
+                        onClick={handleDeleteAccount}
+                        disabled={isDeleting}
+                        className="px-4 py-2 border border-red-200 hover:border-red-300 dark:border-red-900/50 dark:hover:border-red-900 text-red-600 dark:text-red-400 bg-transparent hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg text-sm font-medium transition-colors disabled:opacity-50 flex items-center justify-center min-w-[140px]"
+                      >
+                        {isDeleting ? (
+                          <div className="w-4 h-4 border-2 border-red-400 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          'Delete Account'
+                        )}
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

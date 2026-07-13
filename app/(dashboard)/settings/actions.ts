@@ -37,7 +37,7 @@ export async function updateUserPlan(reference: string, planName: string) {
     const verifyData = await verifyRes.json()
 
     if (!verifyData.status || verifyData.data.status !== 'success') {
-      return { error: 'Payment verification failed' }
+      return { error: 'Verification error' }
     }
 
     // Verify the amount paid roughly matches the plan (in kobo)
@@ -99,5 +99,29 @@ export async function updateUserPlan(reference: string, planName: string) {
   } catch (err: any) {
     console.error('Paystack verification exception:', err)
     return { error: 'Internal server error during verification' }
+  }
+}
+
+export async function deleteAccountAction() {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  try {
+    // Call the secure RPC function to delete the user
+    const { error } = await supabase.rpc('delete_user_account')
+
+    if (error) {
+      console.error('Error deleting account via RPC:', error)
+      return { error: 'Failed to delete account. Please ensure the database schema is updated.' }
+    }
+
+    // Sign the user out locally
+    await supabase.auth.signOut()
+    
+    return { success: true }
+  } catch (err: any) {
+    console.error('Exception during account deletion:', err)
+    return { error: 'An unexpected error occurred.' }
   }
 }
