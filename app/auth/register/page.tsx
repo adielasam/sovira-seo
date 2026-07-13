@@ -36,10 +36,9 @@ export default function RegisterPage() {
         <form action={signupAction} className="space-y-6">
           <div className="flex gap-4 w-full">
             <button
-              formAction={async () => {
-                'use server';
-                const { signInWithOAuthAction } = await import('@/app/auth/actions');
-                await signInWithOAuthAction('google');
+              type="button"
+              onClick={() => {
+                import('@/app/auth/actions').then(m => m.signInWithOAuthAction('google'));
               }}
               className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-4 py-3 text-sm font-medium text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
@@ -53,10 +52,9 @@ export default function RegisterPage() {
               Google
             </button>
             <button
-              formAction={async () => {
-                'use server';
-                const { signInWithOAuthAction } = await import('@/app/auth/actions');
-                await signInWithOAuthAction('github');
+              type="button"
+              onClick={() => {
+                import('@/app/auth/actions').then(m => m.signInWithOAuthAction('github'));
               }}
               className="flex-1 flex items-center justify-center gap-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-4 py-3 text-sm font-medium text-slate-900 dark:text-white hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
             >
