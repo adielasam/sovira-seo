@@ -61,8 +61,8 @@ export default function SettingsPage() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: user.email,
-        amount: planAmount * 100, // in kobo
-        currency: 'NGN',
+        amount: planAmount * 100, // in cents
+        currency: 'USD',
         reference: 'SOVIRA_' + Date.now(),
         onSuccess: async (transaction: any) => {
           toast.loading('Verifying payment...')
@@ -226,14 +226,14 @@ export default function SettingsPage() {
                     POPULAR
                   </div>
                   <h4 className="text-lg font-bold text-blue-600 dark:text-blue-400">Pro</h4>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦36,300<span className="text-sm font-normal text-slate-500">/mo</span></p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">$20<span className="text-sm font-normal text-slate-500">/mo</span></p>
                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
                     <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> 500 Keywords Tracked</p>
                     <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> 100 SEO Audits/mo</p>
                     <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> Unlimited AI Content</p>
                     <p className="flex items-center gap-2"><span className="text-blue-500 font-bold">✓</span> Priority Support</p>
                   </div>
-                  <button onClick={() => handleUpgrade('pro', 36300)} className="w-full px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
+                  <button onClick={() => handleUpgrade('pro', 20)} className="w-full px-4 py-2 bg-blue-600 text-white font-bold rounded-lg hover:bg-blue-500 transition-all duration-300 shadow-md hover:shadow-lg hover:shadow-blue-500/30 active:scale-95">
                     {profile?.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
                   </button>
                 </div>
@@ -241,14 +241,14 @@ export default function SettingsPage() {
                 {/* Agency Plan */}
                 <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-purple-500/10 hover:ring-purple-200 dark:hover:ring-purple-900 group cursor-pointer">
                   <h4 className="text-lg font-bold text-slate-900 dark:text-white transition-colors group-hover:text-purple-600 dark:group-hover:text-purple-400">Agency</h4>
-                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦163,350<span className="text-sm font-normal text-slate-500">/mo</span></p>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">$90<span className="text-sm font-normal text-slate-500">/mo</span></p>
                   <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
                     <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> Unlimited Keywords</p>
                     <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> Unlimited SEO Audits</p>
                     <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> Unlimited AI Content</p>
                     <p className="flex items-center gap-2"><span className="text-purple-500">✓</span> API Access</p>
                   </div>
-                  <button onClick={() => handleUpgrade('agency', 163350)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-all duration-300 group-hover:bg-purple-50 group-hover:text-purple-700 dark:group-hover:bg-purple-900/30 dark:group-hover:text-purple-400">
+                  <button onClick={() => handleUpgrade('agency', 90)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-all duration-300 group-hover:bg-purple-50 group-hover:text-purple-700 dark:group-hover:bg-purple-900/30 dark:group-hover:text-purple-400">
                     {profile?.plan === 'agency' ? 'Current Plan' : 'Upgrade'}
                   </button>
                 </div>

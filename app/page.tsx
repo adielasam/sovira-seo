@@ -165,11 +165,11 @@ export default function LandingPage() {
       return
     }
     
-    let ngnAmount = 0
+    let usdAmount = 0
     const lowerPlan = planName.toLowerCase()
-    if (lowerPlan === 'starter') ngnAmount = isAnnual ? 290000 : 29000
-    else if (lowerPlan === 'pro') ngnAmount = isAnnual ? 790000 : 79000
-    else if (lowerPlan === 'agency') ngnAmount = isAnnual ? 1990000 : 199000
+    if (lowerPlan === 'starter') usdAmount = isAnnual ? 50 : 5
+    else if (lowerPlan === 'pro') usdAmount = isAnnual ? 200 : 20
+    else if (lowerPlan === 'agency') usdAmount = isAnnual ? 900 : 90
 
     try {
       const PaystackPop = (await import('@paystack/inline-js')).default
@@ -177,8 +177,8 @@ export default function LandingPage() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: user.email,
-        amount: ngnAmount * 100, // in kobo
-        currency: 'NGN',
+        amount: usdAmount * 100, // in cents
+        currency: 'USD',
         reference: 'SOVIRA_' + Date.now(),
         onSuccess: async (transaction: any) => {
           toast.loading('Verifying payment...')

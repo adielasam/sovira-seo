@@ -12,7 +12,7 @@ const tiers = [
   {
     name: 'Starter',
     id: 'tier-starter',
-    price: { monthly: 9900, annually: 99000 },
+    price: { monthly: 5, annually: 50 },
     description: 'Perfect for small websites and individual bloggers just getting started with SEO.',
     features: [
       'Track up to 50 keywords',
@@ -27,7 +27,7 @@ const tiers = [
   {
     name: 'Pro',
     id: 'tier-pro',
-    price: { monthly: 36300, annually: 363000 },
+    price: { monthly: 20, annually: 200 },
     description: 'Ideal for growing businesses and agencies needing comprehensive SEO tools.',
     features: [
       'Track up to 500 keywords',
@@ -45,7 +45,7 @@ const tiers = [
   {
     name: 'Agency',
     id: 'tier-agency',
-    price: { monthly: 163350, annually: 1633500 },
+    price: { monthly: 90, annually: 900 },
     description: 'For large teams and enterprises requiring maximum power and limits.',
     features: [
       'Track up to 5,000 keywords',
@@ -88,12 +88,12 @@ export default function PricingPage() {
       return
     }
     
-    // Map USD to NGN for Paystack logic
-    let ngnAmount = 0
+    // Map to USD for Paystack logic
+    let usdAmount = 0
     const lowerPlan = planName.toLowerCase()
-    if (lowerPlan === 'starter') ngnAmount = annual ? 99000 : 9900
-    else if (lowerPlan === 'pro') ngnAmount = annual ? 363000 : 36300
-    else if (lowerPlan === 'agency') ngnAmount = annual ? 1633500 : 163350
+    if (lowerPlan === 'starter') usdAmount = annual ? 50 : 5
+    else if (lowerPlan === 'pro') usdAmount = annual ? 200 : 20
+    else if (lowerPlan === 'agency') usdAmount = annual ? 900 : 90
 
     try {
       const PaystackPop = (await import('@paystack/inline-js')).default
@@ -101,8 +101,8 @@ export default function PricingPage() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: user.email,
-        amount: ngnAmount * 100, // in kobo
-        currency: 'NGN',
+        amount: usdAmount * 100, // in cents
+        currency: 'USD',
         reference: 'SOVIRA_' + Date.now(),
         onSuccess: async (transaction: any) => {
           toast.loading('Verifying payment...')
@@ -205,7 +205,7 @@ export default function PricingPage() {
               </p>
               <div className="mt-2 flex items-baseline gap-x-1">
                 <span className="text-5xl font-bold tracking-tight">
-                  ₦{(annual ? Math.round(tier.price.annually / 12) : tier.price.monthly).toLocaleString()}
+                  ${(annual ? Math.round(tier.price.annually / 12) : tier.price.monthly).toLocaleString()}
                 </span>
                 <span className={`text-sm font-semibold leading-6 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   /month
@@ -213,7 +213,7 @@ export default function PricingPage() {
               </div>
               {annual && (
                 <p className={`text-sm mt-1 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
-                  Billed ₦{tier.price.annually.toLocaleString()} annually
+                  Billed ${tier.price.annually.toLocaleString()} annually
                 </p>
               )}
               
