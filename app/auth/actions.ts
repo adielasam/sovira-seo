@@ -3,6 +3,8 @@
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
+import { headers } from 'next/headers'
+import { sendWelcomeEmail, sendLoginAlertEmail } from '@/lib/email'
 
 export async function loginAction(formData: FormData) {
   const supabase = await createClient()
@@ -24,17 +26,31 @@ export async function loginAction(formData: FormData) {
   }
 
   let destination = '/dashboard'
+  let userName = 'User'
   
   if (data?.user) {
     const { data: profile } = await supabase
       .from('user_profiles')
-      .select('role')
+      .select('role, full_name')
       .eq('id', data.user.id)
       .single()
       
-    if (profile?.role === 'admin' || data.user.email === 'microsoftportharcourt@gmail.com') {
-      destination = '/admin'
+    if (profile) {
+      if (profile.role === 'admin' || data.user.email === 'microsoftportharcourt@gmail.com') {
+        destination = '/admin'
+      }
+      if (profile.full_name) {
+        userName = profile.full_name
+      }
     }
+
+    // Get IP and User-Agent for the login alert email
+    const headersList = await headers()
+    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+    const userAgent = headersList.get('user-agent') || 'Unknown'
+    
+    // Send email without blocking the response
+    sendLoginAlertEmail(data.user.email || email, userName, ip, userAgent)
   }
 
   revalidatePath('/', 'layout')
@@ -65,6 +81,9 @@ export async function signupAction(formData: FormData) {
   if (error) {
     redirect(`/auth/register?error=${encodeURIComponent(error.message)}`)
   }
+
+  // Send welcome email without blocking
+  sendWelcomeEmail(email, fullName || 'User')
 
   if (!data.session) {
     redirect('/auth/login?message=Please check your email for a confirmation link to activate your account.')

@@ -36,6 +36,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to log activity' }, { status: 500 })
     }
 
+    // Convert dashboard activities into personal notifications (skip login/logout)
+    if (action !== 'login' && action !== 'logout') {
+      const titleParts = action.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
+      const title = titleParts.join(' ')
+      
+      await supabase.from('notifications').insert([{
+        user_id: user.id,
+        title: title,
+        message: details?.message || `You performed: ${title}`,
+        type: details?.type || 'info', // 'success', 'info', 'warning'
+        is_global: false,
+        is_read: false
+      }])
+    }
+
     return NextResponse.json({ success: true })
   } catch (error: any) {
     console.error('Error in log-activity route:', error)
