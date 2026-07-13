@@ -16,9 +16,9 @@ export async function POST(req: Request) {
     const { data: { user } } = await supabase.auth.getUser()
     
     if (user) {
-      const { allowed, limitReached } = await checkUsageLimit(user.id, 'audit')
+      const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'audit')
       if (limitReached) {
-        return NextResponse.json({ error: 'LIMIT_REACHED', message: 'You have reached your Free plan audit limit.' }, { status: 403 })
+        return NextResponse.json({ error: 'LIMIT_REACHED', message: `You have reached your limit of ${maxLimit} SEO Audits. Please upgrade your plan.` }, { status: 403 })
       }
     }
 

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkUsageLimit } from '@/lib/usage'
 import { checkKeywordRank } from '@/lib/rank-tracker/serper'
 
 export async function POST(req: Request) {
@@ -18,16 +19,10 @@ export async function POST(req: Request) {
     }
 
     // Check usage limit
-    const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
-    const plan = profile?.plan || 'free'
+    const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'keyword')
     
-    const { count } = await supabase.from('tracked_keywords').select('*', { count: 'exact', head: true }).eq('user_id', user.id).eq('is_active', true)
-    
-    const limits: Record<string, number> = { free: 5, starter: 5, pro: 15, agency: 30 }
-    const maxKeywords = limits[plan] || 5
-    
-    if (count !== null && count >= maxKeywords) {
-       return NextResponse.json({ error: 'LIMIT_REACHED', message: `You have reached your limit of ${maxKeywords} tracked keywords on the ${plan} plan.` }, { status: 403 })
+    if (limitReached) {
+       return NextResponse.json({ error: 'LIMIT_REACHED', message: `You have reached your limit of ${maxLimit} tracked keywords. Please upgrade your plan.` }, { status: 403 })
     }
 
     // 1. Insert Keyword

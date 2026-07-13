@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkUsageLimit } from '@/lib/usage'
 
 const MAGIC_HOUR_API = 'https://api.magichour.ai/v1'
 const MAGIC_HOUR_KEY = process.env.MAGIC_HOUR_API_KEY || 'mhk_live_i3nniUOy8sYlv5Teu5C1F208T7Gu8V2klrz81kviSCmNl0Gaya8xi3oYpxD711zVEoErvX1GHm4JmAFd'
@@ -60,10 +61,10 @@ export async function POST(req: Request) {
         return NextResponse.json({ error: 'Prompt or image is required' }, { status: 400 })
       }
 
-      // Pro Plan Check
-      const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
-      if (profile?.plan !== 'pro') {
-        return NextResponse.json({ error: 'Upgrade to Pro to use AI Generation Studio' }, { status: 403 })
+      // Limit Check
+      const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'video')
+      if (limitReached) {
+        return NextResponse.json({ error: `You have reached your AI Video limit (${maxLimit} per month). Please upgrade your plan.` }, { status: 403 })
       }
 
       // Boost user prompt with cinematic quality keywords for best output
@@ -130,7 +131,7 @@ export async function POST(req: Request) {
       // Log AI usage
       await supabase.from('activity_logs').insert([{
         user_id: user.id,
-        action: 'AI Video Job Started (Magic Hour)',
+        action: 'Video Generated', // MUST match checkUsageLimit exact string
         details: { endpoint, aspect_ratio, end_seconds: endSeconds }
       }])
 

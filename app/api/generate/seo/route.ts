@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkUsageLimit } from '@/lib/usage'
 
 export async function POST(req: Request) {
   try {
@@ -14,6 +15,11 @@ export async function POST(req: Request) {
     
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'words')
+    if (limitReached) {
+      return NextResponse.json({ error: `You have reached your AI Words limit (${maxLimit.toLocaleString()} words). Please upgrade your plan.` }, { status: 403 })
     }
 
     let systemPrompt = ''
@@ -67,11 +73,14 @@ export async function POST(req: Request) {
 
     if (!text) throw new Error('No content returned from Nara')
 
+    // Calculate word count approximately
+    const wordCount = text.trim().split(/\s+/).length
+
     // Log the AI usage
     await supabase.from('activity_logs').insert([{
       user_id: user.id,
-      action: `SEO ${type.toUpperCase()} Generated`,
-      details: { topic: topic || 'Content optimization' }
+      action: `SEO Content Generated`, // MUST match the checkUsageLimit string exactly
+      details: { topic: topic || 'Content optimization', type: type, words: wordCount }
     }])
 
     return NextResponse.json({ result: text.trim() })
