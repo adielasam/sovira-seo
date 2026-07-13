@@ -33,6 +33,7 @@ export default function RegisterPage() {
           <p className="text-sm text-slate-600 dark:text-slate-400">Get started with your free trial</p>
         </div>
 
+        <form action={signupAction} className="space-y-6">
           <div className="flex gap-4 w-full">
             <button
               formAction={async () => {

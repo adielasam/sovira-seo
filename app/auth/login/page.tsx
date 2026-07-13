@@ -33,6 +33,7 @@ export default function LoginPage() {
           <p className="text-sm text-slate-600 dark:text-slate-400">Sign in to your account</p>
         </div>
 
+        <form action={loginAction} className="space-y-6">
           <div className="flex gap-4 w-full">
             <button
               formAction={async () => {
