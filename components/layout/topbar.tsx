@@ -48,7 +48,17 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
   
   const fetchNotifs = async () => {
     const { data } = await getNotifications()
-    setNotifications(data || [])
+    if (data) {
+      // Merge DB state with local read state to handle global notifications
+      const localReadIds = JSON.parse(localStorage.getItem('read_notifications') || '[]')
+      const mergedData = data.map((n: any) => ({
+        ...n,
+        is_read: n.is_read || localReadIds.includes(n.id)
+      }))
+      setNotifications(mergedData)
+    } else {
+      setNotifications([])
+    }
   }
 
   const fetchRole = async () => {
@@ -106,15 +116,26 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
 
   const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    // Update local state and localStorage for instant, robust UX (especially for global notifications)
     setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
+    const localReadIds = JSON.parse(localStorage.getItem('read_notifications') || '[]')
+    if (!localReadIds.includes(id)) {
+      localStorage.setItem('read_notifications', JSON.stringify([...localReadIds, id]))
+    }
+    
+    // Attempt DB update (will work for personal, silently fail for global due to RLS, which is intended)
     await markNotificationAsRead(id)
-    fetchNotifs()
   }
 
   const handleMarkAllRead = async () => {
     setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    
+    const localReadIds = JSON.parse(localStorage.getItem('read_notifications') || '[]')
+    const newIds = notifications.map(n => n.id)
+    const combinedIds = Array.from(new Set([...localReadIds, ...newIds]))
+    localStorage.setItem('read_notifications', JSON.stringify(combinedIds))
+
     await markAllNotificationsAsRead()
-    fetchNotifs()
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length
