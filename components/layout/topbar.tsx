@@ -106,14 +106,15 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
 
   const handleMarkAsRead = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation()
+    setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n))
     await markNotificationAsRead(id)
     fetchNotifs()
   }
 
   const handleMarkAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
     await markAllNotificationsAsRead()
     fetchNotifs()
-    setNotifOpen(false)
   }
 
   const unreadCount = notifications.filter(n => !n.is_read).length
@@ -147,37 +148,47 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
           </button>
 
           {notifOpen && (
-            <div className="absolute right-0 mt-2.5 w-80 origin-top-right rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-gray-100 dark:border-slate-700 focus:outline-none animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden flex flex-col max-h-[400px]">
-              <div className="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex justify-between items-center bg-gray-50 dark:bg-slate-800/50">
-                <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Notifications</h3>
+            <div className="absolute right-0 mt-2.5 w-[380px] origin-top-right rounded-2xl bg-white dark:bg-[#0B1120] shadow-2xl border border-gray-100 dark:border-slate-800 focus:outline-none animate-in fade-in slide-in-from-top-2 duration-200 overflow-hidden flex flex-col max-h-[450px] ring-1 ring-black/5 dark:ring-white/10">
+              <div className="px-5 py-4 flex justify-between items-center bg-transparent">
+                <h3 className="font-bold text-[15px] text-gray-900 dark:text-white">Notifications</h3>
                 {unreadCount > 0 && (
-                  <button onClick={handleMarkAllRead} className="text-xs text-blue-600 dark:text-blue-400 hover:underline">
+                  <button onClick={handleMarkAllRead} className="text-[13px] font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300 transition-colors">
                     Mark all as read
                   </button>
                 )}
               </div>
-              <div className="overflow-y-auto flex-1">
+              <div className="overflow-y-auto flex-1 custom-scrollbar">
                 {notifications.length === 0 ? (
-                  <div className="p-4 text-center text-sm text-gray-500">No notifications yet</div>
+                  <div className="p-8 flex flex-col items-center justify-center text-center">
+                    <Bell className="w-8 h-8 text-gray-300 dark:text-slate-600 mb-3" />
+                    <p className="text-sm font-medium text-gray-900 dark:text-white">All caught up!</p>
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-1">Check back later for new notifications.</p>
+                  </div>
                 ) : (
-                  <ul className="divide-y divide-gray-100 dark:divide-slate-700/50">
+                  <ul className="flex flex-col">
                     {notifications.map((n) => (
                       <li 
                         key={n.id} 
                         onClick={(e) => handleMarkAsRead(n.id, e as any)}
-                        className={`p-4 flex gap-3 hover:bg-gray-50 dark:hover:bg-slate-700/30 cursor-pointer transition-colors ${!n.is_read ? 'bg-blue-50/50 dark:bg-blue-900/10' : ''}`}
+                        className={`group relative px-5 py-4 flex gap-4 hover:bg-gray-50 dark:hover:bg-[#131C31] cursor-pointer transition-colors ${!n.is_read ? 'bg-blue-50/30 dark:bg-[#0F172A]' : 'opacity-70 hover:opacity-100'}`}
                       >
-                        <div className={`mt-0.5 rounded-full p-1.5 flex-shrink-0 h-fit ${n.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400' : n.type === 'warning' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400'}`}>
-                          {n.type === 'success' ? <CheckCircle className="w-4 h-4" /> : n.type === 'warning' ? <AlertTriangle className="w-4 h-4" /> : <Info className="w-4 h-4" />}
+                        <div className={`mt-0.5 rounded-full p-2.5 flex-shrink-0 h-fit transition-colors ${n.type === 'success' ? 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 group-hover:bg-green-200 dark:group-hover:bg-green-900/50' : n.type === 'warning' ? 'bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400 group-hover:bg-orange-200 dark:group-hover:bg-orange-900/50' : 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50'}`}>
+                          {n.type === 'success' ? <CheckCircle className="w-5 h-5" /> : n.type === 'warning' ? <AlertTriangle className="w-5 h-5" /> : <Info className="w-5 h-5" />}
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex justify-between items-start gap-2 mb-0.5">
-                            <p className={`text-sm font-medium ${!n.is_read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300'}`}>{n.title}</p>
-                            <span className="text-[10px] text-gray-500 whitespace-nowrap">{timeAgo(n.created_at)}</span>
-                          </div>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 line-clamp-2">{n.message}</p>
+                        <div className="flex-1 min-w-0 flex flex-col justify-center">
+                          <p className={`text-[14px] font-semibold leading-tight mb-1 ${!n.is_read ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-slate-300'}`}>
+                            {n.title}
+                          </p>
+                          <p className="text-[13px] text-gray-500 dark:text-slate-400 leading-snug mb-2 line-clamp-2 pr-4">
+                            {n.message}
+                          </p>
+                          <span className="text-[11px] font-medium text-gray-400 dark:text-slate-500">
+                            {new Date(n.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
                         </div>
-                        {!n.is_read && <div className="w-2 h-2 rounded-full bg-blue-600 flex-shrink-0 self-center"></div>}
+                        {!n.is_read && (
+                          <div className="absolute right-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-red-500 flex-shrink-0 shadow-[0_0_8px_rgba(239,68,68,0.6)]"></div>
+                        )}
                       </li>
                     ))}
                   </ul>
