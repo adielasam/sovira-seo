@@ -116,3 +116,24 @@ export async function signOutAction(formData?: FormData) {
   await supabase.auth.signOut()
   redirect('/auth/login')
 }
+
+export async function signInWithOAuthAction(provider: 'google' | 'github') {
+  const supabase = await createClient()
+  
+  // Use headers to construct the callback URL to handle local vs production seamlessly
+  const headersList = await headers()
+  const origin = headersList.get('origin') || process.env.NEXT_PUBLIC_SITE_URL || 'https://sovira.com.ng'
+  
+  const { data, error } = await supabase.auth.signInWithOAuth({
+    provider,
+    options: {
+      redirectTo: `${origin}/auth/callback`,
+    },
+  })
+
+  if (data.url) {
+    redirect(data.url)
+  } else {
+    redirect(`/auth/login?error=${encodeURIComponent(error?.message || 'OAuth error')}`)
+  }
+}
