@@ -75,7 +75,7 @@ const tiers = [
 ]
 
 export default function PricingPage() {
-  const [annual, setAnnual] = useState(true)
+  const annual = false; // Lock to monthly
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
 
@@ -111,9 +111,9 @@ export default function PricingPage() {
 
     // Map to NGN for Paystack logic
     let ngnAmount = 0
-    if (lowerPlan === 'starter') ngnAmount = annual ? 100000 : 10000
-    else if (lowerPlan === 'pro') ngnAmount = annual ? 300000 : 30000
-    else if (lowerPlan === 'agency') ngnAmount = annual ? 1300000 : 130000
+    if (lowerPlan === 'starter') ngnAmount = 10000
+    else if (lowerPlan === 'pro') ngnAmount = 30000
+    else if (lowerPlan === 'agency') ngnAmount = 130000
 
     try {
       const PaystackPop = (await import('@paystack/inline-js')).default
@@ -169,34 +169,7 @@ export default function PricingPage() {
           </p>
         </div>
 
-        {/* Toggle */}
-        <div className="mt-16 flex justify-center">
-          <div className="flex items-center gap-3 p-1 rounded-xl bg-slate-200 dark:bg-slate-800 ring-1 ring-inset ring-slate-200 dark:ring-slate-700/50">
-            <button
-              onClick={() => setAnnual(false)}
-              className={`px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                !annual 
-                  ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Monthly billing
-            </button>
-            <button
-              onClick={() => setAnnual(true)}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-lg text-sm font-semibold transition-all ${
-                annual 
-                  ? 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white shadow-sm' 
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
-              }`}
-            >
-              Annual billing
-              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400 uppercase tracking-wider">
-                Save 20%
-              </span>
-            </button>
-          </div>
-        </div>
+        {/* Toggle Removed to ensure fixed pricing */}
 
         {/* Pricing Cards */}
         <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-y-6 sm:mt-20 lg:max-w-none lg:grid-cols-3 lg:gap-8">

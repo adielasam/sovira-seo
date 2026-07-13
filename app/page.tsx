@@ -174,9 +174,9 @@ export default function LandingPage() {
     }
 
     let ngnAmount = 0
-    if (lowerPlan === 'starter') ngnAmount = isAnnual ? 100000 : 10000
-    else if (lowerPlan === 'pro') ngnAmount = isAnnual ? 300000 : 30000
-    else if (lowerPlan === 'agency') ngnAmount = isAnnual ? 1300000 : 130000
+    if (lowerPlan === 'starter') ngnAmount = 10000
+    else if (lowerPlan === 'pro') ngnAmount = 30000
+    else if (lowerPlan === 'agency') ngnAmount = 130000
 
     try {
       const PaystackPop = (await import('@paystack/inline-js')).default
