@@ -10,9 +10,22 @@ import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actio
 
 const tiers = [
   {
+    name: 'Free Trial',
+    id: 'tier-free',
+    price: { monthly: 0, annually: 0 },
+    description: 'Explore the platform with basic features before committing.',
+    features: [
+      'Track up to 10 keywords',
+      '5 SEO Audits per month',
+      '1,000 AI words per month',
+      'Basic Support',
+    ],
+    icon: Shield,
+  },
+  {
     name: 'Starter',
     id: 'tier-starter',
-    price: { monthly: 5, annually: 50 },
+    price: { monthly: 10000, annually: 100000 },
     description: 'Perfect for small websites and individual bloggers just getting started with SEO.',
     features: [
       'Track up to 50 keywords',
@@ -27,7 +40,7 @@ const tiers = [
   {
     name: 'Pro',
     id: 'tier-pro',
-    price: { monthly: 20, annually: 200 },
+    price: { monthly: 30000, annually: 300000 },
     description: 'Ideal for growing businesses and agencies needing comprehensive SEO tools.',
     features: [
       'Track up to 500 keywords',
@@ -45,7 +58,7 @@ const tiers = [
   {
     name: 'Agency',
     id: 'tier-agency',
-    price: { monthly: 90, annually: 900 },
+    price: { monthly: 130000, annually: 1300000 },
     description: 'For large teams and enterprises requiring maximum power and limits.',
     features: [
       'Track up to 5,000 keywords',
@@ -88,12 +101,19 @@ export default function PricingPage() {
       return
     }
     
-    // Map to USD for Paystack logic
-    let usdAmount = 0
     const lowerPlan = planName.toLowerCase()
-    if (lowerPlan === 'starter') usdAmount = annual ? 50 : 5
-    else if (lowerPlan === 'pro') usdAmount = annual ? 200 : 20
-    else if (lowerPlan === 'agency') usdAmount = annual ? 900 : 90
+    
+    if (lowerPlan === 'free trial') {
+      toast.success('You are already on the Free Trial by default!')
+      router.push('/dashboard')
+      return
+    }
+
+    // Map to NGN for Paystack logic
+    let ngnAmount = 0
+    if (lowerPlan === 'starter') ngnAmount = annual ? 100000 : 10000
+    else if (lowerPlan === 'pro') ngnAmount = annual ? 300000 : 30000
+    else if (lowerPlan === 'agency') ngnAmount = annual ? 1300000 : 130000
 
     try {
       const PaystackPop = (await import('@paystack/inline-js')).default
@@ -101,8 +121,8 @@ export default function PricingPage() {
       paystack.newTransaction({
         key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
         email: user.email,
-        amount: usdAmount * 100, // in cents
-        currency: 'USD',
+        amount: ngnAmount * 100, // in kobo
+        currency: 'NGN',
         reference: 'SOVIRA_' + Date.now(),
         onSuccess: async (transaction: any) => {
           toast.loading('Verifying payment...')
@@ -205,15 +225,15 @@ export default function PricingPage() {
               </p>
               <div className="mt-2 flex items-baseline gap-x-1">
                 <span className="text-5xl font-bold tracking-tight">
-                  ${(annual ? Math.round(tier.price.annually / 12) : tier.price.monthly).toLocaleString()}
+                  {tier.price.monthly === 0 ? 'Free' : `₦${(annual ? Math.round(tier.price.annually / 12) : tier.price.monthly).toLocaleString()}`}
                 </span>
                 <span className={`text-sm font-semibold leading-6 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
                   /month
                 </span>
               </div>
-              {annual && (
+              {annual && tier.price.annually > 0 && (
                 <p className={`text-sm mt-1 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
-                  Billed ${tier.price.annually.toLocaleString()} annually
+                  Billed ₦{tier.price.annually.toLocaleString()} annually
                 </p>
               )}
               

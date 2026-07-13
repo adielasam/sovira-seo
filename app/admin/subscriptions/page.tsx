@@ -32,7 +32,7 @@ export default async function AdminSubscriptionsPage() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
           <p className="text-sm font-medium text-slate-500">Monthly Recurring Revenue (MRR)</p>
-          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">$0.00</p>
+          <p className="text-2xl font-bold text-slate-900 dark:text-white mt-1">₦0.00</p>
         </div>
         <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border border-slate-200 dark:border-slate-700">
           <p className="text-sm font-medium text-slate-500">Active Paid Subs</p>

@@ -12,8 +12,8 @@ export function StructuredData() {
         "url": "https://www.sovira.com.ng",
         "offers": {
           "@type": "Offer",
-          "price": "5",
-          "priceCurrency": "USD"
+          "price": "10000",
+          "priceCurrency": "NGN"
         },
         "description": "Sovira AI is the ultimate SEO and content creation tool. Audit your site, generate optimized content, and track your rankings globally."
       },
