@@ -135,6 +135,16 @@ export async function POST(req: Request) {
         details: { endpoint, aspect_ratio, end_seconds: endSeconds }
       }])
 
+      // Log Activity as Notification
+      await supabase.from('notifications').insert([{
+        user_id: user.id,
+        title: 'AI Video Job Started',
+        message: `Your AI Video generation job has started processing.`,
+        type: 'info',
+        is_global: false,
+        is_read: false
+      }])
+
       return NextResponse.json({ id: composedJobId, projectId, credits_charged: data.credits_charged })
     }
 

@@ -83,6 +83,16 @@ export async function POST(req: Request) {
       details: { topic: topic || 'Content optimization', type: type, words: wordCount }
     }])
 
+    // Log Activity as Notification
+    await supabase.from('notifications').insert([{
+      user_id: user.id,
+      title: 'AI Content Generated',
+      message: `You successfully generated SEO content for: ${topic || 'your page'}.`,
+      type: 'info',
+      is_global: false,
+      is_read: false
+    }])
+
     return NextResponse.json({ result: text.trim() })
   } catch (error: any) {
     console.error('Generate SEO Error:', error)

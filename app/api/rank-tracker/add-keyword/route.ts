@@ -61,10 +61,17 @@ export async function POST(req: Request) {
         serp_features: result.serpFeatures
       }])
 
-    if (historyError) {
-      console.error('Failed to log rank history:', historyError)
-      // Continue anyway, we can re-check later
-    }
+    if (historyError) throw new Error(historyError.message)
+
+    // Log Activity as Notification
+    await supabase.from('notifications').insert([{
+      user_id: user.id,
+      title: 'Keyword Tracked',
+      message: `You started tracking the keyword "${keyword}" for ${projectDomain}. Current Rank: ${result.position}`,
+      type: 'success',
+      is_global: false,
+      is_read: false
+    }])
 
     // Log Activity
     await supabase.from('activity_logs').insert([{

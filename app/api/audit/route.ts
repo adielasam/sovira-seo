@@ -191,6 +191,16 @@ export async function POST(req: Request) {
       if (logError) {
         console.error('Activity log error:', logError)
       }
+
+      // Log Activity as Notification
+      await supabase.from('notifications').insert([{
+        user_id: user.id,
+        title: 'SEO Audit Completed',
+        message: `You successfully ran an SEO audit for ${url}. Overall score: ${scores.overall}%`,
+        type: 'success',
+        is_global: false,
+        is_read: false
+      }])
     }
 
     return NextResponse.json({
