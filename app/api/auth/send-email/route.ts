@@ -31,7 +31,12 @@ export async function POST(req: Request) {
     // For signup and magiclink
     if (type === 'signup' || type === 'magiclink') {
       const actionLink = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/auth/v1/verify?token=${tokenHash}&type=${type}&redirect_to=${encodeURIComponent(redirectTo)}`
-      await sendVerificationEmail(user.email, actionLink)
+      const { data, error } = await sendVerificationEmail(user.email, actionLink)
+      
+      if (error) {
+        console.error('Resend API Error:', error)
+        return NextResponse.json({ error: error.message || 'Failed to send email' }, { status: 500 })
+      }
     }
 
     // Note: You can add logic for 'recovery' (password reset) here later
