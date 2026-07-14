@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle2, Unlink, Loader2, Rss, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCmsIntegration, connectWordPress, disconnectCms, updateAutoPublishSettings } from './actions'
 
-export default function IntegrationsPage() {
+function IntegrationsContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [provider, setProvider] = useState<string | null>(null)
@@ -416,5 +416,13 @@ export default function IntegrationsPage() {
         </div>
       )}
     </div>
+  )
+}
+
+export default function IntegrationsPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[400px]"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>}>
+      <IntegrationsContent />
+    </Suspense>
   )
 }
