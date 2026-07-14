@@ -17,6 +17,10 @@ export default async function DashboardLayout({
     redirect('/auth/login')
   }
 
+  if (!user.email_confirmed_at) {
+    redirect('/verify-email')
+  }
+
   // FORCE ADMIN REDIRECT
   const { data: profile } = await supabase.from('user_profiles').select('role, plan').eq('id', user.id).single()
   if (profile?.role === 'admin' || user.email === 'microsoftportharcourt@gmail.com') {

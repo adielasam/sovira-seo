@@ -18,6 +18,10 @@ export default async function AdminLayout({
     redirect('/auth/login')
   }
 
+  if (!user.email_confirmed_at) {
+    redirect('/verify-email')
+  }
+
   // Check admin role
   const { data: profile } = await supabase
     .from('user_profiles')

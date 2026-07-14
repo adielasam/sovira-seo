@@ -72,7 +72,7 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
       resend:
-        specifier: ^6.16.0
+        specifier: ^6.17.1
         version: 6.17.1
       zod:
         specifier: ^4.4.3
