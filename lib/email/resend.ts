@@ -1,6 +1,7 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+// The fallback 're_dummy' prevents Next.js build from crashing if the ENV var is missing during Vercel deployment
+const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy_key_for_build_bypass')
 // Fallback to onboarding@resend.dev if domain isn't verified in Resend yet
 const fromEmail = process.env.NODE_ENV === 'production' 
   ? 'Sovira <hello@sovira.com.ng>' 
