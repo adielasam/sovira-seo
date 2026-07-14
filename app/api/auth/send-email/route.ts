@@ -4,8 +4,14 @@ import { sendVerificationEmail } from '@/lib/email/resend'
 export async function POST(req: Request) {
   try {
     // Basic security check (in production, you should verify a webhook secret from Supabase)
+    // Check for secret in header OR query parameter since Supabase UI changed
     const authHeader = req.headers.get('authorization')
-    if (authHeader !== `Bearer ${process.env.SUPABASE_WEBHOOK_SECRET || 'sovira-webhook-secret'}`) {
+    const url = new URL(req.url)
+    const querySecret = url.searchParams.get('secret')
+    
+    const expectedSecret = process.env.SUPABASE_WEBHOOK_SECRET || 'sovira-webhook-secret'
+    
+    if (authHeader !== `Bearer ${expectedSecret}` && querySecret !== expectedSecret) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
