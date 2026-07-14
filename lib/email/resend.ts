@@ -35,10 +35,7 @@ export async function sendVerificationEmail(email: string, actionLink: string) {
           Welcome to Sovira SEO! To get started and access your dashboard, please confirm your email address by clicking the button below.
         </p>
         <a href="${actionLink}" class="button">Verify Email Address</a>
-        <p class="text" style="margin-top: 24px; font-size: 14px;">
-          Or copy and paste this link into your browser:<br>
-          <a href="${actionLink}" style="color: #2563EB; word-break: break-all;">${actionLink}</a>
-        </p>
+
         <div class="footer">
           &copy; ${new Date().getFullYear()} Sovira. All rights reserved.
         </div>
