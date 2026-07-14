@@ -12,18 +12,16 @@ export async function POST(req: Request) {
     const expectedSecret = process.env.SUPABASE_WEBHOOK_SECRET || 'sovira-webhook-secret'
     
     if (authHeader !== `Bearer ${expectedSecret}` && querySecret !== expectedSecret) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: { http_code: 403, message: 'Unauthorized webhook secret' } }, { status: 403 })
     }
 
     const payload = await req.json()
     const { user, email_data } = payload
 
     if (!user || !user.email || !email_data) {
-      return NextResponse.json({ error: 'Invalid payload' }, { status: 400 })
+      return NextResponse.json({ error: { http_code: 400, message: 'Invalid payload from Supabase' } }, { status: 400 })
     }
 
-    // Construct the verification link that points to Supabase's built-in verify endpoint
-    // This ensures Supabase correctly verifies the token and redirects the user
     const type = email_data.email_action_type
     const tokenHash = email_data.token_hash
     const redirectTo = email_data.redirect_to || `${process.env.NEXT_PUBLIC_APP_URL}/dashboard`
@@ -35,15 +33,20 @@ export async function POST(req: Request) {
       
       if (error) {
         console.error('Resend API Error:', error)
-        return NextResponse.json({ error: error.message || 'Failed to send email' }, { status: 500 })
+        // Return 403 instead of 500 so Supabase passes the message through instead of throwing AuthRetryableFetchError
+        return NextResponse.json({ 
+          error: { http_code: 403, message: `Resend Error: ${error.message}` } 
+        }, { status: 403 })
       }
     }
 
     // Note: You can add logic for 'recovery' (password reset) here later
 
     return NextResponse.json({ success: true })
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error in send-email webhook:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    return NextResponse.json({ 
+      error: { http_code: 500, message: `Webhook Exception: ${error.message}` } 
+    }, { status: 500 })
   }
 }
