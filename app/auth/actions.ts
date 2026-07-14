@@ -79,7 +79,22 @@ export async function signupAction(formData: FormData) {
   })
 
   if (error) {
-    redirect(`/auth/register?error=${encodeURIComponent(error.message)}`)
+    // JavaScript Error objects don't serialize well with JSON.stringify (it returns "{}")
+    // So we manually extract the properties to ensure we see the real error.
+    const errorDetails = {
+      name: error.name,
+      message: error.message,
+      status: error.status,
+      code: error.code || (error as any).code
+    }
+    console.error('Supabase SignUp Error:', errorDetails)
+    
+    let errorMessage = error.message
+    if (!errorMessage || errorMessage === '{}' || typeof errorMessage === 'object') {
+      errorMessage = JSON.stringify(errorDetails)
+    }
+    
+    redirect(`/auth/register?error=${encodeURIComponent(errorMessage)}`)
   }
 
   // Send welcome email without blocking
