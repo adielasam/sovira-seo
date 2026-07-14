@@ -10,7 +10,7 @@ export async function getCmsIntegration() {
 
   const { data, error } = await supabase
     .from('user_profiles')
-    .select('cms_provider, wp_url, wp_username, cms_connected_at')
+    .select('cms_provider, wp_url, wp_username, cms_connected_at, auto_publish_enabled, auto_publish_frequency, auto_publish_topics, blogger_access_token')
     .eq('id', user.id)
     .single()
 
@@ -20,6 +20,29 @@ export async function getCmsIntegration() {
   }
 
   return { data }
+}
+
+export async function updateAutoPublishSettings(enabled: boolean, frequency: string, topics: string) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({
+      auto_publish_enabled: enabled,
+      auto_publish_frequency: frequency,
+      auto_publish_topics: topics ? topics.split(',').map(t => t.trim()).filter(Boolean) : [],
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    console.error('Error updating auto publish settings:', error)
+    return { error: 'Failed to update settings.' }
+  }
+
+  revalidatePath('/integrations')
+  return { success: true }
 }
 
 export async function connectWordPress(wpUrl: string, wpUsername: string, wpAppPassword: string) {
