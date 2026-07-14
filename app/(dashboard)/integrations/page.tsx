@@ -1,11 +1,14 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { CheckCircle2, Unlink, Loader2, Youtube, Facebook, Instagram, Linkedin, Rss, Save } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { getCmsIntegration, connectWordPress, disconnectCms, updateAutoPublishSettings } from './actions'
 
 export default function IntegrationsPage() {
+  const searchParams = useSearchParams()
+  const router = useRouter()
   const [provider, setProvider] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [isActioning, setIsActioning] = useState<string | null>(null)
@@ -16,8 +19,7 @@ export default function IntegrationsPage() {
   const [wpAppPassword, setWpAppPassword] = useState('')
   const [showWpModal, setShowWpModal] = useState(false)
 
-  // Blogger State (Mock for now)
-  const [showBloggerModal, setShowBloggerModal] = useState(false)
+  // Blogger State
   const [bloggerConnected, setBloggerConnected] = useState(false)
 
   // Auto Publish State
@@ -27,11 +29,28 @@ export default function IntegrationsPage() {
   const [isSavingAutoPublish, setIsSavingAutoPublish] = useState(false)
 
   useEffect(() => {
+    // Check URL for OAuth redirects
+    const errorParam = searchParams.get('error')
+    const successParam = searchParams.get('success')
+
+    if (errorParam) {
+      toast.error(`Auth Error: ${errorParam.replace(/_/g, ' ')}`)
+      router.replace('/integrations')
+    } else if (successParam === 'blogger_connected') {
+      toast.success('Successfully connected Blogger account!')
+      router.replace('/integrations')
+    }
+
     const loadIntegration = async () => {
       const { data } = await getCmsIntegration()
       if (data) {
         if (data.cms_provider) setProvider(data.cms_provider)
-        if (data.blogger_access_token) setBloggerConnected(true)
+        if (data.blogger_access_token) {
+           setBloggerConnected(true)
+           if (data.cms_provider === 'blogger') {
+             setProvider('blogger')
+           }
+        }
         if (data.auto_publish_enabled) setAutoPublishEnabled(data.auto_publish_enabled)
         if (data.auto_publish_frequency) setAutoPublishFrequency(data.auto_publish_frequency)
         if (data.auto_publish_topics) setAutoPublishTopics(data.auto_publish_topics.join(', '))
@@ -39,7 +58,7 @@ export default function IntegrationsPage() {
       setIsLoading(false)
     }
     loadIntegration()
-  }, [])
+  }, [searchParams, router])
 
   const handleSaveAutoPublish = async () => {
     if (autoPublishEnabled && !provider && !bloggerConnected) {
@@ -109,8 +128,8 @@ export default function IntegrationsPage() {
       name: 'Blogger',
       subtitle: 'Blog',
       icon: <svg className="w-8 h-8 text-[#f57d00]" viewBox="0 0 24 24" fill="currentColor"><path d="M16.8 0H7.2C3.2 0 0 3.2 0 7.2v9.6C0 20.8 3.2 24 7.2 24h9.6c4 0 7.2-3.2 7.2-7.2V7.2C24 3.2 20.8 0 16.8 0zm-2 16.8H8.4c-1.1 0-2-.9-2-2V9.2c0-1.1.9-2 2-2h6.4c1.1 0 2 .9 2 2v1.6c0 1.1-.9 2-2 2h-1.6v1.6h1.6c1.1 0 2 .9 2 2v1.6c0 1.1-.9 2-2 2zM12 10.4c-.7 0-1.2-.5-1.2-1.2s.5-1.2 1.2-1.2 1.2.5 1.2 1.2-.5 1.2-1.2 1.2zm1.6 4.8c-.9 0-1.6-.7-1.6-1.6s.7-1.6 1.6-1.6 1.6.7 1.6 1.6-.7 1.6-1.6 1.6z"/></svg>,
-      action: () => setShowBloggerModal(true),
-      connected: provider === 'blogger',
+      action: () => { window.location.href = '/api/auth/blogger' },
+      connected: provider === 'blogger' || bloggerConnected,
       color: 'border-[#f57d00]/20 hover:border-[#f57d00]/50'
     },
     {

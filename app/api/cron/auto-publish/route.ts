@@ -129,7 +129,65 @@ export async function GET(request: Request) {
           throw new Error(`WP Publish failed: ${wpResponse.statusText}`)
         }
       } 
-      // Add Blogger logic here later if cms_provider === 'blogger'
+      // Publish to Blogger
+      else if (user.cms_provider === 'blogger' && user.blogger_refresh_token) {
+        // 1. Refresh the access token
+        const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded'
+          },
+          body: new URLSearchParams({
+            client_id: process.env.GOOGLE_CLIENT_ID!,
+            client_secret: process.env.GOOGLE_CLIENT_SECRET!,
+            refresh_token: user.blogger_refresh_token,
+            grant_type: 'refresh_token'
+          })
+        })
+
+        if (!tokenResponse.ok) {
+          throw new Error('Failed to refresh Blogger access token')
+        }
+        
+        const { access_token } = await tokenResponse.json()
+
+        // 2. We need the blog ID. If we don't have it saved, fetch it
+        let blogId = user.blogger_blog_id;
+        if (!blogId) {
+          const blogResponse = await fetch('https://www.googleapis.com/blogger/v3/users/self/blogs', {
+            headers: { 'Authorization': `Bearer ${access_token}` }
+          })
+          if (blogResponse.ok) {
+            const blogData = await blogResponse.json()
+            if (blogData.items && blogData.items.length > 0) {
+              blogId = blogData.items[0].id
+              // Save it for next time
+              await supabase.from('user_profiles').update({ blogger_blog_id: blogId }).eq('id', user.id)
+            }
+          }
+        }
+
+        if (!blogId) {
+          throw new Error('No Blogger blog found for this user.')
+        }
+
+        // 3. Publish to Blogger
+        const bloggerResponse = await fetch(`https://www.googleapis.com/blogger/v3/blogs/${blogId}/posts/`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${access_token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            title: title,
+            content: htmlContent
+          })
+        })
+
+        if (!bloggerResponse.ok) {
+          throw new Error(`Blogger publish failed: ${await bloggerResponse.text()}`)
+        }
+      }
       else {
         throw new Error('No valid CMS connected for auto-publishing.')
       }
