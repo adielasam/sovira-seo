@@ -238,6 +238,8 @@ export async function generateBriefAction(topic: string) {
   }
 }
 
+import { decrypt } from '@/lib/encryption'
+
 export async function publishToWordPressAction(title: string, markdownContent: string) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -254,6 +256,11 @@ export async function publishToWordPressAction(title: string, markdownContent: s
     return { error: 'WordPress credentials not found. Please connect your site in the Integrations tab.' }
   }
 
+  const decryptedPassword = decrypt(profile.wp_app_password)
+  if (!decryptedPassword) {
+    return { error: 'WordPress connection corrupted. Please reconnect in the Integrations tab.' }
+  }
+
   // Basic markdown to HTML conversion for WordPress
   let htmlContent = markdownContent
     .replace(/^### (.*$)/gim, '<h3>$1</h3>')
@@ -265,7 +272,7 @@ export async function publishToWordPressAction(title: string, markdownContent: s
   htmlContent = `<p>${htmlContent}</p>`
 
   const wpEndpoint = `${profile.wp_url}/wp-json/wp/v2/posts`
-  const credentials = Buffer.from(`${profile.wp_username}:${profile.wp_app_password}`).toString('base64')
+  const credentials = Buffer.from(`${profile.wp_username}:${decryptedPassword}`).toString('base64')
 
   try {
     const response = await fetch(wpEndpoint, {
@@ -280,6 +287,16 @@ export async function publishToWordPressAction(title: string, markdownContent: s
         status: 'draft' // Create as draft as requested
       })
     })
+
+    if (response.status === 401 || response.status === 403) {
+      // Log the integration error
+      await supabase.from('activity_logs').insert([{
+        user_id: user.id,
+        action: 'integration_error',
+        details: { provider: 'wordpress', url: profile.wp_url, error: 'Unauthorized or Forbidden' }
+      }])
+      return { error: 'WordPress connection expired — please reconnect' }
+    }
 
     const data = await response.json()
 
@@ -298,6 +315,6 @@ export async function publishToWordPressAction(title: string, markdownContent: s
     return { success: true, url: data.link }
   } catch (err: any) {
     console.error('WP Publish Error:', err)
-    return { error: 'Failed to communicate with WordPress site. Please check your URL and credentials.' }
+    return { error: 'Failed to reach WordPress. Please check your site URL and connection.' }
   }
 }

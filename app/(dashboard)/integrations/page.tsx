@@ -22,6 +22,8 @@ function IntegrationsContent() {
   // Blogger State
   const [bloggerConnected, setBloggerConnected] = useState(false)
 
+  const [wpStatus, setWpStatus] = useState<string>('disconnected')
+
   // Auto Publish State
   const [autoPublishEnabled, setAutoPublishEnabled] = useState(false)
   const [autoPublishFrequency, setAutoPublishFrequency] = useState('daily')
@@ -45,6 +47,7 @@ function IntegrationsContent() {
       const { data } = await getCmsIntegration()
       if (data) {
         if (data.cms_provider) setProvider(data.cms_provider)
+        if (data.wp_status) setWpStatus(data.wp_status)
         if (data.blogger_access_token) {
            setBloggerConnected(true)
            if (data.cms_provider === 'blogger') {
@@ -111,10 +114,11 @@ function IntegrationsContent() {
     const { success, error } = await disconnectCms()
     
     if (success) {
-      setProvider(null)
-      toast.success('Disconnected successfully.')
-    } else {
-      toast.error(error || 'Failed to disconnect.')
+      setProvider('wordpress')
+      setWpStatus('connected')
+      toast.success('WordPress connected successfully!')
+      setShowWpModal(false)
+    } else {toast.error(error || 'Failed to disconnect.')
     }
     setIsActioning(null)
   }
@@ -126,7 +130,8 @@ function IntegrationsContent() {
       subtitle: 'Blog',
       icon: <svg className="w-8 h-8 text-[#21759b]" viewBox="0 0 24 24" fill="currentColor"><path d="M12.158 12.786l-2.698 7.84c.806.236 1.657.365 2.54.365 1.047 0 2.05-.18 2.986-.51-.024-.037-.046-.078-.071-.117l-2.757-7.578zM2.542 12c0-3.905 2.373-7.25 5.795-8.67l-3.327 9.176C3.398 11.83 2.542 11.847 2.542 12zm2.083-9.172c2.096-1.572 4.673-2.508 7.46-2.508 6.627 0 12 5.373 12 12 0 2.213-.598 4.288-1.637 6.064l-3.56-9.794c.338-1.025.5-1.92.5-2.69 0-1.29-.444-2.227-.852-2.915-.65-.99-1.28-1.556-1.28-2.39 0-.916.716-1.76 1.77-1.76h.142c-2.09-1.89-4.853-3.047-7.873-3.047-3.414 0-6.495 1.442-8.67 3.754zM22 12c0 .94-.108 1.854-.314 2.735l-3.385-9.308c-.08-.094-.17-.184-.27-.267.893 1.258 1.42 2.806 1.42 4.475 0 .61-.065 1.205-.188 1.777l2.557 7.03C21.905 13.882 22 12.955 22 12zM12 24c6.627 0 12-5.373 12-12S18.627 0 12 0 0 5.373 0 12s5.373 12 12 12z"/></svg>,
       action: () => setShowWpModal(true),
-      connected: provider === 'wordpress',
+      connected: provider === 'wordpress' && wpStatus === 'connected',
+      reconnectRequired: provider === 'wordpress' && wpStatus === 'reconnect_required',
       color: 'border-[#21759b]/20 hover:border-[#21759b]/50'
     },
     {
@@ -219,6 +224,11 @@ function IntegrationsContent() {
                   <CheckCircle2 className="w-3 h-3" /> CONNECTED
                 </div>
               )}
+              {p.reconnectRequired && (
+                <div className="absolute top-0 right-0 bg-amber-500 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg flex items-center gap-1">
+                  RECONNECT REQUIRED
+                </div>
+              )}
 
               <div className="mb-4 transform group-hover:scale-110 transition-transform duration-300">
                 {p.icon}
@@ -227,14 +237,14 @@ function IntegrationsContent() {
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">{p.name}</h3>
               <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">{p.subtitle}</p>
 
-              {p.connected ? (
+              {p.connected || p.reconnectRequired ? (
                 <button 
-                  onClick={handleDisconnect}
+                  onClick={p.reconnectRequired ? p.action : handleDisconnect}
                   disabled={isActioning !== null}
-                  className="w-full py-2.5 rounded-full border border-red-200 dark:border-red-900/50 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm font-semibold transition-colors flex items-center justify-center gap-2"
+                  className={`w-full py-2.5 rounded-full border text-sm font-semibold transition-colors flex items-center justify-center gap-2 ${p.reconnectRequired ? 'border-amber-500 text-amber-600 hover:bg-amber-50' : 'border-red-200 text-red-600 hover:bg-red-50'}`}
                 >
-                  {isActioning === 'disconnect' ? <Loader2 className="w-4 h-4 animate-spin" /> : <Unlink className="w-4 h-4" />}
-                  Disconnect
+                  {isActioning === 'disconnect' ? <Loader2 className="w-4 h-4 animate-spin" /> : p.reconnectRequired ? null : <Unlink className="w-4 h-4" />}
+                  {p.reconnectRequired ? 'Reconnect' : 'Disconnect'}
                 </button>
               ) : (
                 <button 
