@@ -183,7 +183,7 @@ export async function generateBriefAction(topic: string) {
   const { data: { user } } = await supabase.auth.getUser()
   
   if (user) {
-    const { limitReached } = await checkUsageLimit(user.id, 'generation')
+    const { limitReached } = await checkUsageLimit(user.id, 'words')
     if (limitReached) {
       return { error: 'LIMIT_REACHED', message: 'You have reached your Free plan generation limit.' }
     }
