@@ -38,7 +38,7 @@ export async function GET(request: Request) {
   // 1. Fetch all eligible users for auto-publishing
   const { data: users, error: fetchError } = await supabase
     .from('user_profiles')
-    .select('id, auto_publish_frequency, auto_publish_topics, last_auto_published_at, cms_provider, wp_url, wp_username, wp_app_password, blogger_access_token, blogger_refresh_token')
+    .select('id, auto_publish_frequency, auto_publish_topics, last_auto_published_at, cms_provider, wp_url, wp_username, wp_app_password, blogger_access_token, blogger_refresh_token, blogger_blog_id')
     .eq('auto_publish_enabled', true)
 
   if (fetchError || !users) {
