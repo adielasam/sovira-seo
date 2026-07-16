@@ -6,6 +6,22 @@ import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
 import { sendWelcomeEmail, sendLoginAlertEmail } from '@/lib/email'
 
+async function verifyTurnstile(token: string | null, ip: string) {
+  if (!token) return false
+  const secret = process.env.TURNSTILE_SECRET_KEY || '1x0000000000000000000000000000000AA'
+  try {
+    const res = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `secret=${encodeURIComponent(secret)}&response=${encodeURIComponent(token)}&remoteip=${encodeURIComponent(ip)}`
+    })
+    const data = await res.json()
+    return data.success
+  } catch (e) {
+    return false
+  }
+}
+
 export async function loginAction(formData: FormData) {
   const supabase = await createClient()
   
@@ -14,6 +30,15 @@ export async function loginAction(formData: FormData) {
 
   if (!email || !password) {
     redirect('/auth/login?error=Email and password are required')
+  }
+
+  const headersList = await headers()
+  const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+  const turnstileToken = formData.get('cf-turnstile-response') as string
+  const isHuman = await verifyTurnstile(turnstileToken, ip !== 'Unknown' ? ip : '')
+  
+  if (!isHuman) {
+    redirect('/auth/login?error=Please complete the security check to verify you are human')
   }
 
   const { data, error } = await supabase.auth.signInWithPassword({
@@ -44,9 +69,6 @@ export async function loginAction(formData: FormData) {
       }
     }
 
-    // Get IP and User-Agent for the login alert email
-    const headersList = await headers()
-    const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
     const userAgent = headersList.get('user-agent') || 'Unknown'
     
     // Send email without blocking the response
@@ -71,6 +93,13 @@ export async function signupAction(formData: FormData) {
   // 1. IP Rate Limiting for Free Accounts
   const headersList = await headers()
   const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+  
+  // Verify Turnstile
+  const turnstileToken = formData.get('cf-turnstile-response') as string
+  const isHuman = await verifyTurnstile(turnstileToken, ip !== 'Unknown' ? ip : '')
+  if (!isHuman) {
+    redirect('/auth/register?error=Please complete the security check to verify you are human')
+  }
   
   if (ip !== 'Unknown') {
     const { count } = await supabase

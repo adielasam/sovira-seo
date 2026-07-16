@@ -1,5 +1,7 @@
 'use client'
 
+import { Turnstile } from '@marsidev/react-turnstile'
+
 import Link from 'next/link'
 import Image from 'next/image'
 import { useState } from 'react'
@@ -126,6 +128,10 @@ export default function RegisterPage() {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div className="flex justify-center mb-6">
+            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} />
           </div>
 
           <button
