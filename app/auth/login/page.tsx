@@ -121,7 +121,7 @@ export default function LoginPage() {
           </div>
 
           <div className="flex justify-center mb-6">
-            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '1x00000000000000000000AA'} />
+            <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAD3Ix3x1GjScvPLT'} />
           </div>
 
           <button
