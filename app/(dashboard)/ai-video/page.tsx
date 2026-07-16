@@ -147,7 +147,20 @@ export default function AiVideoPage() {
       })
       const data = await res.json()
       
-      if (res.ok && data.id) {
+      if (!res.ok) {
+        toast.error(data.error || 'Failed to submit job')
+        setIsGenerating(false)
+        return
+      }
+
+      // Bynara text-to-image returns immediately with a completed status + image_url
+      if (data.status === 'completed' && data.image_url) {
+        setVideoUrl(data.image_url)
+        setIsGenerating(false)
+        setStatusText('')
+        toast.success('Image generated!')
+      } else if (data.id) {
+        // Video jobs go into polling mode
         setJobId(data.id)
         setStatusText('Job created. Waiting for video rendering...')
         toast.success('Video job submitted!')
@@ -160,6 +173,7 @@ export default function AiVideoPage() {
       setIsGenerating(false)
     }
   }
+
 
   return (
     <div className="space-y-8">

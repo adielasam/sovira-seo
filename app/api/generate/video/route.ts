@@ -89,14 +89,49 @@ export async function POST(req: Request) {
           aspect_ratio: aspect_ratio || '16:9',
         }
       } else if (mode === 'text-to-image') {
-        // Text-to-Image
-        endpoint = '/ai-image-generator'
-        payload = {
-          name: `Sovira Image - ${new Date().toISOString()}`,
-          image_count: 1,
-          style: { prompt: enhancePrompt(prompt || '') },
-          aspect_ratio: aspect_ratio || '16:9',
+        // ── TEXT-TO-IMAGE via Bynara Image API ────────────────────────
+        const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
+
+        const bynaraRes = await fetch('https://api-images.bynara.id/v1/images/generations', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${NARA_API_KEY}`
+          },
+          body: JSON.stringify({
+            prompt: enhancePrompt(prompt || ''),
+            n: 1,
+            size: aspect_ratio === '9:16' ? '1024x1792' : aspect_ratio === '1:1' ? '1024x1024' : '1792x1024',
+            response_format: 'url'
+          })
+        })
+
+        const bynaraData = await bynaraRes.json()
+
+        if (!bynaraRes.ok) {
+          return NextResponse.json({ error: bynaraData.error?.message || 'Image generation failed' }, { status: bynaraRes.status })
         }
+
+        const imageUrl = bynaraData.data?.[0]?.url
+        if (!imageUrl) {
+          return NextResponse.json({ error: 'No image URL returned from image generation service' }, { status: 500 })
+        }
+
+        // Log AI usage
+        await supabase.from('activity_logs').insert([{
+          user_id: user.id,
+          action: 'Video Generated', // reuse existing usage key
+          details: { endpoint: 'text-to-image', aspect_ratio }
+        }])
+
+        // Return immediately — no polling needed, Bynara returns URL synchronously
+        return NextResponse.json({
+          id: null,
+          status: 'completed',
+          image_url: imageUrl,
+          source: 'bynara'
+        })
+
       } else {
         // Text-to-Video (default)
         endpoint = '/text-to-video'
