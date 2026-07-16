@@ -29,8 +29,12 @@ export default function AiVideoPage() {
       const supabase = createClient()
       const { data: { user } } = await supabase.auth.getUser()
       if (user) {
-        const { data } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
-        if (data?.plan) setUserPlan(data.plan)
+        if (user.email === 'adielasam2015@gmail.com' || user.email === 'adielasam20153@gmail.com') {
+          setUserPlan('admin')
+        } else {
+          const { data } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
+          if (data?.plan) setUserPlan(data.plan)
+        }
       }
       setIsCheckingPlan(false)
     }
@@ -346,7 +350,7 @@ export default function AiVideoPage() {
               </div>
             </div>
 
-            {userPlan !== 'pro' && !isCheckingPlan ? (
+            {(!['pro', 'agency', 'admin'].includes(userPlan)) && !isCheckingPlan ? (
               <Link 
                 href="/pricing"
                 className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-3 rounded-lg font-semibold transition-all shadow-sm"

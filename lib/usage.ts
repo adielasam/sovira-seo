@@ -3,6 +3,11 @@ import { createClient } from './supabase/server'
 export async function checkUsageLimit(userId: string, actionType: 'audit' | 'keyword' | 'words' | 'image' | 'video' | 'insight'): Promise<{ allowed: boolean, limitReached: boolean, maxLimit: number }> {
   const supabase = await createClient()
   
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user && (user.email === 'adielasam2015@gmail.com' || user.email === 'adielasam20153@gmail.com')) {
+    return { allowed: true, limitReached: false, maxLimit: Infinity }
+  }
+
   // Get user profile
   const { data: profile } = await supabase
     .from('user_profiles')
