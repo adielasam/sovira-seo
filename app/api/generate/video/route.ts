@@ -89,17 +89,17 @@ export async function POST(req: Request) {
           aspect_ratio: aspect_ratio || '16:9',
         }
       } else if (mode === 'text-to-image') {
-        // ── TEXT-TO-IMAGE via Bynara Image API ────────────────────────
-        const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
+        // ── TEXT-TO-IMAGE via Pollinations API ────────────────────────
+        const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY || 'sk_ecyzl0y7ARqxlCbZlwSP8IxXuZpzp5yH'
 
-        const bynaraRes = await fetch('https://api-images.bynara.id/v1/images/generations', {
+        const bynaraRes = await fetch('https://gen.pollinations.ai/v1/images/generations', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${NARA_API_KEY}`
+            'Authorization': `Bearer ${POLLINATIONS_API_KEY}`
           },
           body: JSON.stringify({
-            model: 'dall-e-3',
+            model: 'flux', // Pollinations supports flux as a primary high-quality model
             prompt: enhancePrompt(prompt || ''),
             n: 1,
             size: aspect_ratio === '9:16' ? '1024x1792' : aspect_ratio === '1:1' ? '1024x1024' : '1792x1024',
