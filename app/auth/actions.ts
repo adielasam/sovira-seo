@@ -68,6 +68,23 @@ export async function signupAction(formData: FormData) {
     redirect('/auth/register?error=Email and password are required')
   }
 
+  // 1. IP Rate Limiting for Free Accounts
+  const headersList = await headers()
+  const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'Unknown'
+  
+  if (ip !== 'Unknown') {
+    const { count } = await supabase
+      .from('user_profiles')
+      .select('*', { count: 'exact', head: true })
+      .eq('registration_ip', ip)
+      .eq('plan', 'free')
+
+    // Limit to 1 free account per IP
+    if (count && count >= 1) {
+      redirect('/auth/register?error=You have reached the maximum number of free accounts allowed per network. Please upgrade to a paid plan.')
+    }
+  }
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
@@ -77,6 +94,18 @@ export async function signupAction(formData: FormData) {
       },
     },
   })
+
+  // 2. Log IP to user_profiles after successful signup
+  if (data?.user && ip !== 'Unknown') {
+    // We don't await this because the profile is created by a Postgres trigger.
+    // Give the trigger a tiny moment to run, or we can just run an update which might fail if too fast, 
+    // but the safest way is to wait a bit, or even better, pass it in options.data!
+    // But since options.data maps to raw_user_meta_data, we can update the profile directly after a short delay.
+    setTimeout(async () => {
+      const adminClient = await createClient() // Create a new client instance for the delayed update
+      await adminClient.from('user_profiles').update({ registration_ip: ip }).eq('id', data.user!.id)
+    }, 2000)
+  }
 
   if (error) {
     // JavaScript Error objects don't serialize well with JSON.stringify (it returns "{}")
