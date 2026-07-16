@@ -99,6 +99,7 @@ export async function POST(req: Request) {
             'Authorization': `Bearer ${NARA_API_KEY}`
           },
           body: JSON.stringify({
+            model: 'dall-e-3',
             prompt: enhancePrompt(prompt || ''),
             n: 1,
             size: aspect_ratio === '9:16' ? '1024x1792' : aspect_ratio === '1:1' ? '1024x1024' : '1792x1024',
