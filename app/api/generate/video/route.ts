@@ -92,12 +92,12 @@ export async function POST(req: Request) {
         // ── TEXT-TO-IMAGE via FREE Pollinations API ────────────────────────
         // This endpoint is completely free and requires no API key or balance
         
-        // Use resolutions that are native to most generative models (approx 1 megapixel) to prevent stretching
-        // 16:9 -> 1344x768
-        // 9:16 -> 768x1344
+        // Use resolutions that are natively fine-tuned in Flux models to prevent internal model stretching
+        // 16:9 -> 1024x576
+        // 9:16 -> 576x1024
         // 1:1  -> 1024x1024
-        const width = aspect_ratio === '9:16' ? 768 : aspect_ratio === '1:1' ? 1024 : 1344
-        const height = aspect_ratio === '9:16' ? 1344 : aspect_ratio === '1:1' ? 1024 : 768
+        const width = aspect_ratio === '9:16' ? 576 : aspect_ratio === '1:1' ? 1024 : 1024
+        const height = aspect_ratio === '9:16' ? 1024 : aspect_ratio === '1:1' ? 1024 : 576
         
         // Add a random seed so the same prompt generates different images if retried
         const seed = Math.floor(Math.random() * 1000000)

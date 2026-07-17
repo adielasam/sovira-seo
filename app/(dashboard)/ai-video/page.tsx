@@ -178,6 +178,28 @@ export default function AiVideoPage() {
     }
   }
 
+  const handleDownload = async () => {
+    if (!videoUrl) return;
+    try {
+      const loadingToast = toast.loading('Preparing download...')
+      const response = await fetch(videoUrl)
+      if (!response.ok) throw new Error('Network response was not ok')
+      const blob = await response.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = mode === 'text-to-image' ? 'sovira-ai-image.jpg' : 'sovira-ai-video.mp4'
+      document.body.appendChild(a)
+      a.click()
+      window.URL.revokeObjectURL(url)
+      document.body.removeChild(a)
+      toast.dismiss(loadingToast)
+      toast.success('Download started!')
+    } catch (error) {
+      console.error('Download failed', error)
+      toast.error('Failed to download media. Please try again.')
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -425,15 +447,13 @@ export default function AiVideoPage() {
 
                 {/* Floating action bar */}
                 <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                  <a 
-                    href={videoUrl} 
-                    download="sovira-ai-video.mp4"
-                    target="_blank"
-                    rel="noreferrer"
+                  <button 
+                    onClick={handleDownload}
+                    type="button"
                     className="flex items-center gap-2 bg-black/70 hover:bg-indigo-600 text-white text-xs font-semibold px-4 py-2 rounded-full backdrop-blur-md transition-colors"
                   >
-                    <Download className="w-4 h-4" /> Download MP4
-                  </a>
+                    <Download className="w-4 h-4" /> Download {mode === 'text-to-image' ? 'Image' : 'Video'}
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
