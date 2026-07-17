@@ -92,14 +92,18 @@ export async function POST(req: Request) {
         // ── TEXT-TO-IMAGE via FREE Pollinations API ────────────────────────
         // This endpoint is completely free and requires no API key or balance
         
-        const width = aspect_ratio === '9:16' ? 1024 : aspect_ratio === '1:1' ? 1024 : 1792
-        const height = aspect_ratio === '9:16' ? 1792 : aspect_ratio === '1:1' ? 1024 : 1024
+        // Use resolutions that are native to most generative models (approx 1 megapixel) to prevent stretching
+        // 16:9 -> 1344x768
+        // 9:16 -> 768x1344
+        // 1:1  -> 1024x1024
+        const width = aspect_ratio === '9:16' ? 768 : aspect_ratio === '1:1' ? 1024 : 1344
+        const height = aspect_ratio === '9:16' ? 1344 : aspect_ratio === '1:1' ? 1024 : 768
         
         // Add a random seed so the same prompt generates different images if retried
         const seed = Math.floor(Math.random() * 1000000)
         
         const safePrompt = encodeURIComponent(enhancePrompt(prompt || ''))
-        const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`
+        const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true&model=flux`
 
         // Log AI usage
         await supabase.from('activity_logs').insert([{

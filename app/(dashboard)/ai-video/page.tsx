@@ -407,7 +407,7 @@ export default function AiVideoPage() {
                   <img 
                     src={videoUrl} 
                     alt="Generated output"
-                    className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
+                    className="w-full h-full object-contain rounded-lg shadow-2xl"
                   />
                 ) : (
                   <video 
@@ -418,7 +418,7 @@ export default function AiVideoPage() {
                     loop
                     playsInline
                     muted={isMuted}
-                    className={`max-w-full max-h-full rounded-lg shadow-2xl ${aspectRatio === '9:16' ? 'h-full w-auto' : 'w-full h-auto'}`}
+                    className="w-full h-full object-contain rounded-lg shadow-2xl"
                     style={{ outline: 'none' }}
                   />
                 )}
