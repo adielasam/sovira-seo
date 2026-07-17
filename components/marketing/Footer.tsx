@@ -6,7 +6,7 @@ import Image from 'next/image'
 export function Footer() {
   return (
     <footer className="bg-slate-900 text-white py-16 border-t border-slate-800">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 grid grid-cols-1 md:grid-cols-4 gap-12">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 grid grid-cols-1 md:grid-cols-5 gap-12">
         <div className="col-span-1 md:col-span-2">
           <Link href="/" className="flex items-center mb-6 group">
             <Image
@@ -39,6 +39,15 @@ export function Footer() {
             <li><Link href="/contact" className="hover:text-blue-400 transition-colors">Contact</Link></li>
             <li><Link href="/privacy-policy" className="hover:text-blue-400 transition-colors">Privacy Policy</Link></li>
             <li><Link href="/terms" className="hover:text-blue-400 transition-colors">Terms of Service</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Free AI Tools</h3>
+          <ul className="space-y-4 text-base text-slate-400">
+            <li><Link href="/tools/ai-humanizer" className="hover:text-blue-400 transition-colors">AI Text Humanizer</Link></li>
+            <li><Link href="/tools/youtube-title-generator" className="hover:text-blue-400 transition-colors">YouTube Title Maker</Link></li>
+            <li><Link href="/tools/meta-description-generator" className="hover:text-blue-400 transition-colors">Meta Tags Generator</Link></li>
+            <li><Link href="/tools/grammar-checker" className="hover:text-blue-400 transition-colors">AI Grammar Check</Link></li>
           </ul>
         </div>
       </div>

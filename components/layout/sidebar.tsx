@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -15,6 +15,7 @@ const navigation = [
   { name: 'SEO Audit', href: '/audit', icon: Search },
   { name: 'Keywords', href: '/keywords', icon: Tag },
   { name: 'Competitors', href: '/competitors', icon: Users },
+  { name: 'Trending Topics', href: '/trending', icon: Flame },
   { name: 'Content AI', href: '/content', icon: Sparkles },
   { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
   { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
