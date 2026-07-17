@@ -88,6 +88,7 @@ export async function POST(req: Request) {
           style: { prompt: enhancePrompt(prompt || 'Animate this image with smooth, cinematic camera movement') },
           aspect_ratio: aspect_ratio || '16:9',
         }
+      } else if (mode === 'text-to-image') {
         // ── TEXT-TO-IMAGE via FREE Pollinations API ────────────────────────
         // This endpoint is completely free and requires no API key or balance
         
