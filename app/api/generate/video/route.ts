@@ -88,49 +88,31 @@ export async function POST(req: Request) {
           style: { prompt: enhancePrompt(prompt || 'Animate this image with smooth, cinematic camera movement') },
           aspect_ratio: aspect_ratio || '16:9',
         }
-      } else if (mode === 'text-to-image') {
-        // ── TEXT-TO-IMAGE via Pollinations API ────────────────────────
-        const POLLINATIONS_API_KEY = process.env.POLLINATIONS_API_KEY || 'sk_ecyzl0y7ARqxlCbZlwSP8IxXuZpzp5yH'
-
-        const bynaraRes = await fetch('https://gen.pollinations.ai/v1/images/generations', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${POLLINATIONS_API_KEY}`
-          },
-          body: JSON.stringify({
-            model: 'flux', // Pollinations supports flux as a primary high-quality model
-            prompt: enhancePrompt(prompt || ''),
-            n: 1,
-            size: aspect_ratio === '9:16' ? '1024x1792' : aspect_ratio === '1:1' ? '1024x1024' : '1792x1024',
-            response_format: 'url'
-          })
-        })
-
-        const bynaraData = await bynaraRes.json()
-
-        if (!bynaraRes.ok) {
-          return NextResponse.json({ error: bynaraData.error?.message || 'Image generation failed' }, { status: bynaraRes.status })
-        }
-
-        const imageUrl = bynaraData.data?.[0]?.url
-        if (!imageUrl) {
-          return NextResponse.json({ error: 'No image URL returned from image generation service' }, { status: 500 })
-        }
+        // ── TEXT-TO-IMAGE via FREE Pollinations API ────────────────────────
+        // This endpoint is completely free and requires no API key or balance
+        
+        const width = aspect_ratio === '9:16' ? 1024 : aspect_ratio === '1:1' ? 1024 : 1792
+        const height = aspect_ratio === '9:16' ? 1792 : aspect_ratio === '1:1' ? 1024 : 1024
+        
+        // Add a random seed so the same prompt generates different images if retried
+        const seed = Math.floor(Math.random() * 1000000)
+        
+        const safePrompt = encodeURIComponent(enhancePrompt(prompt || ''))
+        const imageUrl = `https://image.pollinations.ai/prompt/${safePrompt}?width=${width}&height=${height}&seed=${seed}&nologo=true`
 
         // Log AI usage
         await supabase.from('activity_logs').insert([{
           user_id: user.id,
           action: 'Video Generated', // reuse existing usage key
-          details: { endpoint: 'text-to-image', aspect_ratio }
+          details: { endpoint: 'text-to-image', aspect_ratio, provider: 'pollinations-free' }
         }])
 
-        // Return immediately — no polling needed, Bynara returns URL synchronously
+        // Return immediately — Pollinations generates the image on the fly when the URL is loaded
         return NextResponse.json({
           id: null,
           status: 'completed',
           image_url: imageUrl,
-          source: 'bynara'
+          source: 'pollinations'
         })
 
       } else {
