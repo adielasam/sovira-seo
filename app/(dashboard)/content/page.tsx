@@ -69,6 +69,14 @@ export default function ContentPage() {
   }, [isGenerating])
 
   useEffect(() => {
+    // Auto-fill topic from URL params if present
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search)
+      const topicParam = urlParams.get('topic')
+      if (topicParam) {
+        setTopic(decodeURIComponent(topicParam))
+      }
+    }
     fetchHistory()
     fetchCmsIntegration()
     fetchTrending()

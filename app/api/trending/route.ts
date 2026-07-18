@@ -1,7 +1,13 @@
 import { NextResponse } from 'next/server'
 import googleTrends from 'google-trends-api'
 import { createClient } from '@/lib/supabase/server'
-import { checkUsageLimit } from '@/lib/usage'
+import { createOpenAI } from '@ai-sdk/openai'
+import { generateText } from 'ai'
+
+const groq = createOpenAI({
+  baseURL: 'https://api.groq.com/openai/v1',
+  apiKey: process.env.GROQ_API_KEY,
+})
 
 export async function GET(req: Request) {
   try {
@@ -14,8 +20,50 @@ export async function GET(req: Request) {
 
     const { searchParams } = new URL(req.url)
     const geo = searchParams.get('geo') || 'US'
+    const niche = searchParams.get('niche') || 'All Niches'
 
     let trendingList: any[] = []
+
+    if (niche !== 'All Niches') {
+      try {
+        const { text } = await generateText({
+          model: groq('llama3-8b-8192'),
+          prompt: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".
+          Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
+          Format strictly like this:
+          [
+            {
+              "title": "Topic Keyword",
+              "snippet": "A one sentence summary of why this is trending right now."
+            }
+          ]`,
+          temperature: 0.8
+        })
+
+        const rawText = text.trim().replace(/```json/gi, '').replace(/```/g, '')
+        const topics = JSON.parse(rawText)
+
+        trendingList = topics.map((t: any, i: number) => ({
+          id: `groq-${i}`,
+          title: t.title,
+          entityNames: [niche],
+          articles: [{
+            title: t.title,
+            url: `https://news.google.com/search?q=${encodeURIComponent(t.title)}`,
+            source: 'AI Trend Analysis',
+            time: new Date().toISOString(),
+            snippet: t.snippet
+          }],
+          image: null,
+          shareUrl: `https://news.google.com/search?q=${encodeURIComponent(t.title)}`
+        }))
+        
+        return NextResponse.json({ trending: trendingList })
+      } catch (aiError) {
+        console.error('Groq Trending error:', aiError)
+        // Fallthrough to Hacker News if Groq fails
+      }
+    }
 
     try {
       const results = await googleTrends.realTimeTrends({

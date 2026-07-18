@@ -31,15 +31,30 @@ const COUNTRIES = [
   { code: 'ZA', name: 'South Africa' }
 ]
 
+const NICHES = [
+  'All Niches',
+  'Finance',
+  'Business',
+  'Education',
+  'Politics',
+  'Tech News',
+  'Football',
+  'Cooking',
+  'Health & Fitness',
+  'Entertainment',
+  'Real Estate'
+]
+
 export default function TrendingTopicsPage() {
   const [trends, setTrends] = useState<TrendingStory[]>([])
   const [loading, setLoading] = useState(true)
   const [geo, setGeo] = useState('US')
+  const [niche, setNiche] = useState('All Niches')
 
   const fetchTrends = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/trending?geo=${geo}`)
+      const res = await fetch(`/api/trending?geo=${geo}&niche=${encodeURIComponent(niche)}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to load trends')
       setTrends(data.trending || [])
@@ -52,7 +67,7 @@ export default function TrendingTopicsPage() {
 
   useEffect(() => {
     fetchTrends()
-  }, [geo])
+  }, [geo, niche])
 
   return (
     <div className="space-y-8">
@@ -66,7 +81,19 @@ export default function TrendingTopicsPage() {
           <p className="text-slate-500 mt-2">Real-time search trends and news across the internet.</p>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
+          <div className="flex items-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2">
+            <Flame className="w-4 h-4 text-orange-400" />
+            <select
+              value={niche}
+              onChange={(e) => setNiche(e.target.value)}
+              className="bg-transparent text-sm font-medium outline-none text-slate-700 dark:text-slate-300"
+            >
+              {NICHES.map(n => (
+                <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
           <div className="flex items-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2">
             <Globe className="w-4 h-4 text-slate-400" />
             <select
