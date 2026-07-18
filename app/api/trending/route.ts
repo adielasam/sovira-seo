@@ -43,28 +43,34 @@ export async function GET(req: Request) {
         throw new Error('Google Trends data malformed')
       }
     } catch (googleError) {
-      console.error('Google Trends failed/blocked, using Reddit Fallback:', googleError)
+      console.error('Google Trends failed/blocked, using HN Fallback:', googleError)
       
-      // Fallback: Real-time Viral Topics from Reddit API (No API key needed, never blocks Vercel)
-      const redditRes = await fetch('https://www.reddit.com/r/popular.json?limit=15', {
-        headers: { 'User-Agent': 'SoviraApp/1.0' } // Reddit requires a User-Agent
-      })
-      const redditData = await redditRes.json()
+      // Fallback: Real-time Viral Topics from Hacker News API (100% Free, NEVER blocks Vercel)
+      const hnRes = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json')
+      const hnIds = await hnRes.json()
       
-      if (redditData?.data?.children) {
-        trendingList = redditData.data.children.map((post: any) => ({
-          id: post.data.id,
-          title: post.data.title,
-          entityNames: [post.data.subreddit],
+      if (Array.isArray(hnIds)) {
+        const top15 = hnIds.slice(0, 15)
+        
+        // Fetch details for top 15 stories in parallel
+        const storyPromises = top15.map(id => 
+          fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(res => res.json())
+        )
+        const stories = await Promise.all(storyPromises)
+        
+        trendingList = stories.filter(s => s && s.title).map((story: any) => ({
+          id: String(story.id),
+          title: story.title,
+          entityNames: ['Tech & Business'],
           articles: [{
-            title: post.data.title,
-            url: `https://reddit.com${post.data.permalink}`,
-            source: post.data.subreddit_name_prefixed,
-            time: new Date(post.data.created_utc * 1000).toISOString(),
-            snippet: post.data.selftext?.substring(0, 150) || 'Viral topic trending across the internet right now.'
+            title: story.title,
+            url: story.url || `https://news.ycombinator.com/item?id=${story.id}`,
+            source: 'Hacker News',
+            time: new Date(story.time * 1000).toISOString(),
+            snippet: 'Currently trending viral topic on the front page of Hacker News.'
           }],
-          image: post.data.thumbnail && post.data.thumbnail.startsWith('http') ? post.data.thumbnail : null,
-          shareUrl: `https://reddit.com${post.data.permalink}`
+          image: null,
+          shareUrl: story.url || `https://news.ycombinator.com/item?id=${story.id}`
         }))
       } else {
         throw new Error('All trending sources failed')
