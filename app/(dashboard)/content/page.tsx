@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText, Trash2, Edit2, Eye, Send } from 'lucide-react'
+import { Sparkles, Copy, RefreshCw, Save, History, Check, FileText, Trash2, Edit2, Eye, Send, Flame } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { generateContentAction, saveGeneration, getRecentGenerations, deleteGeneration, updateGeneration, publishToWordPressAction } from './actions'
 import { getCmsIntegration } from '../integrations/actions'
@@ -49,6 +49,9 @@ export default function ContentPage() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [msgIndex, setMsgIndex] = useState(0)
   
+  const [trending, setTrending] = useState<any[]>([])
+  const [loadingTrending, setLoadingTrending] = useState(false)
+
   const messages = [
     "Crafting your content...",
     "Analyzing your topic...",
@@ -68,7 +71,23 @@ export default function ContentPage() {
   useEffect(() => {
     fetchHistory()
     fetchCmsIntegration()
+    fetchTrending()
   }, [])
+
+  const fetchTrending = async () => {
+    setLoadingTrending(true)
+    try {
+      const res = await fetch('/api/trending?geo=US')
+      const data = await res.json()
+      if (res.ok && data.trending) {
+        setTrending(data.trending.slice(0, 5)) // Get top 5
+      }
+    } catch (e) {
+      console.error(e)
+    } finally {
+      setLoadingTrending(false)
+    }
+  }
 
   const fetchCmsIntegration = async () => {
     const { data } = await getCmsIntegration()
@@ -90,13 +109,13 @@ export default function ContentPage() {
       
       const interval = setInterval(() => {
         setDisplayedContent(content.substring(0, i))
-        i += 3 // Reveal 3 chars at a time for smooth streaming
+        i += 3 
         if (i > content.length) {
           setDisplayedContent(content)
           setIsStreaming(false)
           clearInterval(interval)
         }
-      }, 5) // Faster for Groq since it's very fast usually
+      }, 5) 
       
       return () => clearInterval(interval)
     }
@@ -267,6 +286,8 @@ export default function ContentPage() {
                 <option>Social Media Post</option>
                 <option>Product Description</option>
                 <option>Email Subject</option>
+                <option>Viral Video Script</option>
+                <option>YouTube Title</option>
               </select>
             </div>
 
@@ -298,7 +319,7 @@ export default function ContentPage() {
                     flex items-center justify-center px-3 py-2 border rounded-lg cursor-pointer text-sm font-medium transition-colors
                     ${length === l 
                       ? 'bg-blue-50 border-blue-600 text-blue-700 dark:bg-blue-900/30 dark:border-blue-500 dark:text-blue-400' 
-                      : 'border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
                     }
                   `}>
                     <input 
@@ -306,7 +327,7 @@ export default function ContentPage() {
                       name="length" 
                       value={l} 
                       checked={length === l}
-                      onChange={() => setLength(l)}
+                      onChange={(e) => setLength(e.target.value)}
                       className="sr-only" 
                     />
                     {l}
@@ -317,17 +338,56 @@ export default function ContentPage() {
 
             <button
               type="submit"
-              disabled={isGenerating || isStreaming}
-              className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-3 rounded-lg font-semibold transition-all disabled:opacity-70 disabled:cursor-not-allowed shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+              disabled={isGenerating || !topic}
+              className="w-full flex items-center justify-center gap-2 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isGenerating ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                <RefreshCw className="w-5 h-5 animate-spin" />
               ) : (
                 <Sparkles className="w-5 h-5" />
               )}
               {isGenerating ? 'Generating...' : 'Generate Content'}
             </button>
           </form>
+
+          {/* Trending Topics Section */}
+          <div className="mt-8 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-sm font-semibold text-slate-900 dark:text-white flex items-center gap-2">
+                <Flame className="w-4 h-4 text-orange-500" />
+                Trending Keywords (US)
+              </h3>
+              <button onClick={fetchTrending} className="text-xs text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1">
+                {loadingTrending ? <RefreshCw className="w-3 h-3 animate-spin" /> : 'Refresh'}
+              </button>
+            </div>
+            
+            {loadingTrending && trending.length === 0 ? (
+              <div className="animate-pulse space-y-2">
+                {[1, 2, 3].map(i => <div key={i} className="h-8 bg-slate-100 dark:bg-slate-800 rounded-lg"></div>)}
+              </div>
+            ) : trending.length === 0 ? (
+              <p className="text-xs text-slate-500">No trends found.</p>
+            ) : (
+              <div className="flex flex-wrap gap-2">
+                {trending.map((t, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => {
+                      setTopic(t.title);
+                      setType(idx % 2 === 0 ? 'Viral Video Script' : 'YouTube Title'); // Alternating just for UX
+                    }}
+                    className="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-full transition-colors border border-slate-200 dark:border-slate-700"
+                  >
+                    {t.title}
+                  </button>
+                ))}
+              </div>
+            )}
+            <p className="text-[11px] text-slate-400 mt-3">
+              Click a trending keyword to auto-fill your topic and generate viral content.
+            </p>
+          </div>
         </div>
 
         {/* Right Panel - Output */}

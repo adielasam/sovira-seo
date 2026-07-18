@@ -1,4 +1,4 @@
-import { NextResponse } from 'next'
+import { NextResponse } from 'next/server'
 import googleTrends from 'google-trends-api'
 import { createClient } from '@/lib/supabase/server'
 import { checkUsageLimit } from '@/lib/usage'
