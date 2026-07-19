@@ -1,12 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createOpenAI } from '@ai-sdk/openai'
-import { generateText } from 'ai'
 import { createClient } from '@/lib/supabase/server'
-
-const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
-})
 
 export async function POST(req: Request) {
   try {
@@ -56,14 +49,36 @@ Return ONLY the corrected text.`
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    // Call Groq (Llama 3 70B is very smart)
-    const { text: generatedText } = await generateText({
-      model: groq('llama-3.3-70b-versatile') as any,
-      system: systemPrompt,
-      prompt: `Topic / Text to process: ${text}\n\nAdditional Context: ${context || 'None'}`,
-      temperature: action === 'humanize' ? 0.8 : 0.7,
-      maxTokens: 2000,
+    // Direct Groq REST API call (bypasses AI SDK version mismatch issues)
+    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'llama-3.3-70b-versatile',
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: `Topic / Text to process: ${text}\n\nAdditional Context: ${context || 'None'}` }
+        ],
+        temperature: action === 'humanize' ? 0.8 : 0.7,
+        max_tokens: 2000,
+      })
     })
+
+    const groqData = await groqRes.json()
+
+    if (!groqRes.ok) {
+      console.error('Groq API Error:', groqData)
+      throw new Error(groqData?.error?.message || 'Groq API failed')
+    }
+
+    const generatedText = groqData.choices?.[0]?.message?.content || ''
+
+    if (!generatedText) {
+      throw new Error('No output was generated. Please try again.')
+    }
 
     return NextResponse.json({ result: generatedText })
 

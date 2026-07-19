@@ -1,13 +1,6 @@
 import { NextResponse } from 'next/server'
 import googleTrends from 'google-trends-api'
 import { createClient } from '@/lib/supabase/server'
-import { createOpenAI } from '@ai-sdk/openai'
-import { generateText } from 'ai'
-
-const groq = createOpenAI({
-  baseURL: 'https://api.groq.com/openai/v1',
-  apiKey: process.env.GROQ_API_KEY,
-})
 
 export async function GET(req: Request) {
   try {
@@ -26,21 +19,32 @@ export async function GET(req: Request) {
 
     if (niche !== 'All Niches') {
       try {
-        const { text } = await generateText({
-          model: groq('llama-3.3-70b-versatile') as any,
-          prompt: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".
-          Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
-          Format strictly like this:
-          [
-            {
-              "title": "Topic Keyword",
-              "snippet": "A one sentence summary of why this is trending right now."
-            }
-          ]`,
-          temperature: 0.8
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'user', content: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".
+Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
+Format strictly like this:
+[
+  {
+    "title": "Topic Keyword",
+    "snippet": "A one sentence summary of why this is trending right now."
+  }
+]` }
+            ],
+            temperature: 0.8,
+            max_tokens: 1000,
+          })
         })
 
-        const rawText = text.trim().replace(/```json/gi, '').replace(/```/g, '')
+        const groqData = await groqRes.json()
+        const rawText = (groqData.choices?.[0]?.message?.content || '').trim().replace(/```json/gi, '').replace(/```/g, '')
         const topics = JSON.parse(rawText)
 
         trendingList = topics.map((t: any, i: number) => ({
