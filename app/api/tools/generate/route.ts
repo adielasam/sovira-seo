@@ -58,7 +58,7 @@ Return ONLY the corrected text.`
 
     // Call Groq (Llama 3 70B is very smart)
     const { text: generatedText } = await generateText({
-      model: groq('llama3-70b-8192') as any,
+      model: groq('llama-3.3-70b-versatile') as any,
       system: systemPrompt,
       prompt: `Topic / Text to process: ${text}\n\nAdditional Context: ${context || 'None'}`,
       temperature: action === 'humanize' ? 0.8 : 0.7,
