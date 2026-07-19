@@ -27,7 +27,7 @@ export async function GET(req: Request) {
     if (niche !== 'All Niches') {
       try {
         const { text } = await generateText({
-          model: groq('llama3-8b-8192'),
+          model: groq('llama3-8b-8192') as any,
           prompt: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".
           Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
           Format strictly like this:
