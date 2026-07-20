@@ -51,6 +51,11 @@ function DetectionGauge({ score, verdict }: { score: number; verdict: string }) 
         {score >= 85 ? <CheckCircle2 className="w-4 h-4" /> : <Shield className="w-4 h-4" />}
         {label}
       </div>
+      {score === 100 && (
+        <p className="mt-2 text-xs font-medium text-emerald-600 dark:text-emerald-400 text-center px-4">
+          Your text reads as fully human with a natural tone, rhythm, and flow.
+        </p>
+      )}
     </div>
   )
 }
@@ -64,6 +69,7 @@ export default function DashboardHumanizerPage() {
   const [plan, setPlan] = useState<string>('free')
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [detection, setDetection] = useState<DetectionResult | null>(null)
+  const [rewriteLevel, setRewriteLevel] = useState('Medium')
 
   const FREE_LIMIT = 700
   const isPaid = plan === 'starter' || plan === 'pro' || plan === 'agency'
@@ -130,7 +136,7 @@ export default function DashboardHumanizerPage() {
       const res = await fetch('/api/tools/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'humanize', text: input })
+        body: JSON.stringify({ action: 'humanize', text: input, context: rewriteLevel })
       })
       
       const data = await res.json()
@@ -160,7 +166,7 @@ export default function DashboardHumanizerPage() {
       const res = await fetch('/api/tools/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'humanize', text: output })
+        body: JSON.stringify({ action: 'humanize', text: output, context: rewriteLevel })
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to generate')
@@ -249,6 +255,35 @@ export default function DashboardHumanizerPage() {
               {input.length}{maxChars ? `/${maxChars}` : ''} characters
             </span>
           </div>
+
+          {/* Rewrite Level Selector */}
+          <div className="mb-4 flex flex-col gap-2 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="flex items-center justify-between">
+               <label className="text-xs font-semibold text-slate-600 dark:text-slate-300 uppercase tracking-wider">Rewrite Level</label>
+               <span className="text-[10px] text-slate-500 hidden sm:inline-block">Select phrasing intensity</span>
+            </div>
+            <div className="flex gap-2">
+              {['Light', 'Medium', 'Aggressive'].map((lvl) => (
+                <button
+                  key={lvl}
+                  onClick={() => setRewriteLevel(lvl)}
+                  className={`flex-1 py-1.5 px-2 rounded-lg text-xs font-medium transition-all ${
+                    rewriteLevel === lvl
+                      ? 'bg-emerald-600 text-white shadow-sm'
+                      : 'bg-white dark:bg-[#0F172A] text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:border-emerald-500'
+                  }`}
+                >
+                  {lvl}
+                </button>
+              ))}
+            </div>
+            <p className="text-[10px] text-slate-500 italic mt-1">
+              {rewriteLevel === 'Light' && "Minimal changes, preserves original flow."}
+              {rewriteLevel === 'Medium' && "Balanced rephrasing for natural human rhythm."}
+              {rewriteLevel === 'Aggressive' && "Maximum stealth & readability restructure."}
+            </p>
+          </div>
+
           <textarea
             className="w-full flex-grow min-h-[350px] p-4 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent outline-none resize-none text-slate-800 dark:text-slate-200 text-sm leading-relaxed"
             placeholder="Paste your AI-generated text here (ChatGPT, Claude, Gemini, etc.)..."
