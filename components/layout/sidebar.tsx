@@ -116,12 +116,12 @@ export function Sidebar() {
             <X className="w-5 h-5" />
           </button>
         </div>
-        <nav className="flex flex-1 flex-col mt-4">
+        <nav className="flex flex-1 flex-col mt-4 overflow-y-auto overflow-x-hidden pb-8">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
               <NavItems pathname={pathname} onNav={() => setMobileOpen(false)} />
             </li>
-            <li className="mt-auto">
+            <li className="mt-auto pt-4">
               <button
                 onClick={handleLogout}
                 disabled={loggingOut}
