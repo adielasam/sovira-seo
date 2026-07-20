@@ -1,8 +1,9 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, Copy, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react'
+import { Sparkles, Copy, CheckCircle2, ArrowRight, Loader2, Lock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import Link from 'next/link'
 
 interface ToolInterfaceProps {
   title: string;
@@ -11,13 +12,25 @@ interface ToolInterfaceProps {
   inputPlaceholder: string;
   buttonText: string;
   isTextArea?: boolean;
+  maxChars?: number;
 }
 
-export function ToolInterface({ title, description, action, inputPlaceholder, buttonText, isTextArea = true }: ToolInterfaceProps) {
+export function ToolInterface({ title, description, action, inputPlaceholder, buttonText, isTextArea = true, maxChars }: ToolInterfaceProps) {
   const [input, setInput] = useState('')
   const [output, setOutput] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [copied, setCopied] = useState(false)
+
+  const isOverLimit = maxChars ? input.length > maxChars : false
+
+  const handleInputChange = (value: string) => {
+    if (maxChars && value.length > maxChars) {
+      setInput(value.slice(0, maxChars))
+      toast.error(`Free limit is ${maxChars} characters. Sign up for unlimited access!`)
+      return
+    }
+    setInput(value)
+  }
 
   const handleGenerate = async () => {
     if (!input.trim()) {
@@ -73,14 +86,17 @@ export function ToolInterface({ title, description, action, inputPlaceholder, bu
         <div className="flex flex-col h-full">
           <div className="flex items-center justify-between mb-3">
             <label className="text-sm font-semibold text-slate-700 dark:text-slate-300 uppercase tracking-wider">Your Input</label>
-            <span className="text-xs text-slate-400">{input.length} characters</span>
+            <span className={`text-xs ${maxChars && input.length >= maxChars * 0.9 ? 'text-red-500 font-bold' : 'text-slate-400'}`}>
+              {input.length}{maxChars ? `/${maxChars}` : ''} characters
+            </span>
           </div>
           {isTextArea ? (
             <textarea
               className="w-full flex-grow min-h-[300px] p-4 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none text-slate-800 dark:text-slate-200"
               placeholder={inputPlaceholder}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
+              maxLength={maxChars}
             />
           ) : (
             <input
@@ -88,8 +104,19 @@ export function ToolInterface({ title, description, action, inputPlaceholder, bu
               className="w-full p-4 bg-slate-50 dark:bg-[#0F172A] border border-slate-200 dark:border-slate-700 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none text-slate-800 dark:text-slate-200"
               placeholder={inputPlaceholder}
               value={input}
-              onChange={(e) => setInput(e.target.value)}
+              onChange={(e) => handleInputChange(e.target.value)}
+              maxLength={maxChars}
             />
+          )}
+
+          {/* Upgrade banner when near/at limit */}
+          {maxChars && input.length >= maxChars * 0.8 && (
+            <div className="mt-3 flex items-center gap-2 p-3 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-amber-900/20 dark:to-orange-900/20 border border-amber-200 dark:border-amber-800 rounded-xl">
+              <Lock className="w-4 h-4 text-amber-600 flex-shrink-0" />
+              <p className="text-xs text-amber-700 dark:text-amber-300">
+                Free limit: {maxChars} characters. <Link href="/auth/register" className="font-bold underline hover:text-amber-900">Sign up free</Link> or <Link href="/pricing" className="font-bold underline hover:text-amber-900">upgrade to Starter</Link> for unlimited humanization.
+              </p>
+            </div>
           )}
           
           <button

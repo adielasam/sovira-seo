@@ -21,6 +21,7 @@ export default function AiHumanizerPage() {
         inputPlaceholder="Paste AI-generated text here (ChatGPT, Claude, Gemini)..."
         buttonText="Humanize Text"
         isTextArea={true}
+        maxChars={700}
       />
       <div className="max-w-4xl mx-auto px-6 lg:px-8 pb-24 prose dark:prose-invert">
         <h2>Why use an AI Humanizer?</h2>
