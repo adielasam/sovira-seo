@@ -10,10 +10,12 @@ import {
   getAvailableSchemes,
   getWeeklyEntries,
   deleteSchemeOfWork,
+} from '@/app/(dashboard)/teacher-tools/actions'
+import {
   NIGERIAN_SUBJECTS,
   CLASS_LEVELS,
   TERMS,
-} from '@/app/(dashboard)/teacher-tools/actions'
+} from '@/app/(dashboard)/teacher-tools/constants'
 
 export default function AdminSchemeOfWorkPage() {
   const [subject, setSubject] = useState('')

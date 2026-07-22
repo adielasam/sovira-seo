@@ -14,9 +14,8 @@ import {
   getTeacherLessonNotes,
   deleteLessonNote,
   generateQuestions,
-  CLASS_LEVELS,
-  TERMS,
 } from './actions'
+import { CLASS_LEVELS, TERMS } from './constants'
 
 function timeAgo(dateString: string) {
   const date = new Date(dateString)
