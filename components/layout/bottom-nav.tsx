@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield } from 'lucide-react'
+import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap } from 'lucide-react'
 import { useState } from 'react'
 
 const mainLinks = [
@@ -15,6 +15,7 @@ const mainLinks = [
 const moreLinks = [
   { name: 'Trending', href: '/trending', icon: Flame },
   { name: 'Humanizer', href: '/humanizer', icon: Shield },
+  { name: 'Teacher Tools', href: '/teacher-tools', icon: GraduationCap },
   { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
   { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
   { name: 'AI Video', href: '/ai-video', icon: Video },
