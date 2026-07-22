@@ -271,13 +271,6 @@ export default function TeacherToolsPage() {
             Generate lesson notes &amp; exam questions from the official NERDC Scheme of Work.
           </p>
         </div>
-        <Link
-          href="/teacher-tools/upload"
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-xl font-medium text-sm transition-colors"
-        >
-          <BookOpen className="w-4 h-4" />
-          Upload Scheme of Work
-        </Link>
       </div>
 
       {/* Step 1: Selection Dropdowns */}
