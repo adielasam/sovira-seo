@@ -13,7 +13,7 @@ import {
   getWeeklyEntries,
   deleteSchemeOfWork,
 } from '@/app/(dashboard)/teacher-tools/actions'
-import { extractTextFromPDF, identifySOWsInChunk } from '@/app/(dashboard)/teacher-tools/pdf-actions'
+import { identifySOWsInChunk } from '@/app/(dashboard)/teacher-tools/pdf-actions'
 import { CLASS_LEVELS, TERMS, NIGERIAN_SUBJECTS } from '@/app/(dashboard)/teacher-tools/constants'
 
 // Get flat subject list for manual form

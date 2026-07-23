@@ -56,9 +56,6 @@ importers:
       next-themes:
         specifier: ^0.4.6
         version: 0.4.6(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
-      pdf2json:
-        specifier: ^4.0.3
-        version: 4.0.3
       pdfjs-dist:
         specifier: 3.11.174
         version: 3.11.174
@@ -2759,11 +2756,6 @@ packages:
   path2d-polyfill@2.0.1:
     resolution: {integrity: sha512-ad/3bsalbbWhmBo0D6FZ4RNMwsLsPpL6gnvhuSaU5Vm7b06Kr5ubSltQQ0T7YKsiJQO+g22zJ4dJKNTXIyOXtA==}
     engines: {node: '>=8'}
-
-  pdf2json@4.0.3:
-    resolution: {integrity: sha512-QErPemxRHDI2RUli3+9/mv4V6Ib9VWI+UoP2S82yXEQtoXzWvu9NSjjo3vyiUiVJv+CJFuzNiKUI+UFFUdv8Lg==}
-    engines: {node: '>=20.18.0'}
-    hasBin: true
 
   pdfjs-dist@3.11.174:
     resolution: {integrity: sha512-TdTZPf1trZ8/UFu5Cx/GXB7GZM30LT+wWUNfsi6Bq8ePLnb+woNKtDymI2mxZYBpMbonNFqKmiz684DIfnd8dA==}
@@ -6407,8 +6399,6 @@ snapshots:
 
   path2d-polyfill@2.0.1:
     optional: true
-
-  pdf2json@4.0.3: {}
 
   pdfjs-dist@3.11.174:
     optionalDependencies:
