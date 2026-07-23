@@ -1,6 +1,6 @@
 'use server'
 
-import pdfParse from 'pdf-parse'
+const pdfParse = require('pdf-parse')
 
 export async function extractTextFromPDF(formData: FormData) {
   try {
