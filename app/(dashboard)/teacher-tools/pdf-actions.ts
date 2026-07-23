@@ -5,18 +5,30 @@
 export async function identifySOWsInChunk(textChunk: string) {
   try {
     const prompt = `
-You are an expert AI assisting Nigerian teachers. I am providing you with a chunk of raw text extracted from a massive PDF curriculum document (NERDC Scheme of Work).
-Your job is to identify every unique Scheme of Work block present in this text.
+You are an expert AI assisting Nigerian teachers. I am providing you with a chunk of raw text extracted from a PDF curriculum document (NERDC Scheme of Work).
+The text might be messy because it was extracted from tables. It will contain Weeks, Topics, Contents, etc.
 
-For each Scheme of Work you find, extract:
-1. The Subject (e.g., Mathematics, English Studies, Basic Science)
-2. The Class Level (e.g., JSS 1, SS 2)
-3. The Term (First Term, Second Term, Third Term)
-4. The exact verbatim text content of the scheme for that term (including weeks, topics, objectives, etc.)
+Your job is to find ANY Scheme of Work content in this text, even if partial.
 
-Return ONLY a valid JSON object with a single key "data". The value of "data" must be an array of objects with these keys: "subject", "class_level", "term", "raw_text".
-If you find none, return { "data": [] }.
-Do not include markdown blocks like \`\`\`json. Return raw JSON.
+For each Scheme of Work content block you find, extract:
+1. "subject": The Subject (e.g., English Studies). If not explicitly stated in this chunk, guess from context or use "Unknown".
+2. "class_level": The Class Level (e.g., JSS 1, SS 2). If not found, use "Unknown".
+3. "term": The Term (First Term, Second Term, Third Term). If not found, use "Unknown".
+4. "raw_text": The VERBATIM text content of the scheme (weeks, topics, etc.). Capture ALL curriculum rows you see!
+
+Return ONLY a valid JSON object with a single key "data". The value of "data" must be an array of objects with the exact keys: "subject", "class_level", "term", "raw_text".
+Example output format:
+{
+  "data": [
+    {
+      "subject": "English Studies",
+      "class_level": "JSS 1",
+      "term": "First Term",
+      "raw_text": "Week 1: Speech Work... Grammar... Week 2: Vowel Sounds..."
+    }
+  ]
+}
+If you find absolutely NO curriculum content at all, return { "data": [] }.
 
 Text Chunk:
 ${textChunk}
