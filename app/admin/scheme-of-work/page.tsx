@@ -86,26 +86,50 @@ export default function AdminSchemeOfWorkPage() {
     if (!pdfFile) return
     setIsExtracting(true)
     setExtractedSOWs([])
-    setExtractionProgress('Extracting text from PDF document...')
+    setExtractionProgress('Loading PDF engine...')
     
     try {
-      const formData = new FormData()
-      formData.append('file', pdfFile)
+      // 1. Dynamically load pdf.js from CDN to run purely on client-side (bypasses Vercel limits)
+      if (!(window as any).pdfjsLib) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script')
+          script.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.min.js'
+          script.onload = resolve
+          script.onerror = () => reject(new Error('Failed to load PDF engine'))
+          document.head.appendChild(script)
+        })
+      }
+
+      const pdfjsLib = (window as any).pdfjsLib
+      pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.16.105/pdf.worker.min.js'
+
+      setExtractionProgress('Extracting text from PDF...')
       
-      const { text, error, numPages } = await extractTextFromPDF(formData)
-      if (error || !text) throw new Error(error || 'Failed to read PDF text')
+      const arrayBuffer = await pdfFile.arrayBuffer()
+      const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise
+      
+      let fullText = ''
+      for (let i = 1; i <= pdf.numPages; i++) {
+        setExtractionProgress(`Reading page ${i} of ${pdf.numPages}...`)
+        const page = await pdf.getPage(i)
+        const textContent = await page.getTextContent()
+        const pageText = textContent.items.map((item: any) => item.str).join(' ')
+        fullText += pageText + '\n'
+      }
+
+      if (!fullText.trim()) throw new Error('No text could be extracted from this PDF.')
 
       // Split text into ~12000 character chunks (roughly 2000 words, safely under LLM limits)
       const CHUNK_SIZE = 12000
       const chunks = []
-      for (let i = 0; i < text.length; i += CHUNK_SIZE) {
-        chunks.push(text.substring(i, i + CHUNK_SIZE))
+      for (let i = 0; i < fullText.length; i += CHUNK_SIZE) {
+        chunks.push(fullText.substring(i, i + CHUNK_SIZE))
       }
 
       const allFoundSOWs: any[] = []
       
       for (let i = 0; i < chunks.length; i++) {
-        setExtractionProgress(`AI is reading part ${i + 1} of ${chunks.length}...`)
+        setExtractionProgress(`AI is analyzing part ${i + 1} of ${chunks.length}...`)
         
         const res = await identifySOWsInChunk(chunks[i])
         if (res.data && Array.isArray(res.data)) {

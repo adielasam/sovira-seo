@@ -1,40 +1,6 @@
 'use server'
 
-import PDFParser from 'pdf2json'
 
-export async function extractTextFromPDF(formData: FormData) {
-  try {
-    const file = formData.get('file') as File
-    if (!file) throw new Error('No file uploaded')
-
-    // Vercel serverless payload limit is 4.5MB
-    if (file.size > 4.5 * 1024 * 1024) {
-      return { error: 'File size exceeds 4.5MB Vercel limit. Please split the PDF into smaller parts.' }
-    }
-
-    const arrayBuffer = await file.arrayBuffer()
-    const buffer = Buffer.from(arrayBuffer)
-
-    return new Promise<{ text?: string, numPages?: number, error?: string }>((resolve) => {
-      const pdfParser = new PDFParser(null, 1) // 1 = text mode
-
-      pdfParser.on('pdfParser_dataError', (errData: any) => {
-        console.error('PDF Parse Error:', errData)
-        resolve({ error: errData.parserError?.message || 'Failed to parse PDF document' })
-      })
-
-      pdfParser.on('pdfParser_dataReady', (pdfData: any) => {
-        const text = pdfParser.getRawTextContent()
-        resolve({ text, numPages: pdfData.Pages ? pdfData.Pages.length : 0 })
-      })
-
-      pdfParser.parseBuffer(buffer)
-    })
-  } catch (error: any) {
-    console.error('Action Error:', error)
-    return { error: error.message || 'Server Action Failed' }
-  }
-}
 
 export async function identifySOWsInChunk(textChunk: string) {
   try {
