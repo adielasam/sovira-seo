@@ -14,8 +14,8 @@ For each Scheme of Work you find, extract:
 3. The Term (First Term, Second Term, Third Term)
 4. The exact verbatim text content of the scheme for that term (including weeks, topics, objectives, etc.)
 
-Return ONLY a valid JSON array of objects with these keys: "subject", "class_level", "term", "raw_text".
-If you find none, return an empty array [].
+Return ONLY a valid JSON object with a single key "data". The value of "data" must be an array of objects with these keys: "subject", "class_level", "term", "raw_text".
+If you find none, return { "data": [] }.
 Do not include markdown blocks like \`\`\`json. Return raw JSON.
 
 Text Chunk:
