@@ -41,7 +41,7 @@ ${textChunk}
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [{ role: 'user', content: prompt }],
         temperature: 0.1,
         response_format: { type: 'json_object' }
@@ -49,9 +49,12 @@ ${textChunk}
     })
 
     const data = await response.json()
-    const resultText = data.choices?.[0]?.message?.content || '{"data": []}'
     
-    // Because we used json_object format, we expect a JSON object. 
+    if (data.error) {
+      throw new Error(data.error.message || 'Unknown Groq API Error')
+    }
+
+    const resultText = data.choices?.[0]?.message?.content || '{"data": []}'
     // To ensure the array is returned, we should instruct the model to return { "data": [...] }
     const parsed = JSON.parse(resultText)
     

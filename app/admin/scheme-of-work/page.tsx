@@ -132,9 +132,17 @@ export default function AdminSchemeOfWorkPage() {
         setExtractionProgress(`AI is analyzing part ${i + 1} of ${chunks.length}...`)
         
         const res = await identifySOWsInChunk(chunks[i])
+        
+        if (res.error) {
+          toast.error(`Error on part ${i + 1}: ${res.error}`)
+        }
+        
         if (res.data && Array.isArray(res.data)) {
           allFoundSOWs.push(...res.data)
         }
+
+        // Delay 1.5 seconds to respect Groq Free Tier rate limits (30 Requests Per Minute)
+        await new Promise(resolve => setTimeout(resolve, 1500))
       }
 
       if (allFoundSOWs.length === 0) {
