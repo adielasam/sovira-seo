@@ -34,7 +34,11 @@ Text Chunk:
 ${textChunk}
 `
 
-    const apiKey = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
+    const apiKey = (process.env.NARA_API_KEY || '').trim()
+
+    if (!apiKey) {
+      throw new Error('NARA_API_KEY is missing in Vercel environment variables.')
+    }
     
     const response = await fetch('https://router.bynara.id/v1/chat/completions', {
       method: 'POST',
@@ -45,8 +49,7 @@ ${textChunk}
       body: JSON.stringify({
         model: 'mistral-large',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.1,
-        response_format: { type: 'json_object' }
+        temperature: 0.1
       }),
     })
 
