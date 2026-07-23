@@ -1,23 +1,34 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Upload, GraduationCap, Loader2, CheckCircle2, Trash2, AlertCircle, ChevronDown, ChevronRight, BookOpen } from 'lucide-react'
+import { 
+  Upload, GraduationCap, Loader2, CheckCircle2, Trash2, AlertCircle, 
+  ChevronDown, ChevronRight, BookOpen, FileText, Settings, PlayCircle
+} from 'lucide-react'
 import toast from 'react-hot-toast'
 
-// We'll call the same server actions from the teacher-tools module
 import {
   uploadSchemeOfWork,
   getAvailableSchemes,
   getWeeklyEntries,
   deleteSchemeOfWork,
 } from '@/app/(dashboard)/teacher-tools/actions'
-import {
-  NIGERIAN_SUBJECTS,
-  CLASS_LEVELS,
-  TERMS,
-} from '@/app/(dashboard)/teacher-tools/constants'
+import { extractTextFromPDF, identifySOWsInChunk } from '@/app/(dashboard)/teacher-tools/pdf-actions'
+import { CLASS_LEVELS, TERMS, NIGERIAN_SUBJECTS } from '@/app/(dashboard)/teacher-tools/constants'
+
+// Get flat subject list for manual form
+const subjectList = [...NIGERIAN_SUBJECTS.jss, ...NIGERIAN_SUBJECTS.sss].filter((v, i, a) => a.indexOf(v) === i).sort()
 
 export default function AdminSchemeOfWorkPage() {
+  const [activeTab, setActiveTab] = useState<'manual' | 'pdf'>('manual')
+
+  // Existing schemes state
+  const [schemes, setSchemes] = useState<any[]>([])
+  const [loadingSchemes, setLoadingSchemes] = useState(true)
+  const [expandedScheme, setExpandedScheme] = useState<string | null>(null)
+  const [expandedEntries, setExpandedEntries] = useState<any[]>([])
+
+  // --- MANUAL STATE ---
   const [subject, setSubject] = useState('')
   const [classLevel, setClassLevel] = useState('')
   const [term, setTerm] = useState('')
@@ -25,20 +36,14 @@ export default function AdminSchemeOfWorkPage() {
   const [isUploading, setIsUploading] = useState(false)
   const [uploadResult, setUploadResult] = useState<{ sowId: string; weekCount: number } | null>(null)
 
-  // Existing schemes
-  const [schemes, setSchemes] = useState<any[]>([])
-  const [loadingSchemes, setLoadingSchemes] = useState(true)
-  const [expandedScheme, setExpandedScheme] = useState<string | null>(null)
-  const [expandedEntries, setExpandedEntries] = useState<any[]>([])
-
-  // Subject list based on class
-  const isJSS = classLevel.startsWith('JSS')
-  const isSS = classLevel.startsWith('SS')
-  const subjectList = isJSS
-    ? NIGERIAN_SUBJECTS.jss
-    : isSS
-    ? NIGERIAN_SUBJECTS.sss
-    : [...NIGERIAN_SUBJECTS.jss, ...NIGERIAN_SUBJECTS.sss].filter((v, i, a) => a.indexOf(v) === i).sort()
+  // --- PDF AUTO STATE ---
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [isExtracting, setIsExtracting] = useState(false)
+  const [extractionProgress, setExtractionProgress] = useState('')
+  const [extractedSOWs, setExtractedSOWs] = useState<any[]>([])
+  
+  const [isProcessingBatch, setIsProcessingBatch] = useState(false)
+  const [batchProgress, setBatchProgress] = useState({ current: 0, total: 0 })
 
   useEffect(() => {
     fetchSchemes()
@@ -51,13 +56,10 @@ export default function AdminSchemeOfWorkPage() {
     setLoadingSchemes(false)
   }
 
-  const handleUpload = async () => {
-    if (!subject || !classLevel || !term) {
-      toast.error('Please select subject, class, and term.')
-      return
-    }
-    if (!rawText.trim() || rawText.trim().length < 50) {
-      toast.error('Please paste the full Scheme of Work text (at least 50 characters).')
+  // --- MANUAL UPLOAD LOGIC ---
+  const handleManualUpload = async () => {
+    if (!subject || !classLevel || !term || !rawText.trim()) {
+      toast.error('Please fill all fields')
       return
     }
 
@@ -69,11 +71,8 @@ export default function AdminSchemeOfWorkPage() {
       if (result.error) throw new Error(result.error)
 
       setUploadResult({ sowId: result.sowId!, weekCount: result.weekCount! })
-      toast.success(`Uploaded! ${result.weekCount} weeks parsed successfully.`)
+      toast.success(`Uploaded! ${result.weekCount} weeks parsed.`)
       setRawText('')
-      setSubject('')
-      setClassLevel('')
-      setTerm('')
       fetchSchemes()
     } catch (err: any) {
       toast.error(err.message)
@@ -82,25 +81,101 @@ export default function AdminSchemeOfWorkPage() {
     }
   }
 
+  // --- PDF BATCH LOGIC ---
+  const handleExtractPDF = async () => {
+    if (!pdfFile) return
+    setIsExtracting(true)
+    setExtractedSOWs([])
+    setExtractionProgress('Extracting text from PDF document...')
+    
+    try {
+      const formData = new FormData()
+      formData.append('file', pdfFile)
+      
+      const { text, error, numPages } = await extractTextFromPDF(formData)
+      if (error || !text) throw new Error(error || 'Failed to read PDF text')
+
+      // Split text into ~12000 character chunks (roughly 2000 words, safely under LLM limits)
+      const CHUNK_SIZE = 12000
+      const chunks = []
+      for (let i = 0; i < text.length; i += CHUNK_SIZE) {
+        chunks.push(text.substring(i, i + CHUNK_SIZE))
+      }
+
+      const allFoundSOWs: any[] = []
+      
+      for (let i = 0; i < chunks.length; i++) {
+        setExtractionProgress(`AI is reading part ${i + 1} of ${chunks.length}...`)
+        
+        const res = await identifySOWsInChunk(chunks[i])
+        if (res.data && Array.isArray(res.data)) {
+          allFoundSOWs.push(...res.data)
+        }
+      }
+
+      if (allFoundSOWs.length === 0) {
+        toast.error('No valid Schemes of Work found in the document.')
+      } else {
+        toast.success(`Found ${allFoundSOWs.length} schemes!`)
+        setExtractedSOWs(allFoundSOWs)
+      }
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setIsExtracting(false)
+      setExtractionProgress('')
+    }
+  }
+
+  const handleProcessBatch = async () => {
+    if (extractedSOWs.length === 0) return
+    setIsProcessingBatch(true)
+    setBatchProgress({ current: 0, total: extractedSOWs.length })
+    
+    let successCount = 0
+    let failCount = 0
+
+    for (let i = 0; i < extractedSOWs.length; i++) {
+      const sow = extractedSOWs[i]
+      setBatchProgress({ current: i + 1, total: extractedSOWs.length })
+      
+      try {
+        const result = await uploadSchemeOfWork(
+          sow.subject,
+          sow.class_level,
+          sow.term,
+          sow.raw_text
+        )
+        if (result.error) throw new Error(result.error)
+        successCount++
+      } catch (err) {
+        console.error('Failed to parse:', sow.subject, err)
+        failCount++
+      }
+    }
+
+    setIsProcessingBatch(false)
+    toast.success(`Batch complete: ${successCount} successful, ${failCount} failed.`)
+    setExtractedSOWs([])
+    setPdfFile(null)
+    fetchSchemes()
+  }
+
+  // --- DELETE & EXPAND LOGIC ---
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this Scheme of Work and all its weekly entries? Teachers will lose access to this scheme.')) return
+    if (!confirm('Delete this Scheme of Work?')) return
     const result = await deleteSchemeOfWork(id)
     if (result.error) {
       toast.error(result.error)
     } else {
       toast.success('Scheme deleted')
       fetchSchemes()
-      if (expandedScheme === id) {
-        setExpandedScheme(null)
-        setExpandedEntries([])
-      }
     }
   }
 
   const toggleExpand = async (id: string) => {
     if (expandedScheme === id) {
       setExpandedScheme(null)
-      setExpandedEntries([])
       return
     }
     setExpandedScheme(id)
@@ -108,7 +183,6 @@ export default function AdminSchemeOfWorkPage() {
     setExpandedEntries(result.data || [])
   }
 
-  // Group schemes by class level
   const groupedSchemes: Record<string, any[]> = {}
   schemes.forEach((s) => {
     if (!groupedSchemes[s.class_level]) groupedSchemes[s.class_level] = []
@@ -116,168 +190,204 @@ export default function AdminSchemeOfWorkPage() {
   })
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-6 pb-20">
       <div>
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
           <GraduationCap className="w-7 h-7 text-green-500" />
           Scheme of Work Manager
         </h1>
         <p className="text-slate-500 dark:text-slate-400 mt-1">
-          Upload official NERDC Scheme of Work for Nigerian teachers. The AI will parse it into structured weekly entries that teachers can use to generate lesson notes.
+          Upload official NERDC Schemes of Work. Teachers use these to generate lesson notes.
         </p>
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
-        {/* Upload Form — 3 columns */}
-        <div className="xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
-          <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
-            <Upload className="w-5 h-5 text-green-500" />
-            Upload New Scheme of Work
-          </h2>
-
-          {/* Dropdowns Row */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4">
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Class Level</label>
-              <select
-                value={classLevel}
-                onChange={(e) => { setClassLevel(e.target.value); setSubject('') }}
-                className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select class...</option>
-                {CLASS_LEVELS.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Subject</label>
-              <select
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
-                disabled={!classLevel}
-                className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-green-500 disabled:opacity-50"
-              >
-                <option value="">Select subject...</option>
-                {subjectList.map((s) => (
-                  <option key={s} value={s}>{s}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Term</label>
-              <select
-                value={term}
-                onChange={(e) => setTerm(e.target.value)}
-                className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-sm text-slate-800 dark:text-slate-200 outline-none focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Select term...</option>
-                {TERMS.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
+        
+        {/* LEFT COLUMN: Input Forms */}
+        <div className="xl:col-span-3 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+          
+          {/* Tabs */}
+          <div className="flex border-b border-slate-200 dark:border-slate-700">
+            <button
+              onClick={() => setActiveTab('manual')}
+              className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                activeTab === 'manual' 
+                ? 'bg-white dark:bg-slate-800 text-green-600 border-b-2 border-green-600' 
+                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <FileText className="w-4 h-4" /> Paste Text (Manual)
+            </button>
+            <button
+              onClick={() => setActiveTab('pdf')}
+              className={`flex-1 py-4 text-sm font-bold flex items-center justify-center gap-2 transition-colors ${
+                activeTab === 'pdf' 
+                ? 'bg-white dark:bg-slate-800 text-purple-600 border-b-2 border-purple-600' 
+                : 'bg-slate-50 dark:bg-slate-900/50 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <Upload className="w-4 h-4" /> Bulk Upload (PDF)
+            </button>
           </div>
 
-          {/* Raw Text Paste Area */}
-          <label className="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1.5 uppercase tracking-wider">Paste Scheme of Work Text</label>
-          <textarea
-            value={rawText}
-            onChange={(e) => setRawText(e.target.value)}
-            placeholder={`Paste the full scheme of work here. Example:\n\nWeek 1\nTopic: Number Bases\nSub-topic: Conversion of number bases\nObjectives: Students should be able to convert from one base to another\nContent: Binary, octal, decimal, hexadecimal number systems\nActivities: Guided practice, group work\nResources: Textbook Chapter 1, number charts\n\nWeek 2\nTopic: Fractions\n...`}
-            className="w-full min-h-[320px] p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none resize-none text-slate-800 dark:text-slate-200 text-sm leading-relaxed"
-          />
-
-          <div className="flex items-center gap-2 mt-2 mb-4">
-            <AlertCircle className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
-            <p className="text-[10px] text-slate-400">
-              The AI will automatically parse this text into weekly entries. Supports any format — just paste the raw SOW content from the NERDC curriculum document.
-            </p>
-          </div>
-
-          <button
-            onClick={handleUpload}
-            disabled={isUploading || !subject || !classLevel || !term || !rawText.trim()}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed text-sm"
-          >
-            {isUploading ? (
-              <>
-                <Loader2 className="w-5 h-5 animate-spin" />
-                Parsing with AI... (15–30 seconds)
-              </>
-            ) : (
-              <>
-                <Upload className="w-5 h-5" />
-                Parse &amp; Upload Scheme of Work
-              </>
-            )}
-          </button>
-
-          {/* Success Message */}
-          {uploadResult && (
-            <div className="mt-4 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="font-bold text-green-800 dark:text-green-300 text-sm">Upload successful!</p>
-                <p className="text-xs text-green-700 dark:text-green-400 mt-1">
-                  {uploadResult.weekCount} weekly entries were parsed and saved. Teachers can now generate lesson notes and questions from this scheme.
-                </p>
+          <div className="p-6">
+            {/* MANUAL MODE */}
+            {activeTab === 'manual' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <select value={classLevel} onChange={(e) => setClassLevel(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none">
+                    <option value="">Class Level</option>
+                    {CLASS_LEVELS.map(c => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                  <select value={subject} onChange={(e) => setSubject(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none">
+                    <option value="">Subject</option>
+                    {subjectList.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select value={term} onChange={(e) => setTerm(e.target.value)} className="w-full p-2.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-sm outline-none">
+                    <option value="">Term</option>
+                    {TERMS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                
+                <textarea
+                  value={rawText}
+                  onChange={(e) => setRawText(e.target.value)}
+                  placeholder="Paste the Scheme of Work text here..."
+                  className="w-full min-h-[300px] p-4 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-green-500 outline-none resize-y text-sm"
+                />
+                
+                <button
+                  onClick={handleManualUpload}
+                  disabled={isUploading || !subject || !classLevel || !term || !rawText.trim()}
+                  className="w-full py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50"
+                >
+                  {isUploading ? <><Loader2 className="w-5 h-5 animate-spin"/> Parsing...</> : <><CheckCircle2 className="w-5 h-5"/> Parse & Save</>}
+                </button>
+                {uploadResult && (
+                  <p className="text-green-600 text-sm font-bold text-center">Successfully saved {uploadResult.weekCount} weeks!</p>
+                )}
               </div>
-            </div>
-          )}
+            )}
+
+            {/* PDF BULK MODE */}
+            {activeTab === 'pdf' && (
+              <div className="space-y-6">
+                
+                {extractedSOWs.length === 0 ? (
+                  <>
+                    <div className="p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900/50 text-center">
+                      <input 
+                        type="file" 
+                        accept=".pdf" 
+                        id="pdf-upload" 
+                        className="hidden"
+                        onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
+                      />
+                      <label htmlFor="pdf-upload" className="cursor-pointer flex flex-col items-center">
+                        <Upload className="w-12 h-12 text-purple-400 mb-3" />
+                        <span className="font-bold text-slate-700 dark:text-slate-300">
+                          {pdfFile ? pdfFile.name : 'Select Curriculum PDF'}
+                        </span>
+                        <span className="text-xs text-slate-500 mt-1">
+                          Click to browse (PDF only)
+                        </span>
+                      </label>
+                    </div>
+
+                    <button
+                      onClick={handleExtractPDF}
+                      disabled={!pdfFile || isExtracting}
+                      className="w-full py-4 bg-purple-600 hover:bg-purple-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50 transition-all"
+                    >
+                      {isExtracting ? (
+                        <><Loader2 className="w-5 h-5 animate-spin"/> {extractionProgress}</>
+                      ) : (
+                        <><Settings className="w-5 h-5"/> Step 1: AI Auto-Extract Subjects</>
+                      )}
+                    </button>
+
+                    <div className="bg-purple-50 dark:bg-purple-900/20 p-4 rounded-xl flex gap-3 text-sm text-purple-800 dark:text-purple-300">
+                      <AlertCircle className="w-5 h-5 shrink-0" />
+                      <p>Upload a massive PDF and the AI will slice it into individual subjects, classes, and terms automatically. <b>This can take 1-2 minutes depending on PDF size.</b></p>
+                    </div>
+                  </>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="font-bold text-lg text-slate-800 dark:text-white">
+                        AI Found {extractedSOWs.length} Schemes
+                      </h3>
+                      <button 
+                        onClick={() => { setExtractedSOWs([]); setPdfFile(null) }}
+                        className="text-xs text-slate-500 hover:text-slate-800 dark:hover:text-white"
+                        disabled={isProcessingBatch}
+                      >
+                        Cancel / Start Over
+                      </button>
+                    </div>
+                    
+                    <div className="max-h-60 overflow-y-auto border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-900 p-2 space-y-1">
+                      {extractedSOWs.map((s, i) => (
+                        <div key={i} className="flex justify-between items-center text-sm p-2 bg-white dark:bg-slate-800 rounded-lg border border-slate-100 dark:border-slate-700">
+                          <span className="font-medium text-slate-700 dark:text-slate-300">{s.subject}</span>
+                          <span className="text-xs px-2 py-0.5 bg-slate-100 dark:bg-slate-700 rounded-full">{s.class_level} · {s.term}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <button
+                      onClick={handleProcessBatch}
+                      disabled={isProcessingBatch}
+                      className="w-full py-4 bg-green-600 hover:bg-green-700 text-white rounded-xl font-bold flex justify-center items-center gap-2 disabled:opacity-50 shadow-lg shadow-green-500/20"
+                    >
+                      {isProcessingBatch ? (
+                        <><Loader2 className="w-5 h-5 animate-spin"/> Processing {batchProgress.current} of {batchProgress.total}...</>
+                      ) : (
+                        <><PlayCircle className="w-5 h-5"/> Step 2: Save All to Database</>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Existing Schemes — 2 columns */}
-        <div className="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6">
+        {/* RIGHT COLUMN: Existing Schemes Viewer */}
+        <div className="xl:col-span-2 bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-6 flex flex-col h-full">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-base font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-              <BookOpen className="w-5 h-5 text-blue-500" />
-              Uploaded Schemes
+              <BookOpen className="w-5 h-5 text-blue-500" /> Uploaded Schemes
             </h2>
-            <span className="text-xs font-bold text-slate-400 bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full">
-              {schemes.length} total
-            </span>
+            <span className="text-xs font-bold bg-slate-100 dark:bg-slate-700 px-2.5 py-1 rounded-full">{schemes.length} total</span>
           </div>
 
-          {loadingSchemes ? (
-            <div className="flex items-center justify-center py-12 text-slate-400">
-              <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading schemes...
-            </div>
-          ) : schemes.length === 0 ? (
-            <div className="text-center py-12 text-slate-400">
-              <GraduationCap className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p className="text-sm">No schemes uploaded yet.</p>
-              <p className="text-xs mt-1">Use the form to upload your first Scheme of Work.</p>
-            </div>
-          ) : (
-            <div className="space-y-2 max-h-[550px] overflow-y-auto pr-1">
-              {Object.entries(groupedSchemes).sort(([a], [b]) => a.localeCompare(b)).map(([level, items]) => (
+          <div className="flex-1 overflow-y-auto pr-1 space-y-2 min-h-[400px]">
+            {loadingSchemes ? (
+              <div className="flex justify-center py-12"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
+            ) : schemes.length === 0 ? (
+              <div className="text-center py-12 text-slate-400">
+                <GraduationCap className="w-10 h-10 mx-auto opacity-30 mb-2" />
+                <p className="text-sm">No schemes yet.</p>
+              </div>
+            ) : (
+              Object.entries(groupedSchemes).sort().map(([level, items]) => (
                 <div key={level}>
-                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 mt-3 first:mt-0">{level}</p>
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 mt-3">{level}</p>
                   {items.map((scheme) => (
                     <div key={scheme.id} className="border border-slate-200 dark:border-slate-600 rounded-xl overflow-hidden mb-2">
-                      <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                      <div 
+                        className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-900 cursor-pointer"
                         onClick={() => toggleExpand(scheme.id)}
                       >
                         <div className="flex items-center gap-2 flex-1 min-w-0">
-                          {expandedScheme === scheme.id ? (
-                            <ChevronDown className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                          ) : (
-                            <ChevronRight className="w-4 h-4 text-slate-400 flex-shrink-0" />
-                          )}
+                          {expandedScheme === scheme.id ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
                           <div className="min-w-0">
                             <p className="text-sm font-medium text-slate-700 dark:text-slate-300 truncate">{scheme.subject}</p>
                             <p className="text-[10px] text-slate-400">{scheme.term}</p>
                           </div>
                         </div>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); handleDelete(scheme.id) }}
-                          className="p-1.5 text-slate-400 hover:text-red-500 transition-colors flex-shrink-0"
-                          title="Delete this scheme"
-                        >
+                        <button onClick={(e) => { e.stopPropagation(); handleDelete(scheme.id) }} className="p-1.5 text-slate-400 hover:text-red-500">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
@@ -286,13 +396,8 @@ export default function AdminSchemeOfWorkPage() {
                         <div className="border-t border-slate-200 dark:border-slate-600 p-3 space-y-1.5 bg-white dark:bg-slate-800">
                           {expandedEntries.map((entry) => (
                             <div key={entry.id} className="flex items-start gap-2 text-xs">
-                              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 px-2 py-0.5 rounded-full font-bold flex-shrink-0 text-[10px]">
-                                W{entry.week_number}
-                              </span>
-                              <div className="min-w-0">
-                                <p className="font-medium text-slate-700 dark:text-slate-300 truncate">{entry.topic}</p>
-                                {entry.sub_topic && <p className="text-slate-400 truncate">{entry.sub_topic}</p>}
-                              </div>
+                              <span className="bg-green-100 dark:bg-green-900/30 text-green-700 px-2 py-0.5 rounded-full font-bold text-[10px] shrink-0">W{entry.week_number}</span>
+                              <p className="font-medium text-slate-700 dark:text-slate-300 truncate">{entry.topic}</p>
                             </div>
                           ))}
                         </div>
@@ -300,10 +405,11 @@ export default function AdminSchemeOfWorkPage() {
                     </div>
                   ))}
                 </div>
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
         </div>
+
       </div>
     </div>
   )
