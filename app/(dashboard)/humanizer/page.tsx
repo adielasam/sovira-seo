@@ -302,14 +302,31 @@ export default function DashboardHumanizerPage() {
             </div>
           )}
 
-          <button
-            onClick={handleGenerate}
-            disabled={isLoading || !input.trim()}
-            className="mt-4 w-full flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
-            {isLoading ? (isScanning ? 'Scanning for AI...' : 'Humanizing...') : 'Humanize Text'}
-          </button>
+          <div className="mt-4 flex flex-col sm:flex-row gap-3">
+            <button
+              onClick={() => {
+                if (!input.trim()) {
+                  toast.error('Please enter some text first.')
+                  return
+                }
+                setOutput('')
+                runDetection(input)
+              }}
+              disabled={isScanning || !input.trim()}
+              className="flex-1 flex items-center justify-center gap-2 py-4 bg-white dark:bg-slate-900 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-500 dark:hover:border-blue-500 text-slate-700 dark:text-slate-200 rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isScanning && !isLoading ? <Loader2 className="w-5 h-5 animate-spin text-blue-500" /> : <Scan className="w-5 h-5 text-blue-500" />}
+              {isScanning && !isLoading ? 'Scanning...' : 'Check for AI'}
+            </button>
+            <button
+              onClick={handleGenerate}
+              disabled={isLoading || !input.trim()}
+              className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}
+              {isLoading ? (isScanning ? 'Scanning for AI...' : 'Humanizing...') : 'Humanize Text'}
+            </button>
+          </div>
         </div>
 
         {/* Output + Detection */}
