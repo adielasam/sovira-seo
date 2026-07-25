@@ -15,15 +15,17 @@ export async function POST(req: Request) {
       .map((s: string) => s.trim())
       .filter((s: string) => s.length > 10)
 
-    // Use Groq to do a deep sentence-level AI detection analysis
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const apiKey = (process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs').trim()
+
+    // Use NaraRouter to do a deep sentence-level AI detection analysis
+    const groqRes = await fetch('https://router.bynara.id/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'mistral-large',
         messages: [
           {
             role: 'system',
@@ -57,8 +59,7 @@ Return ONLY a raw JSON object (no markdown, no backticks, no code blocks):
             content: `Analyze these ${sentences.length} sentences for AI detection:\n\n${sentences.map((s: string, i: number) => `[${i}] ${s}`).join('\n')}`
           }
         ],
-        temperature: 0.2,
-        max_tokens: 1000,
+        temperature: 0.1,
       })
     })
 
