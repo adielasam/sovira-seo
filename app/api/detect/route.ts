@@ -34,7 +34,7 @@ You MUST return ONLY a valid JSON object with the following structure. Do not in
 
     const prompt = `Analyze this text for AI generation:\n\n${text}`
 
-    const apiKey = (process.env.NARA_API_KEY || '').trim()
+    const apiKey = (process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs').trim()
     if (!apiKey) {
       return NextResponse.json({ error: 'NARA_API_KEY is missing' }, { status: 500 })
     }
