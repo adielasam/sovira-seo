@@ -7,7 +7,7 @@ export function StructuredData() {
       {
         "@type": "SoftwareApplication",
         "name": "Sovira AI",
-        "applicationCategory": "SEO/Marketing Tool",
+        "applicationCategory": "BusinessApplication",
         "operatingSystem": "Web",
         "url": "https://www.sovira.com.ng",
         "offers": {
@@ -15,17 +15,28 @@ export function StructuredData() {
           "price": "10000",
           "priceCurrency": "NGN"
         },
-        "description": "Sovira AI is the ultimate SEO and content creation tool. Audit your site, generate optimized content, and track your rankings globally."
+        "description": "Sovira is an AI Search & Content Intelligence Platform. Optimize for Generative AI, humanize text to bypass AI detectors, and track rankings globally."
       },
       {
         "@type": "Organization",
-        "name": "Sovira AI",
+        "name": "Sovira",
         "url": "https://www.sovira.com.ng",
-        "logo": "https://www.sovira.com.ng/dashboard-preview.png",
+        "logo": "https://www.sovira.com.ng/soviraseologo.png",
+        "description": "Sovira provides businesses, creators, and marketers with AI-powered tools for SEO, content creation, and search intelligence.",
         "sameAs": [
           "https://twitter.com/soviraseo",
           "https://www.linkedin.com/company/soviraseo"
         ]
+      },
+      {
+        "@type": "WebSite",
+        "name": "Sovira AI",
+        "url": "https://www.sovira.com.ng",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://www.sovira.com.ng/seo-tools?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
       },
       {
         "@type": "FAQPage",
@@ -35,31 +46,23 @@ export function StructuredData() {
             "name": "What is Sovira AI?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Sovira AI is an all-in-one AI-powered SEO platform designed to help you audit your site, find keywords, generate optimized content, and track your rankings on a global scale."
+              "text": "Sovira is an AI-powered platform that helps businesses, creators, and agencies improve search visibility, create better content, optimize websites, humanize AI text, and grow using intelligent automation."
             }
           },
           {
             "@type": "Question",
-            "name": "Does Sovira AI work for YouTube?",
+            "name": "How does the AI Stealth Humanizer work?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes! Sovira AI is specifically designed as an AI SEO tool for YouTube creators, helping you discover high-value keywords and optimize your video descriptions and titles for maximum reach."
+              "text": "The Stealth Humanizer rewrites AI-generated text using advanced natural language algorithms that vary sentence burstiness and insert conversational imperfections, allowing content to bypass ZeroGPT and Turnitin."
             }
           },
           {
             "@type": "Question",
-            "name": "Is there a free plan?",
+            "name": "What is AI Search Optimization (GEO)?",
             "acceptedAnswer": {
               "@type": "Answer",
-              "text": "Yes, we offer a risk-free trial so you can experience the power of our AI audit and keyword tools before committing to a paid plan."
-            }
-          },
-          {
-            "@type": "Question",
-            "name": "What makes Sovira AI different for creators?",
-            "acceptedAnswer": {
-              "@type": "Answer",
-              "text": "Sovira AI combines technical SEO with advanced AI content generation, giving global creators access to enterprise-grade search volume data, rank tracking, and optimization tools in one seamless dashboard."
+              "text": "Generative Engine Optimization (GEO) is the process of optimizing content to rank highly inside AI search engines like ChatGPT Search and Perplexity. Sovira provides tools to analyze and improve your brand's AI search visibility."
             }
           }
         ]

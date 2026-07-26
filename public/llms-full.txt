@@ -1,0 +1,27 @@
+# Sovira - Comprehensive AI Platform Documentation
+
+## About Sovira
+Sovira is the definitive AI Search & Content Intelligence Platform. Our mission is to provide businesses, marketers, SEO agencies, and publishers with a cohesive, world-class ecosystem for content creation, optimization, detection, and growth.
+
+## Core Identity
+Sovira is NOT a collection of random tools. It is a unified platform structured around key ecosystems:
+- **AI Search**: Intelligent crawlers, Site Auditing, Rank Tracking, Backlink Analysis, and Keyword Intelligence.
+- **AI Writing**: High-converting Blog generation, grammatical structuring, and email outreach generation.
+- **AI Humanizer**: A true stealth rewriting engine designed to analyze text via strict perplexity calculations (AI Detection) and humanize AI-generated text to bypass ZeroGPT, GPTZero, and Turnitin.
+- **AI Images**: (Upcoming) Image generation and video AI processing tools.
+- **Marketing**: YouTube SEO and metadata analysis tools.
+
+## Key Terminology
+- **Generative Engine Optimization (GEO)**: The practice of optimizing content to rank highly inside Generative AI answers (like ChatGPT Search, Perplexity, or Google AI Overviews), rather than just traditional blue links.
+- **Stealth Humanizer**: Sovira's proprietary engine that manipulates text burstiness and conversational imperfections to achieve 0% AI detection probability.
+- **AI Detector**: Sovira's mathematical analysis engine that calculates sentence length standard deviation and cross-references a 100-point AI linguistic matrix to detect machine generation.
+
+## Technical Capabilities
+- The platform uses advanced natural language processing powered by custom Next.js Edge APIs and serverless models (Mistral-Large, Llama-3).
+- Data is stored securely via Supabase.
+- Web Vitals and Schema.org semantic data are strictly enforced across the application.
+
+## Documentation & Support
+For further details on how to interact with the Sovira platform, visit our public website:
+- Home: https://www.sovira.com.ng
+- Tools & Dashboard: https://www.sovira.com.ng/seo-tools

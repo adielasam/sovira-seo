@@ -10,53 +10,87 @@ import {
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
-const navigation = [
-  { name: 'Home', href: '/dashboard', icon: LayoutDashboard },
-  { name: 'SEO Audit', href: '/audit', icon: Search },
-  { name: 'Keywords', href: '/keywords', icon: Tag },
-  { name: 'Competitors', href: '/competitors', icon: Users },
-  { name: 'Trending Topics', href: '/trending', icon: Flame },
-  { name: 'Content AI', href: '/content', icon: Sparkles },
-  { name: 'AI Humanizer', href: '/humanizer', icon: Shield },
-  { name: 'AI Detector', href: '/ai-detector', icon: Radar },
-  { name: 'Teacher Tools', href: '/teacher-tools', icon: GraduationCap },
-  { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
-  { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
-  { name: 'AI Video', href: '/ai-video', icon: Video },
-  { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
-  { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Integrations', href: '/integrations', icon: Plug },
-  { name: 'Settings', href: '/settings', icon: Settings },
+const navigationGroups = [
+  {
+    name: 'AI Search',
+    items: [
+      { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Site Audit', href: '/audit', icon: Search },
+      { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
+      { name: 'Keywords', href: '/keywords', icon: Tag },
+      { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
+      { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
+    ]
+  },
+  {
+    name: 'AI Writing',
+    items: [
+      { name: 'Content AI', href: '/content', icon: Sparkles },
+    ]
+  },
+  {
+    name: 'AI Humanizer',
+    items: [
+      { name: 'Humanizer', href: '/humanizer', icon: Shield },
+      { name: 'AI Detector', href: '/ai-detector', icon: Radar },
+    ]
+  },
+  {
+    name: 'Marketing',
+    items: [
+      { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
+      { name: 'Trending Topics', href: '/trending', icon: Flame },
+      { name: 'Competitors', href: '/competitors', icon: Users },
+      { name: 'AI Video', href: '/ai-video', icon: Video },
+    ]
+  },
+  {
+    name: 'Administration',
+    items: [
+      { name: 'Teacher Tools', href: '/teacher-tools', icon: GraduationCap },
+      { name: 'Reports', href: '/reports', icon: FileText },
+      { name: 'Integrations', href: '/integrations', icon: Plug },
+      { name: 'Settings', href: '/settings', icon: Settings },
+    ]
+  }
 ]
 
 function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
   return (
-    <ul role="list" className="-mx-2 space-y-1">
-      {navigation.map((item) => {
-        const isActive = pathname === item.href
-        return (
-          <li key={item.name}>
-            <Link
-              href={item.href}
-              onClick={onNav}
-              className={`
-                group flex gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium transition-all duration-200
-                ${isActive
-                  ? 'bg-blue-600 text-white'
-                  : 'text-slate-300 hover:text-white hover:bg-slate-800'
-                }
-              `}
-            >
-              <item.icon
-                className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}
-                aria-hidden="true"
-              />
-              {item.name}
-            </Link>
-          </li>
-        )
-      })}
+    <ul role="list" className="flex flex-1 flex-col gap-y-7 -mx-2">
+      {navigationGroups.map((group) => (
+        <li key={group.name}>
+          <div className="text-xs font-semibold leading-6 text-slate-400 px-2 uppercase tracking-wider mb-2">
+            {group.name}
+          </div>
+          <ul role="list" className="space-y-1">
+            {group.items.map((item) => {
+              const isActive = pathname === item.href
+              return (
+                <li key={item.name}>
+                  <Link
+                    href={item.href}
+                    onClick={onNav}
+                    className={`
+                      group flex gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium transition-all duration-200
+                      ${isActive
+                        ? 'bg-blue-600 text-white'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                      }
+                    `}
+                  >
+                    <item.icon
+                      className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}
+                      aria-hidden="true"
+                    />
+                    {item.name}
+                  </Link>
+                </li>
+              )
+            })}
+          </ul>
+        </li>
+      ))}
     </ul>
   )
 }

@@ -259,17 +259,17 @@ export default function LandingPage() {
                   {/* Eyebrow */}
                   <div className="inline-flex items-center gap-2 bg-[#2563EB]/8 dark:bg-[#2563EB]/15 border border-[#2563EB]/20 rounded-full px-4 py-1.5 mb-6">
                     <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
-                    <span className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest">Built for Creators Worldwide</span>
+                    <span className="text-xs font-semibold text-[#2563EB] uppercase tracking-widest">The Definitive Intelligence Platform</span>
                   </div>
 
                   {/* Main headline — larger, editorial weight */}
                   <h1 className="font-display text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] text-slate-900 dark:text-white">
-                    The only AI SEO tool with built-in{' '}
-                    <span className="text-[#2563EB]">ideation, tracking, and publishing.</span>
+                    The world's most powerful{' '}
+                    <span className="text-[#2563EB]">AI Search & Content Platform.</span>
                   </h1>
 
                   <p className="mt-6 max-w-xl mx-auto lg:mx-0 text-lg text-slate-600 dark:text-slate-400 leading-relaxed">
-                    Connect with a purpose-driven platform ready to execute your SEO tasks at scale. Accelerate your organic growth with human-like AI content, localized tracking, and deep technical audits.
+                    Sovira provides businesses, marketers, and creators with a unified ecosystem for Generative Engine Optimization (GEO), stealth AI humanization, and technical search intelligence.
                   </p>
 
                   <div className="mt-10 flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">

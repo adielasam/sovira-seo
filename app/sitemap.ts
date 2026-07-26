@@ -14,7 +14,11 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/terms',
     '/seo-tools',
     '/youtube-seo-tools',
-    '/content-creation-tools'
+    '/content-creation-tools',
+    '/ai-search-optimization',
+    '/ai-humanizer',
+    '/technical-seo',
+    '/llms.txt'
   ]
 
   const sitemapEntries = routes.map((route) => ({
