@@ -24,8 +24,8 @@ export async function POST(req: Request) {
     }
 
     // Calculate simple burstiness metadata to feed to the LLM for better accuracy
-    const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
-    const lengths = sentences.map(s => s.trim().split(/\s+/).length)
+    const sentences: string[] = text.match(/[^.!?]+[.!?]+/g) || [text]
+    const lengths = sentences.map((s: string) => s.trim().split(/\s+/).length)
     const avgLength = lengths.reduce((a, b) => a + b, 0) / lengths.length
     const variance = lengths.reduce((a, b) => a + Math.pow(b - avgLength, 2), 0) / lengths.length
     const burstinessScore = Math.sqrt(variance) // Standard deviation of sentence length
