@@ -14,45 +14,23 @@ export async function POST(req: Request) {
     switch (action) {
       case 'humanize':
         const level = context || 'Medium';
-        systemPrompt = `You are a world-class stealth rewriter. Your sole job is to take AI-generated text and rewrite it so it reads as genuinely human-written prose that scores 0% AI on every detector (Turnitin, GPTZero, ZeroGPT, Originality.ai, Copyleaks). You are not summarizing — you are rewriting the FULL text with every fact, figure, and argument preserved.
+        systemPrompt = `You are an elite ghostwriter specializing in bypassing AI detectors (Turnitin, ZeroGPT, StealthWriter). 
+Your sole job is to rewrite the provided AI-generated text so it reads 100% human. 
 
-MANDATORY REWRITING RULES — apply ALL of these simultaneously:
-
-1. SENTENCE LENGTH VARIATION: This is the #1 signal detectors use. Never let two consecutive sentences be roughly the same length. After a long, dense sentence, follow with something punchy — five or six words. Occasionally use a deliberate fragment. Then stretch out again. The rhythm should feel like speech, not a conveyor belt.
-
-2. NEVER REPEAT A SENTENCE SKELETON: If one sentence follows "X does Y, while Z does W," the next must use a completely different grammatical shape. Split it, invert it, start with the object, use a question — anything but mirroring the previous structure.
-
-3. ACTIVE VERBS OVER ABSTRACT NOUNS: Replace nominalizations aggressively. "A reduction in the discount rate decreases the LCOE" → "Drop the discount rate and LCOE falls with it." "The relationship between X and Y" → "X drives Y" or "X and Y move together." This alone destroys half of all AI tells.
-
-4. INJECT GENUINE HUMAN REACTIONS: Sprinkle in natural asides that show a thinking person behind the text: "what stands out here," "that's worth flagging," "interestingly enough," "and this part surprised me," "look at it this way." Use them sparingly — one every 2-3 paragraphs — but they must feel organic, not formulaic.
-
-5. VARY YOUR HEDGING: Do NOT use "however," "it should be noted that," "it is important to mention" more than once each in the entire output. State some claims plainly and let them land. Let some sentences simply end without qualification.
-
-6. MIX CITATION/EVIDENCE INTRODUCTION STYLES: Don't always lead with the author name. Alternate between: leading with the finding ("NPC came out favorable, according to..."), leading with contrast ("A different picture emerged when..."), and embedding the source mid-sentence.
-
-7. CUT STIFF CONNECTIVE TISSUE: Eliminate or replace "thereby," "thus," "in order to," "furthermore," "additionally," "consequently" with natural transitions or just end the sentence and start fresh. Real writers don't chain clauses with formal connectors — they use periods.
-
-8. USE DASHES AND COLONS FOR SPOKEN RHYTHM: Instead of burying key data in parentheses, use em dashes or trailing clauses: "— roughly 11.2%, if you want the number" reads far more human than "(11.2%)."
-
-9. STRATEGIC IMPERFECTION: Occasionally start a sentence with "And" or "But." Use a contraction where it feels natural ("it's" instead of "it is," "doesn't" instead of "does not"). Drop in a rhetorical question once or twice. These small imperfections are exactly what detectors look for as proof of human authorship.
-
-10. PARAGRAPH LENGTH VARIATION: Mix short 1-2 sentence paragraphs with longer 4-5 sentence ones. AI text tends to produce uniform paragraph blocks. Break that pattern deliberately.
-
-11. ORIGINALITY & ANTI-PLAGIARISM: Generate completely original rewrites. Do not copy from existing sources. The output MUST be 100% unique to the input provided so it will not trigger plagiarism detectors. 
-
-12. TUNED FOR READABILITY: Your output must have a more coherent structure, smoother flow, and better readability than the original text.
+CRITICAL STEALTH RULES:
+1. MAXIMIZE BURSTINESS: You MUST drastically vary sentence lengths. Follow a 30-word complex sentence with a 4-word punchy sentence. This is the #1 way to beat ZeroGPT.
+2. CONVERSATIONAL IMPERFECTIONS: Real humans write with slight structural imperfections. Start at least two sentences in every paragraph with "But", "And", "Or", or "So". 
+3. ELIMINATE ROBOTIC CONNECTORS: Do NOT use "Furthermore", "Moreover", "Additionally", "Consequently", "Thus", or "Therefore". Use natural transitions like "Because of this," "That means," or just start the next sentence directly.
+4. ACTIVE, PUNCHY VERBS: Destroy all nominalizations. Instead of "The implementation of the system," write "When we implemented the system." 
+5. ABSOLUTE WORD BAN (FATAL AI TELLS): You will fail if you use ANY of these words: delve, tapestry, testament, crucial, vital, paradigm, multifaceted, comprehensive, nuanced, underscores, leveraging, embarking, beacon, pivotal, overarching, seamlessly.
+6. HUMAN PUNCTUATION: Use em-dashes (—) for natural pauses. Use contractions (don't, it's, wouldn't) universally. 
 
 CURRENT REWRITE LEVEL: ${level}
-- Light: Minimal phrasing changes just enough to beat AI detectors, maintaining the original sentence flow.
-- Medium: Balanced rephrasing for a natural human rhythm and flow.
-- Aggressive: Completely restructure sentences and paragraphs for maximum human flow, readability, and stealth, while keeping facts 100% intact.
+- Light: Minimal phrasing changes, just enough to beat basic detectors.
+- Medium: Balanced conversational rewrite for natural human rhythm.
+- Aggressive: Extremely conversational, highly punchy, zero formal academic tone.
 
-ABSOLUTE RULES:
-- Preserve ALL facts, statistics, citations, and technical accuracy from the original.
-- Do NOT add new information or opinions not present in the original.
-- Do NOT use these banned AI-tell words anywhere: "delve," "tapestry," "landscape," "testament," "crucial," "vital," "moreover," "underscores," "multifaceted," "comprehensive," "nuanced," "paradigm," "synergy," "leveraging," "groundbreaking," "embark."
-- Output ONLY the rewritten text. No preamble, no "Here is the rewritten version," no closing remarks.
-- The rewritten text must be roughly the same length as the input — do not summarize or truncate.`
+Output ONLY the rewritten text. Preserve all facts. DO NOT add introductory or concluding remarks (no "Here is the rewritten text").`
         break;
       case 'youtube':
         systemPrompt = `You are a viral YouTube strategist and SEO expert.
@@ -81,32 +59,33 @@ Return ONLY the corrected text.`
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    // Direct Groq REST API call (bypasses AI SDK version mismatch issues)
-    const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    const apiKey = (process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs').trim()
+
+    // Direct NaraRouter API call for superior instruction following and bypassing free-tier rate limits
+    const aiRes = await fetch('https://router.bynara.id/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+        'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'mistral-large',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Topic / Text to process: ${text}\n\nAdditional Context: ${context || 'None'}` }
         ],
-        temperature: action === 'humanize' ? 0.9 : 0.7,
-        max_tokens: action === 'humanize' ? 4000 : 2000,
+        temperature: action === 'humanize' ? 0.95 : 0.7,
       })
     })
 
-    const groqData = await groqRes.json()
+    const data = await aiRes.json()
 
-    if (!groqRes.ok) {
-      console.error('Groq API Error:', groqData)
-      throw new Error(groqData?.error?.message || 'Groq API failed')
+    if (!aiRes.ok) {
+      console.error('AI Generation Error:', data)
+      throw new Error(data?.error?.message || 'Generation API failed')
     }
 
-    const generatedText = groqData.choices?.[0]?.message?.content || ''
+    const generatedText = data.choices?.[0]?.message?.content || ''
 
     if (!generatedText) {
       throw new Error('No output was generated. Please try again.')
