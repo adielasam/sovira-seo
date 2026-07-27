@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap } from 'lucide-react'
+import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap, Radar } from 'lucide-react'
 import { useState } from 'react'
 
 const mainLinks = [
