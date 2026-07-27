@@ -9,7 +9,7 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/admin', '/api/', '/_next/'],
       },
       {
-        userAgent: ['GPTBot', 'PerplexityBot', 'Claude-Web', 'anthropic-ai', 'OAI-SearchBot', 'Google-Extended'],
+        userAgent: ['GPTBot', 'PerplexityBot', 'Claude-Web', 'ClaudeBot', 'anthropic-ai', 'Anthropic-AI', 'OAI-SearchBot', 'Google-Extended', 'CCBot'],
         allow: ['/llms.txt', '/llms-full.txt', '/blog', '/about', '/'],
         disallow: ['/admin', '/api/', '/_next/'],
       }
