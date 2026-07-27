@@ -86,6 +86,20 @@ export default function PricingPage() {
   const [user, setUser] = useState<any>(null)
 
   useEffect(() => {
+    // Check if redirected due to expired trial
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('expired') === 'true') {
+        toast.error('Your 3-month free trial has expired. Please upgrade to a paid plan to continue accessing the dashboard.', {
+          duration: 6000,
+          icon: '⏳'
+        });
+        
+        // Remove the parameter from URL so it doesn't toast again on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
     const fetchUser = async () => {
       try {
         const data = await getUserProfile()

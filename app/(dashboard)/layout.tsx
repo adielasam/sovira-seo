@@ -27,17 +27,15 @@ export default async function DashboardLayout({
     redirect('/admin')
   }
 
-  // 1-Month Free Trial Expiration Check
+  // 3-Month Free Trial Expiration Check
   const plan = profile?.plan || 'free'
-  /* 
   if (plan === 'free') {
     const signupDate = new Date(user.created_at).getTime()
-    const thirtyDaysMs = 30 * 24 * 60 * 60 * 1000
-    if (Date.now() - signupDate > thirtyDaysMs) {
+    const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000
+    if (Date.now() - signupDate > ninetyDaysMs) {
       redirect('/pricing?expired=true')
     }
   }
-  */
 
   return (
     <div className="h-full bg-slate-50 dark:bg-[#0F172A] min-h-screen text-slate-900 dark:text-white transition-colors duration-200 pb-16 lg:pb-0">
