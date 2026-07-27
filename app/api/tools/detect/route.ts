@@ -8,89 +8,99 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Text is too short to analyze' }, { status: 400 })
     }
 
-    // Split text into sentences for per-sentence analysis
+    // 1. Split into sentences safely
     const sentences = text
       .replace(/([.!?])\s+/g, '$1|||')
       .split('|||')
       .map((s: string) => s.trim())
-      .filter((s: string) => s.length > 10)
+      .filter((s: string) => s.length > 5);
 
-    const apiKey = (process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs').trim()
-
-    // Use NaraRouter to do a deep sentence-level AI detection analysis
-    const groqRes = await fetch('https://router.bynara.id/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'mistral-large',
-        messages: [
-          {
-            role: 'system',
-            content: `You are an expert AI text detector, as accurate as Turnitin, GPTZero, ZeroGPT, and Originality.ai combined. Your job is to analyze each sentence in the provided text and determine which ones exhibit AI-generated patterns.
-
-AI TEXT DETECTION RULES — check each sentence for these signals:
-
-1. UNIFORM SENTENCE LENGTH: AI text tends to produce sentences of very similar length. Flag sentences in runs of 3+ that are within 10 words of each other.
-2. REPEATED GRAMMATICAL SKELETONS: If consecutive sentences follow the exact same structure (e.g., "X does Y. A does B. C does D."), flag them.
-3. NOMINALIZATION OVERUSE: Sentences heavy with abstract nouns like "the implementation of," "the utilization of," "the relationship between" instead of active verbs.
-4. AI TELL-WORDS: Flag any sentence containing: "delve," "tapestry," "landscape," "testament," "crucial," "vital," "moreover," "furthermore," "underscores," "multifaceted," "comprehensive," "nuanced," "paradigm," "synergy," "leveraging," "groundbreaking," "embark," "consequently," "additionally."
-5. ROBOTIC HEDGING: Repetitive use of "it should be noted," "it is important to mention," "however" at the start of sentences.
-6. LACK OF VOICE: Sentences with zero personality markers — no contractions, no dashes, no rhetorical questions, no asides.
-7. TEMPLATE CONNECTORS: Overuse of "thereby," "thus," "in order to," "which" used to chain clauses mechanically.
-8. EVEN PARAGRAPH BLOCKS: If all paragraphs are roughly the same length, that's a pattern signal.
-
-For each sentence, assign a score from 0 to 100 where:
-- 0 = definitely AI-generated
-- 100 = definitely human-written
-
-Return ONLY a raw JSON object (no markdown, no backticks, no code blocks):
-{
-  "overallScore": <number 0-100 representing overall human percentage>,
-  "verdict": "<'human' if score >= 85, 'mixed' if 50-84, 'ai' if < 50>",
-  "flaggedIndices": [<array of 0-based indices of sentences scoring below 70>],
-  "sentenceScores": [<array of scores for each sentence, same order as input>]
-}`
-          },
-          {
-            role: 'user',
-            content: `Analyze these ${sentences.length} sentences for AI detection:\n\n${sentences.map((s: string, i: number) => `[${i}] ${s}`).join('\n')}`
-          }
-        ],
-        temperature: 0.1,
-      })
-    })
-
-    const groqData = await groqRes.json()
-
-    if (!groqRes.ok) {
-      console.error('Groq Detection Error:', groqData)
-      throw new Error(groqData?.error?.message || 'Detection API failed')
+    if (sentences.length === 0) {
+       return NextResponse.json({ 
+         overallScore: 100, verdict: 'human', flaggedIndices: [], sentenceScores: [], sentences: [] 
+       })
     }
 
-    const rawResponse = (groqData.choices?.[0]?.message?.content || '').trim()
-      .replace(/```json/gi, '').replace(/```/g, '')
+    // 2. Calculate Burstiness (Standard Deviation of Sentence Lengths)
+    const lengths = sentences.map((s: string) => s.split(/\s+/).length);
+    const avgLength = lengths.reduce((a: number, b: number) => a + b, 0) / lengths.length;
+    
+    const variance = lengths.reduce((acc: number, len: number) => acc + Math.pow(len - avgLength, 2), 0) / lengths.length;
+    const stdDev = Math.sqrt(variance);
 
-    let detection
-    try {
-      detection = JSON.parse(rawResponse)
-    } catch {
-      // If parsing fails, return a default "looks human" response
-      detection = {
-        overallScore: 85,
-        verdict: 'human',
-        flaggedIndices: [],
-        sentenceScores: sentences.map(() => 85)
-      }
+    // 3. Calculate Vocabulary Diversity (Unique words / Total words)
+    const words = text.toLowerCase().match(/\b\w+\b/g) || [];
+    const uniqueWords = new Set(words);
+    const diversityRatio = words.length > 0 ? uniqueWords.size / words.length : 1;
+
+    // 4. AI Tell-words penalty
+    const aiWords = ["delve", "tapestry", "landscape", "testament", "crucial", "vital", "moreover", "furthermore", "underscores", "multifaceted", "comprehensive", "nuanced", "paradigm", "synergy", "leveraging", "groundbreaking", "embark", "consequently", "additionally", "in conclusion"];
+    let aiWordCount = 0;
+    const lowerText = text.toLowerCase();
+    for (const word of aiWords) {
+        if (lowerText.includes(word)) aiWordCount++;
     }
+
+    // 5. Deterministic Scoring Logic
+    // AI typically has very low standard deviation (uniform sentence length) and low diversity.
+    // Human text has high standard deviation (burstiness).
+    let score = 0;
+    
+    // Base score from burstiness
+    if (stdDev < 3.5) score = 15;
+    else if (stdDev < 5.0) score = 35;
+    else if (stdDev < 6.5) score = 65;
+    else if (stdDev < 8.0) score = 85;
+    else score = 98; // Highly bursty = Human
+
+    // Boost score if vocabulary is highly diverse (human trait)
+    if (diversityRatio > 0.6) score += 10;
+    else if (diversityRatio < 0.4) score -= 15;
+
+    // Penalty for AI tell-words
+    score -= (aiWordCount * 4);
+    
+    // Academic Text Check: Academic texts have long average lengths. 
+    // If it's long but has decent burstiness, it's human academic.
+    if (avgLength > 20 && stdDev > 6) {
+        score += 15;
+    }
+
+    // Ensure bounds (0 to 100)
+    score = Math.max(0, Math.min(100, Math.round(score)));
+
+    // 6. Sentence-Level Scoring
+    const sentenceScores = lengths.map((len: number, idx: number) => {
+        let sScore = 100;
+        const diff = Math.abs(len - avgLength);
+        const sentenceLower = sentences[idx].toLowerCase();
+        
+        // If sentence length is exactly the average, it lacks burstiness
+        if (diff < 2) sScore -= 40;
+        else if (diff < 4) sScore -= 20;
+
+        // Check for AI tell words in this specific sentence
+        for (const word of aiWords) {
+            if (sentenceLower.includes(word)) {
+                sScore -= 30;
+            }
+        }
+        return Math.max(0, Math.min(100, sScore));
+    });
+
+    const flaggedIndices = sentenceScores
+      .map((score: number, idx: number) => score < 70 ? idx : -1)
+      .filter((idx: number) => idx !== -1);
+
+    let verdict = 'mixed';
+    if (score >= 85) verdict = 'human';
+    else if (score < 50) verdict = 'ai';
 
     return NextResponse.json({
-      overallScore: Math.min(100, Math.max(0, detection.overallScore || 0)),
-      verdict: detection.verdict || 'mixed',
-      flaggedIndices: detection.flaggedIndices || [],
-      sentenceScores: detection.sentenceScores || [],
+      overallScore: score,
+      verdict,
+      flaggedIndices,
+      sentenceScores,
       sentences
     })
 
