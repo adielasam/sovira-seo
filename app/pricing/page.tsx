@@ -97,8 +97,8 @@ export default function PricingPage() {
 
   const handleSubscribe = async (planName: string, amount: number) => {
     if (!user) {
-      toast.error('Please log in or create an account first.', { icon: '🔒' })
-      router.push('/auth/login?redirect=/pricing')
+      toast.error('Please create an account to start your trial.', { icon: '🔒' })
+      router.push('/auth/register?redirect=/pricing')
       return
     }
 

@@ -155,8 +155,8 @@ export default function LandingPage() {
 
   const handleSubscribe = async (planName: string) => {
     if (!user) {
-      toast.error('Please log in or create an account first.', { icon: '🔒' })
-      router.push('/auth/login?redirect=/')
+      toast.error('Please create an account to start your trial.', { icon: '🔒' })
+      router.push('/auth/register?redirect=/')
       return
     }
 
