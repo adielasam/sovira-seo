@@ -12,19 +12,40 @@ const mainLinks = [
   { name: 'Content', href: '/content', icon: Sparkles },
 ]
 
-const moreLinks = [
-  { name: 'Trending', href: '/trending', icon: Flame },
-  { name: 'Humanizer', href: '/humanizer', icon: Shield },
-  { name: 'Teacher Tools', href: '/teacher-tools', icon: GraduationCap },
-  { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
-  { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
-  { name: 'AI Video', href: '/ai-video', icon: Video },
-  { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
-  { name: 'Competitors', href: '/competitors', icon: Users },
-  { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'Integrations', href: '/integrations', icon: Plug },
-  { name: 'Settings', href: '/settings', icon: Settings },
+const moreGroups = [
+  {
+    name: 'AI Search',
+    items: [
+      { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
+      { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
+      { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
+    ]
+  },
+  {
+    name: 'AI Humanizer',
+    items: [
+      { name: 'Humanizer', href: '/humanizer', icon: Shield },
+      { name: 'AI Detector', href: '/ai-detector', icon: Radar },
+    ]
+  },
+  {
+    name: 'Marketing',
+    items: [
+      { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
+      { name: 'Trending Topics', href: '/trending', icon: Flame },
+      { name: 'Competitors', href: '/competitors', icon: Users },
+      { name: 'AI Video', href: '/ai-video', icon: Video },
+    ]
+  },
+  {
+    name: 'Administration',
+    items: [
+      { name: 'Teacher Tools', href: '/teacher-tools', icon: GraduationCap },
+      { name: 'Reports', href: '/reports', icon: FileText },
+      { name: 'Integrations', href: '/integrations', icon: Plug },
+      { name: 'Settings', href: '/settings', icon: Settings },
+    ]
+  }
 ]
 
 export function BottomNav() {
@@ -64,23 +85,31 @@ export function BottomNav() {
 
       {/* Slide-up More Menu */}
       {isMoreOpen && (
-        <div className="lg:hidden fixed inset-x-0 bottom-16 bg-white dark:bg-[#1E293B] border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 flex flex-col gap-2 rounded-t-2xl animate-in slide-in-from-bottom-2 duration-200">
-          <div className="flex items-center justify-between mb-2 px-2">
+        <div className="lg:hidden fixed inset-x-0 bottom-16 bg-white dark:bg-[#1E293B] border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] z-40 flex flex-col gap-4 rounded-t-2xl animate-in slide-in-from-bottom-2 duration-200 max-h-[75vh] overflow-y-auto">
+          <div className="flex items-center justify-between mb-2 px-2 shrink-0">
             <h3 className="font-semibold text-slate-900 dark:text-white">More Options</h3>
           </div>
-          <div className="grid grid-cols-2 gap-2">
-            {moreLinks.map((link) => (
-              <Link
-                key={link.name}
-                href={link.href}
-                onClick={() => setIsMoreOpen(false)}
-                className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 active:bg-blue-50 dark:active:bg-blue-900/20"
-              >
-                <link.icon className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                <span className="text-sm font-medium">{link.name}</span>
-              </Link>
-            ))}
-          </div>
+          
+          {moreGroups.map((group) => (
+            <div key={group.name} className="flex flex-col gap-2">
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2">
+                {group.name}
+              </span>
+              <div className="grid grid-cols-2 gap-2">
+                {group.items.map((link) => (
+                  <Link
+                    key={link.name}
+                    href={link.href}
+                    onClick={() => setIsMoreOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl bg-slate-50 dark:bg-[#0F172A] text-slate-700 dark:text-slate-300 active:bg-blue-50 dark:active:bg-blue-900/20"
+                  >
+                    <link.icon className="w-5 h-5 text-blue-600 dark:text-blue-400 shrink-0" />
+                    <span className="text-xs font-medium truncate">{link.name}</span>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       )}
     </>
