@@ -3,8 +3,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkAndIncrementDashboardUsage } from '@/lib/usage'
 import { generateObject } from 'ai'
-import { google } from '@ai-sdk/google'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
+
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY
+})
 
 const dashboardSpecSchema = z.object({
   kpis: z.array(z.object({
