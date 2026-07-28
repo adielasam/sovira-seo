@@ -13,6 +13,8 @@ interface ColumnMeta {
   type: ColumnType
 }
 
+import { generateDatasetSummary } from '@/lib/dashboardAnalytics'
+
 export default function DataAnalyserPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
@@ -242,7 +244,12 @@ export default function DataAnalyserPage() {
 
             <div className="mt-8 flex justify-end">
               <button
-                onClick={() => toast('Aggregation Engine coming in Phase 3!', { icon: '🚧' })}
+                onClick={() => {
+                  const summary = generateDatasetSummary(parsedData, columnMeta)
+                  console.log('--- Phase 3 Local Aggregation Summary ---')
+                  console.log(summary)
+                  toast.success('Aggregations computed locally. Check DevTools Console!')
+                }}
                 className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center gap-2"
               >
                 Analyze Data
