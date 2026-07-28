@@ -3,12 +3,11 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkAndIncrementDashboardUsage } from '@/lib/usage'
 import { generateObject } from 'ai'
-import { createOpenAI } from '@ai-sdk/openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 
-const nara = createOpenAI({
-  apiKey: process.env.NARA_API_KEY || process.env.GEMINI_API_KEY,
-  baseURL: 'https://router.bynara.id/v1'
+const google = createGoogleGenerativeAI({
+  apiKey: process.env.GEMINI_API_KEY,
 })
 
 const dashboardSpecSchema = z.object({
@@ -58,8 +57,7 @@ You must return a valid JSON object matching the requested schema.
 NEVER reference your underlying model or vendor.`
 
     const result = await generateObject({
-      // @ts-ignore: Version mismatch between ai and @ai-sdk/openai types
-      model: nara('mimo-v2.5-pro'),
+      model: google('gemini-1.5-flash'),
       mode: 'json',
       schema: dashboardSpecSchema,
       system: systemPrompt,
