@@ -23,7 +23,14 @@ export async function POST(req: Request) {
     }
 
     const targetUrl = new URL(url)
-    const baseUrl = `${targetUrl.protocol}//${targetUrl.host}`
+    let baseUrl = `${targetUrl.protocol}//${targetUrl.host}`
+    let fetchUrl = url
+
+    // Bypass Cloudflare WAF for our own domain by fetching the Vercel internal URL directly
+    if (targetUrl.host.includes('sovira.com.ng') && process.env.VERCEL_URL) {
+      fetchUrl = url.replace(targetUrl.host, process.env.VERCEL_URL)
+      baseUrl = baseUrl.replace(targetUrl.host, process.env.VERCEL_URL)
+    }
 
     // 1. Fetch HTML and Headers
     const fetchHeaders = {
@@ -37,7 +44,7 @@ export async function POST(req: Request) {
       'Upgrade-Insecure-Requests': '1'
     }
 
-    const response = await fetch(url, { headers: fetchHeaders })
+    const response = await fetch(fetchUrl, { headers: fetchHeaders })
     if (!response.ok) {
       if (response.status === 403 || response.status === 401) {
         throw new Error(`The target website (${targetUrl.host}) has security protections (WAF/Cloudflare) that are blocking our automated audit bot (403 Forbidden). Try scanning a different URL.`)
