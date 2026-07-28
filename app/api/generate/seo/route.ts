@@ -30,7 +30,7 @@ export async function POST(req: Request) {
     let systemPrompt = ''
     let prompt = ''
 
-    if (type === 'meta_description') {
+    if (type === 'meta_description' || type === 'meta') {
       systemPrompt = 'You are an SEO expert. Generate an optimized meta description (150-160 characters) that includes compelling copy to maximize CTR.'
       prompt = `Generate a meta description for a page about: "${targetTopic}"`
     } else if (type === 'title') {
