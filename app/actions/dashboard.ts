@@ -6,8 +6,6 @@ import { generateObject } from 'ai'
 import { createOpenAI } from '@ai-sdk/openai'
 import { z } from 'zod'
 
-export const maxDuration = 60
-
 const nara = createOpenAI({
   apiKey: process.env.NARA_API_KEY || process.env.GEMINI_API_KEY,
   baseURL: 'https://router.bynara.id/v1'

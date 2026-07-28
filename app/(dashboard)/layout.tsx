@@ -5,6 +5,8 @@ import { Topbar } from '@/components/layout/topbar'
 import { BottomNav } from '@/components/layout/bottom-nav'
 import { UpgradeModal } from '@/components/ui/upgrade-modal'
 
+export const maxDuration = 60
+
 export default async function DashboardLayout({
   children,
 }: {
