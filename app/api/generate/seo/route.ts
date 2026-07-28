@@ -4,9 +4,10 @@ import { checkUsageLimit } from '@/lib/usage'
 
 export async function POST(req: Request) {
   try {
-    const { type, topic, content } = await req.json()
+    const { type, topic, content, url, context } = await req.json()
+    const targetTopic = topic || context || url || 'Website'
     
-    if (!type || (!topic && !content)) {
+    if (!type || (!targetTopic && !content)) {
       return NextResponse.json({ error: 'Type and topic/content are required' }, { status: 400 })
     }
 
@@ -22,24 +23,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: `You have reached your AI Words limit (${maxLimit.toLocaleString()} words). Please upgrade your plan.` }, { status: 403 })
     }
 
+    if (type === 'og-image') {
+      return NextResponse.json({ result: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&h=630' })
+    }
+
     let systemPrompt = ''
     let prompt = ''
 
     if (type === 'meta_description') {
       systemPrompt = 'You are an SEO expert. Generate an optimized meta description (150-160 characters) that includes compelling copy to maximize CTR.'
-      prompt = `Generate a meta description for a page about: "${topic}"`
+      prompt = `Generate a meta description for a page about: "${targetTopic}"`
     } else if (type === 'title') {
       systemPrompt = 'You are an SEO expert. Generate 3 optimized SEO title tags (under 60 characters) that include the target keyword naturally and are designed for high CTR.'
-      prompt = `Generate SEO titles for a page about: "${topic}"`
+      prompt = `Generate SEO titles for a page about: "${targetTopic}"`
     } else if (type === 'outline') {
       systemPrompt = 'You are a content strategist. Create a comprehensive SEO content outline with H2 and H3 tags. Ensure logical flow and comprehensive topic coverage.'
-      prompt = `Create an SEO content outline for: "${topic}"`
+      prompt = `Create an SEO content outline for: "${targetTopic}"`
     } else if (type === 'keywords') {
       systemPrompt = 'You are an SEO strategist. Generate a list of 10-15 LSI (Latent Semantic Indexing) keywords and long-tail variations that should be included in content about this topic.'
-      prompt = `Generate LSI and related keywords for: "${topic}"`
+      prompt = `Generate LSI and related keywords for: "${targetTopic}"`
     } else if (type === 'optimize') {
       systemPrompt = 'You are an SEO editor. Review the provided content and suggest specific improvements for SEO, readability, and engagement. Be concise and actionable.'
       prompt = `Analyze and suggest SEO improvements for this content:\n\n${content}`
+    } else if (type === 'privacy') {
+      systemPrompt = 'You are a legal tech writer. Write a standard, GDPR-compliant Privacy Policy in MDX format for a web application.'
+      prompt = `Generate a Privacy Policy for a website at ${url} using context: ${context}`
+    } else if (type === 'schema') {
+      systemPrompt = 'You are a technical SEO expert. Generate ONLY valid JSON-LD schema (Organization and WebSite). Output raw JSON only, no markdown blocks.'
+      prompt = `Generate JSON-LD schema for ${url}`
+    } else if (type === 'og') {
+      systemPrompt = 'You are an SEO expert. Generate ONLY valid JSON representing standard OpenGraph meta tags. Output raw JSON only, no markdown.'
+      prompt = `Generate OG tags for ${url}`
     } else {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }
