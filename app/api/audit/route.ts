@@ -52,6 +52,12 @@ export async function POST(req: Request) {
       throw new Error(`Failed to fetch URL: ${response.status} ${response.statusText}`)
     }
     const html = await response.text()
+    
+    // Cloudflare Managed Challenge pages return a 200 status, so we must check the HTML
+    if (html.includes('cf-browser-verification') || html.includes('cf-turnstile') || html.includes('<title>Just a moment...</title>')) {
+      throw new Error(`The target website (${targetUrl.host}) has security protections (Cloudflare JS Challenge) that are blocking our automated audit bot. Try scanning a different URL.`)
+    }
+
     const $ = cheerio.load(html)
     const headers = response.headers
 
@@ -128,12 +134,11 @@ export async function POST(req: Request) {
     const jsonLd = $('script[type="application/ld+json"]').length
     if (jsonLd === 0) addIssue('aiReadability', 'critical', 'Missing JSON-LD', 'No structured data found.', 'schema')
 
-    const semanticTags = ['main', 'article', 'header', 'nav', 'footer']
+    const semanticTags = ['main', 'nav', 'footer']
     let missingSemantic = semanticTags.filter(t => $(t).length === 0)
     if (missingSemantic.length > 0) addIssue('aiReadability', 'warning', 'Missing Semantic Tags', `Missing: ${missingSemantic.join(', ')}`)
 
     if (!llmsRes?.ok && !agentsRes?.ok) addIssue('aiReadability', 'warning', 'No AI Agents Text', 'Missing /llms.txt or /agents.txt')
-    if (robotsTxt && !robotsTxt.includes('GPTBot')) addIssue('aiReadability', 'warning', 'GPTBot Not Blocked', 'You may want to control AI scraping in robots.txt')
 
     // Social & OG Tags
     if (!$('meta[property="og:title"]').length) addIssue('social', 'warning', 'Missing og:title', 'No OpenGraph title.', 'og')

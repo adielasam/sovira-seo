@@ -65,6 +65,7 @@ export default function RootLayout({
           <Toaster position="top-right" />
           <Chatbot />
           <StructuredData />
+          <script defer data-domain="sovira.com.ng" src="https://plausible.io/js/script.js" />
         </ThemeProvider>
       </body>
     </html>
