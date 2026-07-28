@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap, Radar } from 'lucide-react'
+import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap, Radar, BarChart2 } from 'lucide-react'
 import { useState } from 'react'
 
 const mainLinks = [
@@ -16,6 +16,7 @@ const moreGroups = [
   {
     name: 'AI Search',
     items: [
+      { name: 'Data Analyser', href: '/dashboard/analyser', icon: BarChart2 },
       { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
       { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
       { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },

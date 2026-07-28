@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -15,6 +15,7 @@ const navigationGroups = [
     name: 'AI Search',
     items: [
       { name: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
+      { name: 'Data Analyser', href: '/dashboard/analyser', icon: BarChart2 },
       { name: 'Site Audit', href: '/audit', icon: Search },
       { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
       { name: 'Keywords', href: '/keywords', icon: Tag },
