@@ -1,10 +1,17 @@
 'use client'
 
 import { useState } from 'react'
-import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2 } from 'lucide-react'
+import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, TrendingUp, TrendingDown, Minus, Lock } from 'lucide-react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
+import { generateDatasetSummary } from '@/lib/dashboardAnalytics'
+import { generateDashboardSpec, type DashboardSpec } from '@/app/actions/dashboard'
+import {
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts'
+import Link from 'next/link'
 
 type ColumnType = 'numeric' | 'date' | 'currency' | 'categorical' | 'unknown'
 
@@ -13,14 +20,18 @@ interface ColumnMeta {
   type: ColumnType
 }
 
-import { generateDatasetSummary } from '@/lib/dashboardAnalytics'
+const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899']
 
 export default function DataAnalyserPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
   const [parsedData, setParsedData] = useState<any[]>([])
   const [columnMeta, setColumnMeta] = useState<ColumnMeta[]>([])
   const [fileName, setFileName] = useState<string | null>(null)
+  
+  const [dashboardSpec, setDashboardSpec] = useState<DashboardSpec | null>(null)
+  const [paywallDate, setPaywallDate] = useState<string | null>(null)
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -44,7 +55,6 @@ export default function DataAnalyserPage() {
   }
 
   const processFile = async (file: File) => {
-    // 10MB limit
     if (file.size > 10 * 1024 * 1024) {
       toast.error('File size exceeds 10MB limit. Please upload a smaller file to prevent browser freezing.')
       return
@@ -60,6 +70,8 @@ export default function DataAnalyserPage() {
     setIsParsing(true)
     setParsedData([])
     setColumnMeta([])
+    setDashboardSpec(null)
+    setPaywallDate(null)
 
     try {
       if (fileExt === 'csv') {
@@ -96,14 +108,12 @@ export default function DataAnalyserPage() {
       return
     }
 
-    // Auto-detect column types
     const keys = Object.keys(data[0])
     const meta: ColumnMeta[] = keys.map(key => {
       let isNumeric = true
       let isDate = true
       let isCurrency = false
 
-      // Sample up to 50 rows to detect type
       const sample = data.slice(0, 50)
       
       for (const row of sample) {
@@ -112,7 +122,6 @@ export default function DataAnalyserPage() {
 
         const strVal = String(val).trim()
 
-        // Check Currency markers including NGN and ₦
         if (typeof val === 'string' && (/[\$€£₦]/.test(strVal) || /NGN/i.test(strVal))) {
           isCurrency = true
           isNumeric = false
@@ -120,12 +129,10 @@ export default function DataAnalyserPage() {
           break
         }
         
-        // Check if strict number
         if (isNaN(Number(val))) {
           isNumeric = false
         }
 
-        // Check if valid date (very simple heuristic, not foolproof but good enough for generic detection)
         if (isDate && isNaN(Date.parse(strVal))) {
           isDate = false
         }
@@ -145,17 +152,104 @@ export default function DataAnalyserPage() {
     toast.success('File parsed successfully!')
   }
 
+  const handleGenerateDashboard = async () => {
+    setIsGenerating(true)
+    const summary = generateDatasetSummary(parsedData, columnMeta)
+    
+    const res = await generateDashboardSpec(summary)
+    setIsGenerating(false)
+
+    if (res.success && res.spec) {
+      setDashboardSpec(res.spec)
+      toast.success('Dashboard generated successfully!')
+    } else if (res.error === 'LIMIT_REACHED') {
+      setPaywallDate(res.resetsAt || null)
+    } else {
+      toast.error(res.error || 'Failed to generate dashboard.')
+    }
+  }
+
+  const renderChart = (chartSpec: any) => {
+    if (chartSpec.type === 'bar') {
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <BarChart data={chartSpec.data}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+            <XAxis dataKey={chartSpec.categoryKey} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => val.toLocaleString()} />
+            <Tooltip 
+              cursor={{ fill: 'transparent' }}
+              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+            />
+            <Bar dataKey={chartSpec.dataKey} fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          </BarChart>
+        </ResponsiveContainer>
+      )
+    }
+    
+    if (chartSpec.type === 'line') {
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <LineChart data={chartSpec.data}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+            <XAxis dataKey={chartSpec.categoryKey} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
+            <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => val.toLocaleString()} />
+            <Tooltip 
+              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+            />
+            <Line type="monotone" dataKey={chartSpec.dataKey} stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+          </LineChart>
+        </ResponsiveContainer>
+      )
+    }
+
+    if (chartSpec.type === 'pie') {
+      return (
+        <ResponsiveContainer width="100%" height={300}>
+          <PieChart>
+            <Pie
+              data={chartSpec.data}
+              cx="50%"
+              cy="50%"
+              innerRadius={60}
+              outerRadius={100}
+              paddingAngle={5}
+              dataKey={chartSpec.dataKey}
+              nameKey={chartSpec.categoryKey}
+            >
+              {chartSpec.data.map((entry: any, index: number) => (
+                <Cell key={\`cell-\${index}\`} fill={COLORS[index % COLORS.length]} />
+              ))}
+            </Pie>
+            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
+            <Legend />
+          </PieChart>
+        </ResponsiveContainer>
+      )
+    }
+
+    return null
+  }
+
   return (
     <div className="space-y-8 pb-20">
-      <div>
-        <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-          <BarChart2 className="w-8 h-8 text-blue-500" />
-          Data Analyser
-        </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Upload a dataset to generate an AI-powered executive dashboard.</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
+            <BarChart2 className="w-8 h-8 text-blue-500" />
+            Data Analyser
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400 mt-1">Upload a dataset to generate an AI-powered executive dashboard.</p>
+        </div>
+        {dashboardSpec && (
+           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+             <AlertCircle className="w-3.5 h-3.5" />
+             Usage counted
+           </span>
+        )}
       </div>
 
-      {!parsedData.length && !isParsing && (
+      {!parsedData.length && !isParsing && !dashboardSpec && (
         <div 
           className={`border-2 border-dashed rounded-xl p-12 text-center transition-all ${
             isDragging 
@@ -183,15 +277,96 @@ export default function DataAnalyserPage() {
         </div>
       )}
 
-      {isParsing && (
+      {(isParsing || isGenerating) && (
         <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center min-h-[300px]">
           <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Parsing Dataset...</h2>
-          <p className="text-sm text-slate-500">Normalizing columns and detecting data types.</p>
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
+            {isParsing ? 'Parsing Dataset...' : 'Sovira AI is building your dashboard...'}
+          </h2>
+          <p className="text-sm text-slate-500">
+            {isParsing ? 'Normalizing columns and detecting data types.' : 'Analyzing trends, metrics, and relationships.'}
+          </p>
         </div>
       )}
 
-      {parsedData.length > 0 && !isParsing && (
+      {paywallDate && (
+        <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col items-center justify-center text-center animate-in zoom-in duration-300">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6">
+            <Lock className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Free Limit Reached</h2>
+          <p className="text-slate-600 dark:text-slate-400 max-w-md mb-8">
+            You've exhausted your 10 free Data Analyser generations for this billing cycle. Your free quota resets on <strong>{new Date(paywallDate).toLocaleDateString()}</strong>.
+          </p>
+          <Link 
+            href="/pricing"
+            className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg font-semibold shadow-sm transition-all"
+          >
+            Upgrade to Pro
+          </Link>
+          <button 
+            onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setPaywallDate(null); }}
+            className="mt-6 text-sm text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-medium"
+          >
+            Start Over
+          </button>
+        </div>
+      )}
+
+      {dashboardSpec && !isGenerating && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700">
+           <div className="flex justify-between items-center bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+             <div className="flex items-center gap-3">
+               <FileSpreadsheet className="w-5 h-5 text-green-500" />
+               <span className="font-medium text-slate-900 dark:text-white">{fileName}</span>
+             </div>
+             <button 
+                onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setDashboardSpec(null); }}
+                className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-md transition-colors"
+              >
+                Upload New File
+              </button>
+           </div>
+
+           {/* KPIs */}
+           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+             {dashboardSpec.kpis.map((kpi, idx) => (
+               <div key={idx} className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col justify-between">
+                 <p className="text-sm font-medium text-slate-500 mb-1">{kpi.title}</p>
+                 <h4 className="text-3xl font-bold text-slate-900 dark:text-white">{kpi.value}</h4>
+                 {kpi.delta && (
+                   <div className={`flex items-center gap-1 mt-3 text-sm font-medium ${
+                     kpi.sentiment === 'positive' ? 'text-green-600 dark:text-green-400' :
+                     kpi.sentiment === 'negative' ? 'text-red-600 dark:text-red-400' :
+                     'text-slate-500'
+                   }`}>
+                     {kpi.sentiment === 'positive' ? <TrendingUp className="w-4 h-4" /> : 
+                      kpi.sentiment === 'negative' ? <TrendingDown className="w-4 h-4" /> : 
+                      <Minus className="w-4 h-4" />}
+                     {kpi.delta} vs last period
+                   </div>
+                 )}
+               </div>
+             ))}
+           </div>
+
+           {/* Charts */}
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             {dashboardSpec.layoutOrder.map(chartId => {
+               const chart = dashboardSpec.charts.find(c => c.id === chartId)
+               if (!chart) return null
+               return (
+                 <div key={chart.id} className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{chart.title}</h3>
+                   {renderChart(chart)}
+                 </div>
+               )
+             })}
+           </div>
+        </div>
+      )}
+
+      {parsedData.length > 0 && !isParsing && !isGenerating && !dashboardSpec && !paywallDate && (
         <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
             <div className="flex items-center justify-between mb-6">
@@ -244,16 +419,12 @@ export default function DataAnalyserPage() {
 
             <div className="mt-8 flex justify-end">
               <button
-                onClick={() => {
-                  const summary = generateDatasetSummary(parsedData, columnMeta)
-                  console.log('--- Phase 3 Local Aggregation Summary ---')
-                  console.log(summary)
-                  toast.success('Aggregations computed locally. Check DevTools Console!')
-                }}
-                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center gap-2"
+                onClick={handleGenerateDashboard}
+                disabled={isGenerating}
+                className="bg-blue-600 hover:bg-blue-500 text-white px-8 py-3 rounded-lg text-sm font-semibold shadow-sm transition-all flex items-center gap-2 disabled:opacity-70 disabled:cursor-not-allowed"
               >
-                Analyze Data
-                <AlertCircle className="w-4 h-4" />
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <BarChart2 className="w-4 h-4" />}
+                {isGenerating ? 'Generating Dashboard...' : 'Generate Dashboard'}
               </button>
             </div>
           </div>

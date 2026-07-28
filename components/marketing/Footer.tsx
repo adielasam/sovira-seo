@@ -44,6 +44,7 @@ export function Footer() {
         <div>
           <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Free AI Tools</h3>
           <ul className="space-y-4 text-base text-slate-400">
+            <li><Link href="/dashboard/analyser" className="hover:text-blue-400 transition-colors">Data Analyser</Link></li>
             <li><Link href="/tools/ai-humanizer" className="hover:text-blue-400 transition-colors">AI Text Humanizer</Link></li>
             <li><Link href="/tools/youtube-title-generator" className="hover:text-blue-400 transition-colors">YouTube Title Maker</Link></li>
             <li><Link href="/tools/meta-description-generator" className="hover:text-blue-400 transition-colors">Meta Tags Generator</Link></li>
