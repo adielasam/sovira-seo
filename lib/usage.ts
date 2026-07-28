@@ -93,3 +93,60 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
   
   return { allowed: true, limitReached: false, maxLimit }
 }
+
+export async function checkAndIncrementDashboardUsage(userId: string): Promise<{ allowed: boolean, remaining: number, resetsAt?: string }> {
+  const supabase = await createClient()
+
+  // 1. Fetch user's row
+  const { data: usage, error } = await supabase
+    .from('dashboard_usage')
+    .select('*')
+    .eq('user_id', userId)
+    .single()
+
+  const now = new Date()
+
+  // If no row exists, create one and initialize with 1 usage
+  if (error && error.code === 'PGRST116') {
+    await supabase.from('dashboard_usage').insert({
+      user_id: userId,
+      generation_count: 1,
+      period_start: now.toISOString(),
+      last_generated_at: now.toISOString()
+    })
+    return { allowed: true, remaining: 9 }
+  }
+
+  if (usage) {
+    const periodStart = new Date(usage.period_start)
+    const diffTime = Math.abs(now.getTime() - periodStart.getTime())
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
+
+    let currentCount = usage.generation_count
+
+    // 2. If >= 30 days, reset count and period start
+    if (diffDays >= 30) {
+      currentCount = 0
+      periodStart.setTime(now.getTime())
+    }
+
+    // 3. If < 10: increment and allow
+    if (currentCount < 10) {
+      await supabase.from('dashboard_usage')
+        .update({
+          generation_count: currentCount + 1,
+          period_start: periodStart.toISOString(),
+          last_generated_at: now.toISOString()
+        })
+        .eq('user_id', userId)
+        
+      return { allowed: true, remaining: 9 - currentCount }
+    } else {
+      // 4. If >= 10: block and return reset date
+      const resetsAt = new Date(periodStart.getTime() + (30 * 24 * 60 * 60 * 1000))
+      return { allowed: false, remaining: 0, resetsAt: resetsAt.toISOString() }
+    }
+  }
+
+  return { allowed: false, remaining: 0 }
+}
