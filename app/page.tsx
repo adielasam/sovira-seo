@@ -243,6 +243,32 @@ export default function LandingPage() {
         }
       `}} />
 
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              "name": "Sovira AI",
+              "url": "https://www.sovira.com.ng",
+              "logo": "https://www.sovira.com.ng/sovira-logo.png",
+              "sameAs": [
+                "https://www.facebook.com/dorvastechnologies/",
+                "https://www.linkedin.com/in/samogide/",
+                "https://www.youtube.com/@samgoldtales"
+              ]
+            },
+            {
+              "@type": "WebApplication",
+              "name": "Sovira AI",
+              "applicationCategory": "SEO Tool",
+              "operatingSystem": "WebBrowser"
+            }
+          ]
+        }) }}
+      />
+
       <Navbar />
 
       <main>
