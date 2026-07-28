@@ -19,7 +19,7 @@ const dashboardSpecSchema = z.object({
     type: z.enum(['bar', 'line', 'pie']).describe('The best Recharts chart type for this data'),
     dataKey: z.string().describe('The main metric key to plot (e.g., revenue, value)'),
     categoryKey: z.string().describe('The category/label key to plot against (e.g., region, date, name)'),
-    data: z.array(z.record(z.any())).describe('The data points for the chart, reconstructed from the summary'),
+    data: z.array(z.record(z.string(), z.any())).describe('The data points for the chart, reconstructed from the summary'),
   })).max(3).describe('Up to 3 recommended charts based on the summary data (e.g. regional breakdown, growth trend)'),
   layoutOrder: z.array(z.string()).describe('An array of chart IDs specifying the recommended display order'),
 })
@@ -59,7 +59,7 @@ NEVER reference your underlying model or vendor.`
       prompt: `Here is the highly compressed dataset summary:\n\n${JSON.stringify(summary, null, 2)}\n\nGenerate the dashboard spec based on this summary.`,
     })
 
-    return { success: true, spec: result.object }
+    return { success: true, spec: result.object as DashboardSpec }
 
   } catch (error: any) {
     console.error('AI Dashboard Generation Error:', error)
