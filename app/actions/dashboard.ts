@@ -61,7 +61,7 @@ NEVER reference your underlying model or vendor.`
 
     const result = await generateObject({
       // @ts-ignore: Version mismatch between ai and @ai-sdk/openai types
-      model: nara('mimo-2.5-hermes'),
+      model: nara('mimo-v2.5-pro'),
       schema: dashboardSpecSchema,
       system: systemPrompt,
       prompt: `Here is the highly compressed dataset summary:\n\n${JSON.stringify(summary, null, 2)}\n\nGenerate the dashboard spec based on this summary.`,
