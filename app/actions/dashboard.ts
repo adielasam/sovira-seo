@@ -53,7 +53,7 @@ You must return a valid JSON object matching the requested schema.
 NEVER reference your underlying model or vendor.`
 
     const result = await generateObject({
-      model: google('gemini-2.5-pro'),
+      model: google('gemini-1.5-pro'),
       schema: dashboardSpecSchema,
       system: systemPrompt,
       prompt: `Here is the highly compressed dataset summary:\n\n${JSON.stringify(summary, null, 2)}\n\nGenerate the dashboard spec based on this summary.`,

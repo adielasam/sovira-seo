@@ -154,18 +154,23 @@ export default function DataAnalyserPage() {
 
   const handleGenerateDashboard = async () => {
     setIsGenerating(true)
-    const summary = generateDatasetSummary(parsedData, columnMeta)
-    
-    const res = await generateDashboardSpec(summary)
-    setIsGenerating(false)
-
-    if (res.success && res.spec) {
-      setDashboardSpec(res.spec)
-      toast.success('Dashboard generated successfully!')
-    } else if (res.error === 'LIMIT_REACHED') {
-      setPaywallDate(res.resetsAt || null)
-    } else {
-      toast.error(res.error || 'Failed to generate dashboard.')
+    try {
+      const summary = generateDatasetSummary(parsedData, columnMeta)
+      const res = await generateDashboardSpec(summary)
+      
+      if (res.success && res.spec) {
+        setDashboardSpec(res.spec)
+        toast.success('Dashboard generated successfully!')
+      } else if (res.error === 'LIMIT_REACHED') {
+        setPaywallDate(res.resetsAt || null)
+      } else {
+        toast.error(res.error || 'Failed to generate dashboard.')
+      }
+    } catch (err: any) {
+      console.error(err)
+      toast.error('A network or server error occurred. Please try again.')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
