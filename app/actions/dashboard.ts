@@ -60,6 +60,7 @@ You must return a valid JSON object matching the requested schema.
 NEVER reference your underlying model or vendor.`
 
     const result = await generateObject({
+      // @ts-ignore: Version mismatch between ai and @ai-sdk/openai types
       model: nara('mimo-2.5-hermes'),
       schema: dashboardSpecSchema,
       system: systemPrompt,
