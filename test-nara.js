@@ -12,8 +12,7 @@ async function main() {
 
   try {
     const result = await generateObject({
-      model: nara('mimo-2.5-hermes'),
-      mode: 'json',
+      model: nara('mimo-v2.5-pro'),
       schema: z.object({
         status: z.string()
       }),
