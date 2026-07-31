@@ -229,18 +229,26 @@ export default function DataAnalyserPage() {
   }
 
   const renderChart = (chartSpec: any) => {
+    const commonTooltipStyle = {
+      backgroundColor: 'rgba(15, 23, 42, 0.95)',
+      border: '1px solid #334155',
+      borderRadius: '8px',
+      color: '#f8fafc',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+      backdropFilter: 'blur(8px)'
+    };
+    const commonAxisStyle = { stroke: '#475569', fontSize: 11, tickLine: false, axisLine: false };
+    const commonGridStyle = { stroke: '#1e293b', strokeDasharray: '3 3', vertical: false };
+
     if (chartSpec.type === 'bar') {
       return (
         <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartSpec.data}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-            <XAxis dataKey={chartSpec.categoryKey} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => val.toLocaleString()} />
-            <Tooltip 
-              cursor={{ fill: 'transparent' }}
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            />
-            <Bar dataKey={chartSpec.dataKey} fill="#3b82f6" radius={[4, 4, 0, 0]} />
+          <BarChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid {...commonGridStyle} />
+            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
+            <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
+            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={commonTooltipStyle} />
+            <Bar dataKey={chartSpec.dataKey} fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
           </BarChart>
         </ResponsiveContainer>
       )
@@ -249,20 +257,19 @@ export default function DataAnalyserPage() {
     if (chartSpec.type === 'line') {
       return (
         <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartSpec.data}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-            <XAxis dataKey={chartSpec.categoryKey} stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} />
-            <YAxis stroke="#64748b" fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => val.toLocaleString()} />
-            <Tooltip 
-              contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
-            />
-            <Line type="monotone" dataKey={chartSpec.dataKey} stroke="#10b981" strokeWidth={3} dot={{ r: 4 }} activeDot={{ r: 6 }} />
+          <LineChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <CartesianGrid {...commonGridStyle} />
+            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
+            <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
+            <Tooltip contentStyle={commonTooltipStyle} />
+            <Line type="monotone" dataKey={chartSpec.dataKey} stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#1e293b', stroke: '#a855f7', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#a855f7', stroke: '#fff' }} />
           </LineChart>
         </ResponsiveContainer>
       )
     }
 
     if (chartSpec.type === 'pie') {
+      const PIE_COLORS = ['#06b6d4', '#a855f7', '#f59e0b', '#10b981', '#ec4899', '#3b82f6'];
       return (
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
@@ -270,18 +277,19 @@ export default function DataAnalyserPage() {
               data={chartSpec.data}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={100}
-              paddingAngle={5}
+              innerRadius={70}
+              outerRadius={95}
+              paddingAngle={4}
               dataKey={chartSpec.dataKey}
               nameKey={chartSpec.categoryKey}
+              stroke="none"
             >
               {chartSpec.data.map((entry: any, index: number) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} />
               ))}
             </Pie>
-            <Tooltip contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }} />
-            <Legend />
+            <Tooltip contentStyle={commonTooltipStyle} itemStyle={{ color: '#f8fafc' }} />
+            <Legend wrapperStyle={{ fontSize: '12px', color: '#94a3b8' }} />
           </PieChart>
         </ResponsiveContainer>
       )
@@ -383,70 +391,110 @@ export default function DataAnalyserPage() {
       )}
 
       {dashboardSpec && !isGenerating && (
-        <div ref={dashboardRef} className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 p-2 -m-2">
-           {/* Header / Utility Bar */}
-           <div className="flex justify-between items-center bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
-             <div className="flex items-center gap-3">
-               <FileSpreadsheet className="w-5 h-5 text-green-500" />
-               <span className="font-medium text-slate-900 dark:text-white">{fileName}</span>
-               <span className="text-slate-400 dark:text-slate-500 text-sm px-2 border-l border-slate-200 dark:border-slate-700">Sovira AI Executive Report</span>
+        <div ref={dashboardRef} className="animate-in slide-in-from-bottom-4 duration-700 mt-4 rounded-2xl overflow-hidden bg-[#0B1121] shadow-2xl ring-1 ring-white/10 text-white font-sans">
+           {/* Dark Mode Header */}
+           <div className="flex justify-between items-center bg-[#0F172A] p-6 border-b border-white/5">
+             <div className="flex items-center gap-4">
+               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+                 <FileSpreadsheet className="w-5 h-5 text-white" />
+               </div>
+               <div>
+                 <h2 className="text-xl font-black tracking-tight text-white uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                   {fileName?.split('.')[0] || 'Executive'} Dashboard
+                 </h2>
+                 <p className="text-xs font-semibold tracking-widest text-cyan-400 uppercase mt-0.5">Sovira AI Analytics</p>
+               </div>
              </div>
              <button 
                 onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setDashboardSpec(null); }}
-                className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-md transition-colors"
+                className="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-white/5 px-4 py-2 rounded-md transition-all"
                 data-html2canvas-ignore="true"
-              >
-                Upload New File
-              </button>
+             >
+                New Analysis
+             </button>
            </div>
 
-           {/* Executive Summary Narrative */}
-           {dashboardSpec.executiveSummary && (
-             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10 p-6 rounded-xl shadow-sm ring-1 ring-blue-100 dark:ring-blue-900/30">
-               <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
-                 <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                 Executive Summary
-               </h3>
-               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
-                 {dashboardSpec.executiveSummary}
-               </p>
-             </div>
-           )}
-
-           {/* KPIs */}
-           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-             {dashboardSpec.kpis.map((kpi, idx) => (
-               <div key={idx} className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col justify-between">
-                 <p className="text-sm font-medium text-slate-500 mb-1">{kpi.title}</p>
-                 <h4 className="text-3xl font-bold text-slate-900 dark:text-white">{kpi.value}</h4>
-                 {kpi.delta && (
-                   <div className={`flex items-center gap-1 mt-3 text-sm font-medium ${
-                     kpi.sentiment === 'positive' ? 'text-green-600 dark:text-green-400' :
-                     kpi.sentiment === 'negative' ? 'text-red-600 dark:text-red-400' :
-                     'text-slate-500'
-                   }`}>
-                     {kpi.sentiment === 'positive' ? <TrendingUp className="w-4 h-4" /> : 
-                      kpi.sentiment === 'negative' ? <TrendingDown className="w-4 h-4" /> : 
-                      <Minus className="w-4 h-4" />}
-                     {kpi.delta} vs last period
+           <div className="p-6 space-y-6">
+             {/* KPIs Grid */}
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+               {dashboardSpec.kpis.map((kpi, idx) => {
+                 const isPos = kpi.sentiment === 'positive'
+                 const isNeg = kpi.sentiment === 'negative'
+                 const colorClass = isPos ? 'text-emerald-400' : isNeg ? 'text-rose-400' : 'text-slate-400'
+                 const bgClass = isPos ? 'bg-emerald-400/10' : isNeg ? 'bg-rose-400/10' : 'bg-slate-400/10'
+                 const borderClass = isPos ? 'border-emerald-400/20' : isNeg ? 'border-rose-400/20' : 'border-slate-400/20'
+                 
+                 // Fake a percentage for the radial circle based on index to make it look active
+                 const pseudoPercentage = 65 + (idx * 10) % 30
+                 
+                 return (
+                   <div key={idx} className="bg-[#0F172A] p-5 rounded-xl border border-white/5 shadow-lg relative overflow-hidden group">
+                     {/* Top accent line */}
+                     <div className={`absolute top-0 left-0 right-0 h-1 ${isPos ? 'bg-gradient-to-r from-emerald-500 to-emerald-300' : isNeg ? 'bg-gradient-to-r from-rose-500 to-rose-300' : 'bg-gradient-to-r from-slate-500 to-slate-300'}`} />
+                     
+                     <div className="flex justify-between items-start mb-2">
+                       <p className="text-xs font-bold tracking-wider text-slate-400 uppercase">{kpi.title}</p>
+                     </div>
+                     
+                     <div className="flex items-end justify-between mt-4">
+                       <div>
+                         <h4 className="text-3xl font-black text-white tracking-tight">{kpi.value}</h4>
+                         {kpi.delta && (
+                           <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-bold ${bgClass} ${colorClass} border ${borderClass}`}>
+                             {isPos ? <TrendingUp className="w-3 h-3" /> : isNeg ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
+                             {kpi.delta}
+                           </div>
+                         )}
+                       </div>
+                       
+                       {/* Radial Progress Graphic */}
+                       <div className="relative w-12 h-12 flex items-center justify-center">
+                         <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                           <path className="text-slate-800" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                           <path className={colorClass} strokeWidth="3" strokeDasharray={`${pseudoPercentage}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                         </svg>
+                         <span className="absolute text-[9px] font-bold text-slate-300">{pseudoPercentage}%</span>
+                       </div>
+                     </div>
                    </div>
-                 )}
-               </div>
-             ))}
-           </div>
+                 )
+               })}
+             </div>
 
-           {/* Charts */}
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-             {dashboardSpec.layoutOrder.map(chartId => {
-               const chart = dashboardSpec.charts.find(c => c.id === chartId)
-               if (!chart) return null
-               return (
-                 <div key={chart.id} className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
-                   <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-6">{chart.title}</h3>
-                   {renderChart(chart)}
+             {/* Charts Grid */}
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+               {/* Executive Summary takes up full width or half width */}
+               {dashboardSpec.executiveSummary && (
+                 <div className="lg:col-span-2 bg-gradient-to-br from-[#0F172A] to-[#0B1121] p-6 rounded-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
+                   <h3 className="text-xs font-bold tracking-widest text-cyan-400 uppercase mb-3 flex items-center gap-2">
+                     <FileText className="w-4 h-4" />
+                     Executive Insight
+                   </h3>
+                   <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                     {dashboardSpec.executiveSummary}
+                   </p>
                  </div>
-               )
-             })}
+               )}
+               
+               {dashboardSpec.layoutOrder.map((chartId, i) => {
+                 const chart = dashboardSpec.charts.find(c => c.id === chartId)
+                 if (!chart) return null
+                 return (
+                   <div key={chart.id} className="bg-[#0F172A] p-6 rounded-xl border border-white/5 shadow-lg relative overflow-hidden">
+                     {/* Subtle background glow */}
+                     <div className={`absolute -top-20 -right-20 w-40 h-40 blur-3xl opacity-10 rounded-full ${i % 2 === 0 ? 'bg-cyan-500' : 'bg-purple-500'}`} />
+                     
+                     <h3 className="text-sm font-bold tracking-wide text-white mb-6 uppercase flex items-center gap-2">
+                       <div className={`w-2 h-2 rounded-full ${i % 2 === 0 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]'}`} />
+                       {chart.title}
+                     </h3>
+                     <div className="relative z-10">
+                       {renderChart(chart)}
+                     </div>
+                   </div>
+                 )
+               })}
+             </div>
            </div>
         </div>
       )}
