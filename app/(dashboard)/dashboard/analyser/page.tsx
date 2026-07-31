@@ -14,6 +14,7 @@ import {
   XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
 } from 'recharts'
 import Link from 'next/link'
+import { useTheme } from 'next-themes'
 
 type ColumnType = 'numeric' | 'date' | 'currency' | 'categorical' | 'unknown'
 
@@ -27,6 +28,8 @@ const COLORS = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899'
 export const maxDuration = 60
 
 export default function DataAnalyserPage() {
+  const { resolvedTheme } = useTheme()
+  const isDark = resolvedTheme === 'dark'
   const [isDragging, setIsDragging] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
@@ -230,15 +233,15 @@ export default function DataAnalyserPage() {
 
   const renderChart = (chartSpec: any) => {
     const commonTooltipStyle = {
-      backgroundColor: 'rgba(15, 23, 42, 0.95)',
-      border: '1px solid #334155',
+      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
+      border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
       borderRadius: '8px',
-      color: '#f8fafc',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
+      color: isDark ? '#f8fafc' : '#0f172a',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
       backdropFilter: 'blur(8px)'
     };
-    const commonAxisStyle = { stroke: '#475569', fontSize: 11, tickLine: false, axisLine: false };
-    const commonGridStyle = { stroke: '#1e293b', strokeDasharray: '3 3', vertical: false };
+    const commonAxisStyle = { stroke: isDark ? '#475569' : '#94a3b8', fontSize: 11, tickLine: false, axisLine: false };
+    const commonGridStyle = { stroke: isDark ? '#1e293b' : '#f1f5f9', strokeDasharray: '3 3', vertical: false };
 
     if (chartSpec.type === 'bar') {
       return (
@@ -247,8 +250,8 @@ export default function DataAnalyserPage() {
             <CartesianGrid {...commonGridStyle} />
             <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
             <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
-            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={commonTooltipStyle} />
-            <Bar dataKey={chartSpec.dataKey} fill="#06b6d4" radius={[4, 4, 0, 0]} barSize={32} />
+            <Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} contentStyle={commonTooltipStyle} />
+            <Bar dataKey={chartSpec.dataKey} fill={isDark ? "#06b6d4" : "#2563eb"} radius={[4, 4, 0, 0]} barSize={32} />
           </BarChart>
         </ResponsiveContainer>
       )
@@ -262,7 +265,7 @@ export default function DataAnalyserPage() {
             <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
             <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
             <Tooltip contentStyle={commonTooltipStyle} />
-            <Line type="monotone" dataKey={chartSpec.dataKey} stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#1e293b', stroke: '#a855f7', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#a855f7', stroke: '#fff' }} />
+            <Line type="monotone" dataKey={chartSpec.dataKey} stroke={isDark ? "#a855f7" : "#8b5cf6"} strokeWidth={3} dot={{ r: 4, fill: isDark ? '#1e293b' : '#fff', stroke: isDark ? '#a855f7' : '#8b5cf6', strokeWidth: 2 }} activeDot={{ r: 6, fill: isDark ? '#a855f7' : '#8b5cf6', stroke: isDark ? '#fff' : '#fff' }} />
           </LineChart>
         </ResponsiveContainer>
       )
@@ -391,23 +394,23 @@ export default function DataAnalyserPage() {
       )}
 
       {dashboardSpec && !isGenerating && (
-        <div ref={dashboardRef} className="animate-in slide-in-from-bottom-4 duration-700 mt-4 rounded-2xl overflow-hidden bg-[#0B1121] shadow-2xl ring-1 ring-white/10 text-white font-sans">
-           {/* Dark Mode Header */}
-           <div className="flex justify-between items-center bg-[#0F172A] p-6 border-b border-white/5">
+        <div ref={dashboardRef} className="animate-in slide-in-from-bottom-4 duration-700 mt-4 bg-white dark:bg-slate-900 shadow-md ring-1 ring-slate-200 dark:ring-slate-800 text-slate-900 dark:text-white font-sans w-full rounded-xl">
+           {/* Header */}
+           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-6 border-b border-slate-200 dark:border-slate-800 rounded-t-xl">
              <div className="flex items-center gap-4">
-               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center shadow-lg shadow-cyan-500/20">
+               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#2563EB] to-blue-600 flex items-center justify-center shadow-md">
                  <FileSpreadsheet className="w-5 h-5 text-white" />
                </div>
                <div>
-                 <h2 className="text-xl font-black tracking-tight text-white uppercase bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                 <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
                    {fileName?.split('.')[0] || 'Executive'} Dashboard
                  </h2>
-                 <p className="text-xs font-semibold tracking-widest text-cyan-400 uppercase mt-0.5">Sovira AI Analytics</p>
+                 <p className="text-xs font-semibold tracking-widest text-[#2563EB] dark:text-cyan-400 uppercase mt-0.5">Sovira AI Analytics</p>
                </div>
              </div>
              <button 
                 onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setDashboardSpec(null); }}
-                className="text-xs font-bold uppercase tracking-wider text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-700/50 border border-white/5 px-4 py-2 rounded-md transition-all"
+                className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-md shadow-sm transition-all"
                 data-html2canvas-ignore="true"
              >
                 New Analysis
@@ -420,25 +423,26 @@ export default function DataAnalyserPage() {
                {dashboardSpec.kpis.map((kpi, idx) => {
                  const isPos = kpi.sentiment === 'positive'
                  const isNeg = kpi.sentiment === 'negative'
-                 const colorClass = isPos ? 'text-emerald-400' : isNeg ? 'text-rose-400' : 'text-slate-400'
-                 const bgClass = isPos ? 'bg-emerald-400/10' : isNeg ? 'bg-rose-400/10' : 'bg-slate-400/10'
-                 const borderClass = isPos ? 'border-emerald-400/20' : isNeg ? 'border-rose-400/20' : 'border-slate-400/20'
                  
-                 // Fake a percentage for the radial circle based on index to make it look active
+                 // Dynamic classes adapting to light/dark
+                 const colorClass = isPos ? 'text-emerald-600 dark:text-emerald-400' : isNeg ? 'text-rose-600 dark:text-rose-400' : 'text-slate-600 dark:text-slate-400'
+                 const bgClass = isPos ? 'bg-emerald-100 dark:bg-emerald-400/10' : isNeg ? 'bg-rose-100 dark:bg-rose-400/10' : 'bg-slate-100 dark:bg-slate-400/10'
+                 const borderClass = isPos ? 'border-emerald-200 dark:border-emerald-400/20' : isNeg ? 'border-rose-200 dark:border-rose-400/20' : 'border-slate-200 dark:border-slate-400/20'
+                 
                  const pseudoPercentage = 65 + (idx * 10) % 30
                  
                  return (
-                   <div key={idx} className="bg-[#0F172A] p-5 rounded-xl border border-white/5 shadow-lg relative overflow-hidden group">
-                     {/* Top accent line */}
-                     <div className={`absolute top-0 left-0 right-0 h-1 ${isPos ? 'bg-gradient-to-r from-emerald-500 to-emerald-300' : isNeg ? 'bg-gradient-to-r from-rose-500 to-rose-300' : 'bg-gradient-to-r from-slate-500 to-slate-300'}`} />
+                   <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                     {/* Left accent line instead of top */}
+                     <div className={`absolute top-0 left-0 bottom-0 w-1 ${isPos ? 'bg-emerald-500' : isNeg ? 'bg-rose-500' : 'bg-slate-400'}`} />
                      
-                     <div className="flex justify-between items-start mb-2">
-                       <p className="text-xs font-bold tracking-wider text-slate-400 uppercase">{kpi.title}</p>
+                     <div className="flex justify-between items-start mb-2 pl-3">
+                       <p className="text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">{kpi.title}</p>
                      </div>
                      
-                     <div className="flex items-end justify-between mt-4">
+                     <div className="flex items-end justify-between mt-4 pl-3">
                        <div>
-                         <h4 className="text-3xl font-black text-white tracking-tight">{kpi.value}</h4>
+                         <h4 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">{kpi.value}</h4>
                          {kpi.delta && (
                            <div className={`inline-flex items-center gap-1 mt-2 px-2 py-0.5 rounded-full text-xs font-bold ${bgClass} ${colorClass} border ${borderClass}`}>
                              {isPos ? <TrendingUp className="w-3 h-3" /> : isNeg ? <TrendingDown className="w-3 h-3" /> : <Minus className="w-3 h-3" />}
@@ -447,13 +451,12 @@ export default function DataAnalyserPage() {
                          )}
                        </div>
                        
-                       {/* Radial Progress Graphic */}
                        <div className="relative w-12 h-12 flex items-center justify-center">
                          <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                           <path className="text-slate-800" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                           <path className={colorClass} strokeWidth="3" strokeDasharray={`${pseudoPercentage}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                           <path className="text-slate-100 dark:text-slate-800" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                           <path className={colorClass} strokeWidth="4" strokeDasharray={`${pseudoPercentage}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                          </svg>
-                         <span className="absolute text-[9px] font-bold text-slate-300">{pseudoPercentage}%</span>
+                         <span className="absolute text-[9px] font-bold text-slate-600 dark:text-slate-300">{pseudoPercentage}%</span>
                        </div>
                      </div>
                    </div>
@@ -465,12 +468,12 @@ export default function DataAnalyserPage() {
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                {/* Executive Summary takes up full width or half width */}
                {dashboardSpec.executiveSummary && (
-                 <div className="lg:col-span-2 bg-gradient-to-br from-[#0F172A] to-[#0B1121] p-6 rounded-xl border border-cyan-500/20 shadow-[0_0_15px_rgba(6,182,212,0.1)]">
-                   <h3 className="text-xs font-bold tracking-widest text-cyan-400 uppercase mb-3 flex items-center gap-2">
+                 <div className="lg:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-sm">
+                   <h3 className="text-xs font-bold tracking-widest text-[#2563EB] dark:text-cyan-400 uppercase mb-3 flex items-center gap-2">
                      <FileText className="w-4 h-4" />
                      Executive Insight
                    </h3>
-                   <p className="text-sm text-slate-300 leading-relaxed font-medium">
+                   <p className="text-sm text-slate-700 dark:text-slate-300 leading-relaxed font-medium">
                      {dashboardSpec.executiveSummary}
                    </p>
                  </div>
@@ -480,16 +483,13 @@ export default function DataAnalyserPage() {
                  const chart = dashboardSpec.charts.find(c => c.id === chartId)
                  if (!chart) return null
                  return (
-                   <div key={chart.id} className="bg-[#0F172A] p-6 rounded-xl border border-white/5 shadow-lg relative overflow-hidden">
-                     {/* Subtle background glow */}
-                     <div className={`absolute -top-20 -right-20 w-40 h-40 blur-3xl opacity-10 rounded-full ${i % 2 === 0 ? 'bg-cyan-500' : 'bg-purple-500'}`} />
-                     
-                     <h3 className="text-sm font-bold tracking-wide text-white mb-6 uppercase flex items-center gap-2">
-                       <div className={`w-2 h-2 rounded-full ${i % 2 === 0 ? 'bg-cyan-500 shadow-[0_0_8px_rgba(6,182,212,0.8)]' : 'bg-purple-500 shadow-[0_0_8px_rgba(168,85,247,0.8)]'}`} />
+                   <div key={chart.id} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                     <h3 className="text-sm font-bold tracking-wide text-slate-900 dark:text-white mb-6 uppercase flex items-center gap-2">
+                       <div className={`w-2 h-2 rounded-full ${i % 2 === 0 ? 'bg-[#2563EB] dark:bg-cyan-500' : 'bg-[#10B981] dark:bg-purple-500'}`} />
                        {chart.title}
                      </h3>
                      <div className="relative z-10">
-                       {renderChart(chart)}
+                       {renderChart(chart, isDark)}
                      </div>
                    </div>
                  )
