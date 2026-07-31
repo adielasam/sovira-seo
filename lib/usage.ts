@@ -136,8 +136,8 @@ export async function checkAndIncrementDashboardUsage(userId: string): Promise<{
       periodStart.setTime(now.getTime())
     }
 
-    // 3. If < 10: increment and allow
-    if (currentCount < 10) {
+    // 3. If < 5: increment and allow
+    if (currentCount < 5) {
       await supabase.from('dashboard_usage')
         .update({
           generation_count: currentCount + 1,
@@ -146,9 +146,9 @@ export async function checkAndIncrementDashboardUsage(userId: string): Promise<{
         })
         .eq('user_id', userId)
         
-      return { allowed: true, remaining: 9 - currentCount }
+      return { allowed: true, remaining: 4 - currentCount }
     } else {
-      // 4. If >= 10: block and return reset date
+      // 4. If >= 5: block and return reset date
       const resetsAt = new Date(periodStart.getTime() + (30 * 24 * 60 * 60 * 1000))
       return { allowed: false, remaining: 0, resetsAt: resetsAt.toISOString() }
     }

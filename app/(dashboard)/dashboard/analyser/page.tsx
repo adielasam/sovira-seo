@@ -376,7 +376,7 @@ export default function DataAnalyserPage() {
           </div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-3">Free Limit Reached</h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-md mb-8">
-            You've exhausted your 10 free Data Analyser generations for this billing cycle. Your free quota resets on <strong>{new Date(paywallDate).toLocaleDateString()}</strong>.
+            You've exhausted your 5 free Data Analyser generations for this billing cycle. Your free quota resets on <strong>{new Date(paywallDate).toLocaleDateString()}</strong>.
           </p>
           <Link 
             href="/pricing"
@@ -402,7 +402,7 @@ export default function DataAnalyserPage() {
                  <FileSpreadsheet className="w-5 h-5 text-white" />
                </div>
                <div>
-                 <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase bg-clip-text text-transparent bg-gradient-to-r from-slate-900 to-slate-600 dark:from-white dark:to-slate-400">
+                 <h2 className="text-xl font-black tracking-tight text-slate-900 dark:text-white uppercase">
                    {fileName?.split('.')[0] || 'Executive'} Dashboard
                  </h2>
                  <p className="text-xs font-semibold tracking-widest text-[#2563EB] dark:text-cyan-400 uppercase mt-0.5">Sovira AI Analytics</p>
@@ -452,7 +452,7 @@ export default function DataAnalyserPage() {
                        </div>
                        
                        <div className="relative w-12 h-12 flex items-center justify-center">
-                         <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
+                         <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg">
                            <path className="text-slate-100 dark:text-slate-800" strokeWidth="4" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                            <path className={colorClass} strokeWidth="4" strokeDasharray={`${pseudoPercentage}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
                          </svg>
