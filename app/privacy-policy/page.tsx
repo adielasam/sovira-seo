@@ -5,6 +5,10 @@ import { Footer } from '@/components/marketing/Footer'
 export const metadata = {
   title: 'Privacy Policy | Sovira SEO',
   description: 'Privacy Policy for Sovira SEO platform.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function PrivacyPolicyPage() {

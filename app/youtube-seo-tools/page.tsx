@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'YouTube SEO Tools - Maximize Video Views | Sovira AI',
-  description: 'Optimize your YouTube channel with Sovira AI. Discover top-ranking video keywords, generate optimized titles, and explode your subscriber growth.',
+  title: 'YouTube SEO Tools — Grow Views & Subscribers with AI | Sovira AI',
+  description: 'Optimize video titles, descriptions, and tags for YouTube search and discovery with Sovira AI\'s Channel Tools — built to help creators grow faster.',
 }
 
 export default function YouTubeSeoToolsPage() {

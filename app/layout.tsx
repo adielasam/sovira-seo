@@ -11,10 +11,10 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   metadataBase: new URL('https://www.sovira.com.ng'),
   title: {
-    default: "Sovira AI - AI SEO Tool for YouTube Creators",
+    default: "Sovira AI — AI-Powered SEO & Content Tools for Creators and Businesses",
     template: "%s | Sovira AI"
   },
-  description: "Sovira AI is the ultimate SEO and content creation tool. Audit your site, generate optimized content, and track your rankings globally.",
+  description: "Sovira AI helps you rank higher, write faster, and grow your content with AI-powered SEO tools, rank tracking, and content creation — built for creators and businesses in Nigeria and beyond.",
   openGraph: {
     title: 'Sovira AI - AI SEO Tool for YouTube Creators',
     description: 'Sovira AI is the ultimate SEO and content creation tool. Audit your site, generate optimized content, and track your rankings globally.',

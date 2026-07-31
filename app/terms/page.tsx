@@ -5,6 +5,10 @@ import { Footer } from '@/components/marketing/Footer'
 export const metadata = {
   title: 'Terms of Service | Sovira SEO',
   description: 'Terms of Service for Sovira SEO platform.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 }
 
 export default function TermsPage() {

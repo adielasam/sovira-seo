@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'Content Creation Tools - Write Faster with AI | Sovira AI',
-  description: 'Supercharge your writing with Sovira AI. Our content creation tools generate high-ranking, SEO-optimized articles and copy in seconds.',
+  title: 'AI Content Creation Tools — Write, Optimize & Publish Faster | Sovira AI',
+  description: 'Generate SEO-optimized blog posts, product descriptions, and social content in minutes with Sovira AI\'s Content AI suite. Draft, edit, and publish — all from one dashboard.',
 }
 
 export default function ContentCreationToolsPage() {

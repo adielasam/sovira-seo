@@ -5,8 +5,8 @@ import { TrendingUp, BarChart, Search, Sparkles } from 'lucide-react'
 import { Metadata } from 'next'
 
 export const metadata: Metadata = {
-  title: 'AI SEO Tools - Scale Your Organic Growth | Sovira AI',
-  description: 'Discover how Sovira AI\'s suite of advanced SEO tools can help you audit your site, discover high-value keywords, and dominate global search rankings.',
+  title: 'AI SEO Tools — Rank Tracker, Backlinks & Site Audit | Sovira AI',
+  description: 'Track keyword rankings, monitor backlinks, and run automated site audits with Sovira AI\'s all-in-one SEO toolkit. Built for creators and small businesses who want results without the agency price tag.',
 }
 
 export default function SeoToolsPage() {
