@@ -216,11 +216,12 @@ export default function DataAnalyserPage() {
         toast.success('Dashboard generated successfully!')
       } else if (res.error === 'LIMIT_REACHED') {
         setPaywallDate(res.resetsAt || null)
-      } else {
+        alert(`Generation Failed: ${res.error || 'Unknown error'}`)
         toast.error(`Generation Failed: ${res.error || 'Unknown error'}`, { duration: 8000 })
       }
     } catch (err: any) {
       console.error('Dashboard Generation Crash:', err)
+      alert(`System Error: ${err.message || 'A network or server error occurred. Please try again.'}`)
       toast.error(`System Error: ${err.message || 'A network or server error occurred. Please try again.'}`, { duration: 8000 })
     } finally {
       setIsGenerating(false)
