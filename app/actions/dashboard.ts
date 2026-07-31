@@ -18,16 +18,16 @@ const dashboardSpecSchema = z.object({
     value: z.string().describe('The formatted value of the KPI (e.g., $1.2M, 45%)'),
     delta: z.string().nullable().describe('The period-over-period growth or change, if applicable (e.g., +5.2%)'),
     sentiment: z.enum(['positive', 'negative', 'neutral']).describe('The sentiment of the delta for coloring'),
-  })).max(4).describe('Top 4 most important key performance indicators derived from the summary'),
+  })).max(8).describe('Top 4 to 8 most important key performance indicators derived from the summary'),
   charts: z.array(z.object({
-    id: z.string().describe('A unique identifier for the chart'),
+    id: z.string().describe('A unique identifier for the chart (e.g., c1, c2)'),
     title: z.string().describe('A descriptive title for the chart'),
     type: z.enum(['bar', 'line', 'pie']).describe('The best Recharts chart type for this data'),
     dataKey: z.string().describe('The main metric key to plot (e.g., revenue, value)'),
     categoryKey: z.string().describe('The category/label key to plot against (e.g., region, date, name)'),
     data: z.array(z.record(z.string(), z.any())).describe('The data points for the chart, reconstructed from the summary'),
-  })).max(3).describe('Up to 3 recommended charts based on the summary data (e.g. regional breakdown, growth trend)'),
-  layoutOrder: z.array(z.string()).describe('An array of chart IDs specifying the recommended display order'),
+  })).max(4).describe('Up to 4 recommended charts based on the summary data (e.g. regional breakdown, growth trend)'),
+  layoutOrder: z.array(z.string()).describe('An array of chart IDs (from the charts array) specifying the recommended display order'),
 })
 
 export type DashboardSpec = z.infer<typeof dashboardSpecSchema>
@@ -58,17 +58,18 @@ export async function generateDashboardSpec(summary: any): Promise<{ success: bo
     // 2. Generate Spec via AI
     const systemPrompt = `You are Sovira AI, an expert Business Intelligence consultant. Generate the dashboard spec based on this summary. 
 YOU MUST RETURN A JSON OBJECT WITH EXACTLY THESE ROOT KEYS: "executiveSummary", "kpis", "charts", "layoutOrder".
-DO NOT USE "widgets" OR ANY OTHER KEYS!
 Example format:
 {
   "executiveSummary": "Your 3-5 sentence summary here.",
   "kpis": [
-    { "title": "Revenue", "value": "$1.2M", "delta": "+5%", "sentiment": "positive" }
+    { "title": "Revenue", "value": "$1.2M", "delta": "+5%", "sentiment": "positive" },
+    { "title": "Profit Margin", "value": "18%", "delta": "-2%", "sentiment": "negative" }
   ],
   "charts": [
-    { "id": "c1", "title": "Sales", "type": "bar", "dataKey": "revenue", "categoryKey": "region", "data": [{"region": "North", "revenue": 1000}] }
+    { "id": "c1", "title": "Sales by Region", "type": "bar", "dataKey": "revenue", "categoryKey": "region", "data": [{"region": "North", "revenue": 1000}] },
+    { "id": "c2", "title": "Monthly Trend", "type": "line", "dataKey": "sales", "categoryKey": "month", "data": [{"month": "Jan", "sales": 500}] }
   ],
-  "layoutOrder": ["executiveSummary", "kpis", "charts"]
+  "layoutOrder": ["c1", "c2"]
 }`
 
     const result = await generateObject({
