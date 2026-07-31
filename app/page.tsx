@@ -282,10 +282,29 @@ export default function LandingPage() {
               {/* ── Left: Headline + CTA ── */}
               <div className="flex-1 text-center lg:text-left">
                 <FadeInSection>
-                  {/* Product Hunt Badge */}
-                  <div className="mb-6 flex justify-center lg:justify-start">
-                    <a href="https://www.producthunt.com/products/sovira-ai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-sovira-ai" target="_blank" rel="noopener noreferrer">
-                      <img alt="Sovira AI - AI that helps your business rank higher on Google | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1211138&theme=light&t=1785479295657" className="hover:scale-105 transition-transform" />
+                  {/* Custom Product Hunt Review Badge */}
+                  <div className="mb-8 flex justify-center lg:justify-start">
+                    <a 
+                      href="https://www.producthunt.com/products/sovira-ai" 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="group flex items-center gap-4 bg-white border-2 border-[#DA552F] rounded-full px-6 py-3 hover:bg-[#DA552F]/5 transition-all duration-300 shadow-sm hover:shadow-md hover:-translate-y-1"
+                    >
+                      {/* P Logo */}
+                      <div className="w-10 h-10 rounded-full bg-[#DA552F] flex items-center justify-center shrink-0">
+                        <span className="text-white font-bold text-2xl leading-none font-sans">P</span>
+                      </div>
+                      
+                      {/* Text */}
+                      <div className="flex flex-col items-start justify-center text-left">
+                        <span className="text-[10px] font-bold text-[#DA552F] uppercase tracking-wider leading-tight">Leave a review on</span>
+                        <span className="text-xl font-extrabold text-[#DA552F] leading-tight">Product Hunt</span>
+                      </div>
+                      
+                      {/* Star Icon */}
+                      <div className="ml-2 pl-4 border-l border-[#DA552F]/20">
+                        <Star className="w-8 h-8 text-[#DA552F] group-hover:fill-[#DA552F]/20 transition-all" />
+                      </div>
                     </a>
                   </div>
 
