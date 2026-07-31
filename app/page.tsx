@@ -282,6 +282,13 @@ export default function LandingPage() {
               {/* ── Left: Headline + CTA ── */}
               <div className="flex-1 text-center lg:text-left">
                 <FadeInSection>
+                  {/* Product Hunt Badge */}
+                  <div className="mb-6 flex justify-center lg:justify-start">
+                    <a href="https://www.producthunt.com/products/sovira-ai?embed=true&utm_source=badge-featured&utm_medium=badge&utm_campaign=badge-sovira-ai" target="_blank" rel="noopener noreferrer">
+                      <img alt="Sovira AI - AI that helps your business rank higher on Google | Product Hunt" width="250" height="54" src="https://api.producthunt.com/widgets/embed-image/v1/featured.svg?post_id=1211138&theme=light&t=1785479295657" className="hover:scale-105 transition-transform" />
+                    </a>
+                  </div>
+
                   {/* Eyebrow */}
                   <div className="inline-flex items-center gap-2 bg-[#2563EB]/8 dark:bg-[#2563EB]/15 border border-[#2563EB]/20 rounded-full px-4 py-1.5 mb-6">
                     <span className="w-2 h-2 rounded-full bg-[#2563EB] animate-pulse" />
