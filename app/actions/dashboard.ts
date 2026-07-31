@@ -6,11 +6,13 @@ import { generateObject } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { z } from 'zod'
 
+// TODO: wire to credits system + swap to Nara API before production
 const google = createGoogleGenerativeAI({
   apiKey: process.env.GEMINI_API_KEY,
 })
 
 const dashboardSpecSchema = z.object({
+  executiveSummary: z.string().describe('A short executive summary (3-5 sentences) in plain business language analyzing the dataset. Explain what is working, what is declining, and what to watch based on the computed KPIs and chart data. No jargon, do not restate raw numbers verbatim — interpret them.'),
   kpis: z.array(z.object({
     title: z.string().describe('The name of the KPI (e.g., Total Revenue)'),
     value: z.string().describe('The formatted value of the KPI (e.g., $1.2M, 45%)'),

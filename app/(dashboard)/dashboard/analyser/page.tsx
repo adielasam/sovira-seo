@@ -1,10 +1,12 @@
 'use client'
 
-import { useState } from 'react'
-import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, TrendingUp, TrendingDown, Minus, Lock } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, TrendingUp, TrendingDown, Minus, Lock, Download, FileText } from 'lucide-react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
+import html2canvas from 'html2canvas'
+import { jsPDF } from 'jspdf'
 import { generateDatasetSummary } from '@/lib/dashboardAnalytics'
 import { generateDashboardSpec, type DashboardSpec } from '@/app/actions/dashboard'
 import {
@@ -32,6 +34,37 @@ export default function DataAnalyserPage() {
   
   const [dashboardSpec, setDashboardSpec] = useState<DashboardSpec | null>(null)
   const [paywallDate, setPaywallDate] = useState<string | null>(null)
+  const dashboardRef = useRef<HTMLDivElement>(null)
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExportPDF = async () => {
+    if (!dashboardRef.current) return
+    setIsExporting(true)
+    try {
+      // Temporarily add a white background for the PDF capture since it might be transparent
+      const originalBg = dashboardRef.current.style.backgroundColor
+      dashboardRef.current.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#f8fafc'
+      
+      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true })
+      
+      dashboardRef.current.style.backgroundColor = originalBg
+
+      const imgData = canvas.toDataURL('image/png')
+      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
+      
+      // If the dashboard is very tall, it might exceed one page, but scaling to width is the simplest acceptable MVP.
+      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      pdf.save(`sovira-ai-dashboard-${new Date().toISOString().split('T')[0]}.pdf`)
+      toast.success('PDF downloaded successfully!')
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to generate PDF')
+    } finally {
+      setIsExporting(false)
+    }
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -247,10 +280,20 @@ export default function DataAnalyserPage() {
           <p className="text-slate-600 dark:text-slate-400 mt-1">Upload a dataset to generate an AI-powered executive dashboard.</p>
         </div>
         {dashboardSpec && (
-           <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
-             <AlertCircle className="w-3.5 h-3.5" />
-             Usage counted
-           </span>
+          <div className="flex items-center gap-3">
+             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
+               <AlertCircle className="w-3.5 h-3.5" />
+               Usage counted
+             </span>
+             <button
+               onClick={handleExportPDF}
+               disabled={isExporting}
+               className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+             >
+               {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+               {isExporting ? 'Generating PDF...' : 'Download PDF Report'}
+             </button>
+          </div>
         )}
       </div>
 
@@ -319,19 +362,35 @@ export default function DataAnalyserPage() {
       )}
 
       {dashboardSpec && !isGenerating && (
-        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-700">
+        <div ref={dashboardRef} className="space-y-6 animate-in slide-in-from-bottom-4 duration-700 p-2 -m-2">
+           {/* Header / Utility Bar */}
            <div className="flex justify-between items-center bg-white dark:bg-[#1E293B] p-4 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
              <div className="flex items-center gap-3">
                <FileSpreadsheet className="w-5 h-5 text-green-500" />
                <span className="font-medium text-slate-900 dark:text-white">{fileName}</span>
+               <span className="text-slate-400 dark:text-slate-500 text-sm px-2 border-l border-slate-200 dark:border-slate-700">Sovira AI Executive Report</span>
              </div>
              <button 
                 onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setDashboardSpec(null); }}
                 className="text-sm font-semibold text-slate-500 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 px-4 py-2 rounded-md transition-colors"
+                data-html2canvas-ignore="true"
               >
                 Upload New File
               </button>
            </div>
+
+           {/* Executive Summary Narrative */}
+           {dashboardSpec.executiveSummary && (
+             <div className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-900/20 dark:to-indigo-900/10 p-6 rounded-xl shadow-sm ring-1 ring-blue-100 dark:ring-blue-900/30">
+               <h3 className="text-lg font-bold text-blue-900 dark:text-blue-100 mb-3 flex items-center gap-2">
+                 <FileText className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                 Executive Summary
+               </h3>
+               <p className="text-slate-700 dark:text-slate-300 leading-relaxed">
+                 {dashboardSpec.executiveSummary}
+               </p>
+             </div>
+           )}
 
            {/* KPIs */}
            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
