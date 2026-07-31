@@ -489,7 +489,7 @@ export default function DataAnalyserPage() {
                        {chart.title}
                      </h3>
                      <div className="relative z-10">
-                       {renderChart(chart, isDark)}
+                       {renderChart(chart)}
                      </div>
                    </div>
                  )
