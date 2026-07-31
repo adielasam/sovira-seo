@@ -41,7 +41,10 @@ export default function DataAnalyserPage() {
     if (!dashboardRef.current) return
     setIsExporting(true)
     try {
-      // Temporarily add a white background for the PDF capture since it might be transparent
+      // 1. Wait for any Recharts SVG animations to finish drawing (default is ~1500ms)
+      await new Promise(resolve => setTimeout(resolve, 2000))
+
+      // 2. Temporarily add a white background for the PDF capture since it might be transparent
       const originalBg = dashboardRef.current.style.backgroundColor
       dashboardRef.current.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#f8fafc'
       
@@ -51,11 +54,26 @@ export default function DataAnalyserPage() {
 
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
-      const pdfWidth = pdf.internal.pageSize.getWidth()
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width
       
-      // If the dashboard is very tall, it might exceed one page, but scaling to width is the simplest acceptable MVP.
-      pdf.addImage(imgData, 'PNG', 0, 0, pdfWidth, pdfHeight)
+      const pdfWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+      const imgHeight = (canvas.height * pdfWidth) / canvas.width
+      
+      let heightLeft = imgHeight
+      let position = 0
+
+      // 3. Multi-page slicing: add the first page
+      pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight)
+      heightLeft -= pageHeight
+
+      // Add subsequent pages if the dashboard content is taller than one A4 page
+      while (heightLeft >= 0) {
+        position = heightLeft - imgHeight
+        pdf.addPage()
+        pdf.addImage(imgData, 'PNG', 0, position, pdfWidth, imgHeight)
+        heightLeft -= pageHeight
+      }
+
       pdf.save(`sovira-ai-dashboard-${new Date().toISOString().split('T')[0]}.pdf`)
       toast.success('PDF downloaded successfully!')
     } catch (err) {
