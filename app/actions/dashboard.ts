@@ -3,12 +3,12 @@
 import { createClient } from '@/lib/supabase/server'
 import { checkAndIncrementDashboardUsage } from '@/lib/usage'
 import { generateObject } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 
 // TODO: wire to credits system + swap to Nara API before production
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GEMINI_API_KEY,
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 })
 
 const dashboardSpecSchema = z.object({
@@ -52,14 +52,23 @@ export async function generateDashboardSpec(summary: any): Promise<{ success: bo
     }
 
     // 2. Generate Spec via AI
-    const systemPrompt = `You are Sovira AI, an expert Business Intelligence consultant. 
-Your task is to analyze the provided dataset summary and design an executive dashboard specification.
-The user wants to see the most important KPIs, and visually compelling charts (bar, line, or pie) that highlight trends or regional/categorical breakdowns.
-You must return a valid JSON object matching the requested schema.
-NEVER reference your underlying model or vendor.`
+    const systemPrompt = `You are Sovira AI, an expert Business Intelligence consultant. Generate the dashboard spec based on this summary. 
+YOU MUST RETURN A JSON OBJECT WITH EXACTLY THESE ROOT KEYS: "executiveSummary", "kpis", "charts", "layoutOrder".
+DO NOT USE "widgets" OR ANY OTHER KEYS!
+Example format:
+{
+  "executiveSummary": "Your 3-5 sentence summary here.",
+  "kpis": [
+    { "title": "Revenue", "value": "$1.2M", "delta": "+5%", "sentiment": "positive" }
+  ],
+  "charts": [
+    { "id": "c1", "title": "Sales", "type": "bar", "dataKey": "revenue", "categoryKey": "region", "data": [{"region": "North", "revenue": 1000}] }
+  ],
+  "layoutOrder": ["executiveSummary", "kpis", "charts"]
+}`
 
     const result = await generateObject({
-      model: google('gemini-1.5-flash'),
+      model: groq('llama-3.3-70b-versatile'),
       mode: 'json',
       schema: dashboardSpecSchema,
       system: systemPrompt,

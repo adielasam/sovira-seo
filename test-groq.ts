@@ -1,9 +1,9 @@
 import { generateObject } from 'ai'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { createGroq } from '@ai-sdk/groq'
 import { z } from 'zod'
 
-const google = createGoogleGenerativeAI({
-  apiKey: process.env.GOOGLE_PAGESPEED_API_KEY,
+const groq = createGroq({
+  apiKey: process.env.GROQ_API_KEY,
 })
 
 const dashboardSpecSchema = z.object({
@@ -43,10 +43,23 @@ const summary = {
 async function test() {
   try {
     const result = await generateObject({
-      model: google('gemini-1.5-flash'),
+      model: groq('llama-3.3-70b-versatile'),
       mode: 'json',
       schema: dashboardSpecSchema,
-      system: 'You are Sovira AI, an expert Business Intelligence consultant. Generate the dashboard spec based on this summary.',
+      system: `You are Sovira AI, an expert Business Intelligence consultant. Generate the dashboard spec based on this summary. 
+YOU MUST RETURN A JSON OBJECT WITH EXACTLY THESE ROOT KEYS: "executiveSummary", "kpis", "charts", "layoutOrder".
+DO NOT USE "widgets" OR ANY OTHER KEYS!
+Example format:
+{
+  "executiveSummary": "Your 3-5 sentence summary here.",
+  "kpis": [
+    { "title": "Revenue", "value": "$1.2M", "delta": "+5%", "sentiment": "positive" }
+  ],
+  "charts": [
+    { "id": "c1", "title": "Sales", "type": "bar", "dataKey": "revenue", "categoryKey": "region", "data": [{"region": "North", "revenue": 1000}] }
+  ],
+  "layoutOrder": ["executiveSummary", "kpis", "charts"]
+}`,
       prompt: JSON.stringify(summary, null, 2),
     });
     console.log(JSON.stringify(result.object, null, 2));
