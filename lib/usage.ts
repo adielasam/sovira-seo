@@ -97,6 +97,12 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
 export async function checkAndIncrementDashboardUsage(userId: string): Promise<{ allowed: boolean, remaining: number, resetsAt?: string }> {
   const supabase = await createClient()
 
+  // Admin bypass
+  const { data: { user } } = await supabase.auth.getUser()
+  if (user && (user.email === 'adielasam2015@gmail.com' || user.email === 'adielasam20153@gmail.com')) {
+    return { allowed: true, remaining: 9999 }
+  }
+
   // 1. Fetch user's row
   const { data: usage, error } = await supabase
     .from('dashboard_usage')

@@ -216,12 +216,12 @@ export default function DataAnalyserPage() {
         toast.success('Dashboard generated successfully!')
       } else if (res.error === 'LIMIT_REACHED') {
         setPaywallDate(res.resetsAt || null)
-        alert(`Generation Failed: ${res.error || 'Unknown error'}`)
+        toast.error(`Monthly limit reached. Please upgrade to continue.`, { duration: 8000 })
+      } else {
         toast.error(`Generation Failed: ${res.error || 'Unknown error'}`, { duration: 8000 })
       }
     } catch (err: any) {
       console.error('Dashboard Generation Crash:', err)
-      alert(`System Error: ${err.message || 'A network or server error occurred. Please try again.'}`)
       toast.error(`System Error: ${err.message || 'A network or server error occurred. Please try again.'}`, { duration: 8000 })
     } finally {
       setIsGenerating(false)
@@ -512,6 +512,30 @@ export default function DataAnalyserPage() {
                 {isGenerating ? 'Generating Dashboard...' : 'Generate Dashboard'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {paywallDate && (
+        <div className="bg-white dark:bg-[#1E293B] p-12 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 text-center animate-in fade-in duration-500 max-w-xl mx-auto mt-8">
+          <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle className="w-8 h-8 text-blue-600 dark:text-blue-400" />
+          </div>
+          <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-4">Monthly Limit Reached</h2>
+          <p className="text-slate-600 dark:text-slate-400 mb-8">
+            You have reached your free monthly limit of 10 AI Dashboard generations. 
+            Upgrade to a premium plan for unlimited insights, or wait until your limit resets on <span className="font-semibold text-slate-900 dark:text-white">{new Date(paywallDate).toLocaleDateString()}</span>.
+          </p>
+          <div className="flex items-center justify-center gap-4">
+            <button 
+              onClick={() => { setPaywallDate(null); setParsedData([]); setFileName(null); setColumnMeta([]); }}
+              className="px-6 py-3 border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 rounded-lg text-sm font-semibold text-slate-600 dark:text-slate-300 transition-all"
+            >
+              Start Over
+            </button>
+            <a href="/pricing" className="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white rounded-lg text-sm font-semibold shadow-sm transition-all">
+              View Pricing
+            </a>
           </div>
         </div>
       )}
