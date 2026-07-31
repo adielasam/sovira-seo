@@ -41,6 +41,10 @@ export async function generateDashboardSpec(summary: any): Promise<{ success: bo
       return { success: false, error: 'Unauthorized' }
     }
 
+    if (!process.env.GROQ_API_KEY) {
+      return { success: false, error: 'GROQ_API_KEY environment variable is missing on Vercel. Please add it to your project settings.' }
+    }
+
     // 1. Check and increment usage
     const usageCheck = await checkAndIncrementDashboardUsage(user.id)
     if (!usageCheck.allowed) {
