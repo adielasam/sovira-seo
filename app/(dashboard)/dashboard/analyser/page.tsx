@@ -217,11 +217,11 @@ export default function DataAnalyserPage() {
       } else if (res.error === 'LIMIT_REACHED') {
         setPaywallDate(res.resetsAt || null)
       } else {
-        toast.error(res.error || 'Failed to generate dashboard.')
+        toast.error(`Generation Failed: ${res.error || 'Unknown error'}`, { duration: 8000 })
       }
     } catch (err: any) {
-      console.error(err)
-      toast.error('A network or server error occurred. Please try again.')
+      console.error('Dashboard Generation Crash:', err)
+      toast.error(`System Error: ${err.message || 'A network or server error occurred. Please try again.'}`, { duration: 8000 })
     } finally {
       setIsGenerating(false)
     }
