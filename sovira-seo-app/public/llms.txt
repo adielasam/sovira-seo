@@ -1,0 +1,13 @@
+# Sovira - AI Search & Content Intelligence Platform
+
+> **Sovira** is an intelligent AI platform designed to help businesses, creators, agencies, and publishers improve search visibility, create better content, and grow using automation.
+
+## Platform Ecosystem
+
+- **AI Search & SEO**: Technical Site Audits, Rank Tracking, Backlink Analysis, Keyword Research, and Generative Engine Optimization (GEO).
+- **AI Writing**: High-performance AI blog writing, email crafting, SEO-optimized content rewriting, and grammar checking.
+- **Stealth AI Humanizer**: Advanced detection-bypassing text humanization and Turnitin-level AI probability detection.
+- **Marketing & YouTube**: YouTube video SEO (Title/Description generation), trend analysis, and competitor tracking.
+
+For full technical details, API documentation, and platform capabilities, read our comprehensive documentation at:
+[https://www.sovira.com.ng/llms-full.txt](https://www.sovira.com.ng/llms-full.txt)

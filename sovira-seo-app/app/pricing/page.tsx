@@ -1,0 +1,259 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { Check, ArrowRight, Zap, Shield, Sparkles, Building2 } from 'lucide-react'
+import toast from 'react-hot-toast'
+import Link from 'next/link'
+import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
+
+const tiers = [
+  {
+    name: 'Free Trial',
+    id: 'tier-free',
+    price: { monthly: 0, annually: 0 },
+    description: 'Explore the platform with basic features before committing.',
+    features: [
+      'Track up to 10 keywords',
+      '5 SEO Audits per month',
+      '1,000 AI words per month',
+      '1 AI Image generation (Watermarked / Low Res)',
+      '0 AI Video generations',
+      'Basic Support',
+    ],
+    icon: Shield,
+  },
+  {
+    name: 'Starter',
+    id: 'tier-starter',
+    price: { monthly: 10000, annually: 100000 },
+    description: 'Perfect for small websites and individual bloggers just getting started with SEO and content.',
+    features: [
+      'Track up to 50 keywords',
+      '50 SEO Audits per month',
+      '10,000 AI words per month',
+      '15 AI Image generations per month',
+      '1 AI Video generation per month',
+      'Basic Competitor Analysis',
+      'Standard Support',
+    ],
+    icon: Zap,
+  },
+  {
+    name: 'Pro',
+    id: 'tier-pro',
+    price: { monthly: 30000, annually: 300000 },
+    description: 'Ideal for growing businesses and solo founders needing comprehensive SEO tools and cinematic content.',
+    features: [
+      'Track up to 500 keywords',
+      'Unlimited SEO Audits',
+      '100,000 AI words per month',
+      '100 AI Image generations per month',
+      '3 AI Video generations per month',
+      'Advanced Competitor Analysis',
+      '1-Click CMS Auto-Publishing (WordPress, Webflow, etc.)',
+      'Priority Email Support',
+      'White-label Reports',
+    ],
+    mostPopular: true,
+    icon: Sparkles,
+  },
+  {
+    name: 'Agency',
+    id: 'tier-agency',
+    price: { monthly: 130000, annually: 1300000 },
+    description: 'For large teams and enterprises requiring maximum power, limits, and creative freedom.',
+    features: [
+      'Track up to 5,000 keywords',
+      'Unlimited SEO Audits',
+      'Unlimited AI words (Fair Use Policy applies)',
+      '500 AI Image generations per month',
+      '15 AI Video generations per month',
+      'Deep Competitor Analysis',
+      '24/7 Phone & Email Support',
+      'Unlimited User Seats',
+      'Custom White-labeling',
+      'Dedicated Account Manager',
+    ],
+    icon: Building2,
+  },
+]
+
+export default function PricingPage() {
+  const annual = false; // Lock to monthly
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    // Check if redirected due to expired trial
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('expired') === 'true') {
+        toast.error('Your 3-month free trial has expired. Please upgrade to a paid plan to continue accessing the dashboard.', {
+          duration: 6000,
+          icon: '⏳'
+        });
+        
+        // Remove the parameter from URL so it doesn't toast again on refresh
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+
+    const fetchUser = async () => {
+      try {
+        const data = await getUserProfile()
+        if (data && data.user) setUser(data.user)
+      } catch(e) {}
+    }
+    fetchUser()
+  }, [])
+
+  const handleSubscribe = async (planName: string, amount: number) => {
+    if (!user) {
+      toast.error('Please create an account to start your trial.', { icon: '🔒' })
+      router.push('/auth/register?redirect=/pricing')
+      return
+    }
+
+    if (!process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY) {
+      toast.error('Paystack key not configured')
+      return
+    }
+    
+    const lowerPlan = planName.toLowerCase()
+    
+    if (lowerPlan === 'free trial') {
+      toast.success('You are already on the Free Trial by default!')
+      router.push('/dashboard')
+      return
+    }
+
+    // Map to NGN for Paystack logic
+    let ngnAmount = 0
+    if (lowerPlan === 'starter') ngnAmount = 10000
+    else if (lowerPlan === 'pro') ngnAmount = 30000
+    else if (lowerPlan === 'agency') ngnAmount = 130000
+
+    try {
+      const PaystackPop = (await import('@paystack/inline-js')).default
+      const paystack = new PaystackPop()
+      paystack.newTransaction({
+        key: process.env.NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY,
+        email: user.email,
+        amount: ngnAmount * 100, // in kobo
+        currency: 'NGN',
+        reference: 'SOVIRA_' + Date.now(),
+        onSuccess: async (transaction: any) => {
+          toast.loading('Verifying payment...')
+          const res = await updateUserPlan(transaction.reference, lowerPlan)
+          toast.dismiss()
+          if (res.error) {
+            toast.error(res.error)
+          } else {
+            toast.success('Payment successful! Plan upgraded.')
+            router.push('/dashboard')
+          }
+        },
+        onCancel: () => {
+          console.log('Payment closed')
+        }
+      })
+    } catch (err) {
+      console.error('Paystack error:', err)
+      toast.error('Failed to initialize payment gateway')
+    }
+  }
+
+  return (
+    <div className="bg-slate-50 dark:bg-[#0F172A] min-h-screen py-24 sm:py-32 transition-colors duration-300">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8">
+        
+        {/* Header */}
+        <div className="mx-auto max-w-4xl text-center">
+          <Link href="/" className="inline-flex items-center justify-center mb-8 group">
+            <Image
+              src="/sovira-logo.png"
+              alt="Sovira SEO"
+              width={160}
+              height={46}
+              className="h-11 w-auto object-contain"
+              priority
+            />
+          </Link>
+          <h1 className="text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+            Pricing that scales with your growth
+          </h1>
+          <p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-slate-600 dark:text-slate-400">
+            Choose the perfect plan for your SEO needs. Simple, transparent pricing with no hidden fees. All plans include a 14-day free trial.
+          </p>
+        </div>
+
+        {/* Toggle Removed to ensure fixed pricing */}
+
+        {/* Pricing Cards */}
+        <div className="mx-auto mt-16 grid max-w-lg grid-cols-1 gap-y-6 sm:mt-20 lg:max-w-none lg:grid-cols-3 lg:gap-8">
+          {tiers.map((tier) => (
+            <div
+              key={tier.id}
+              className={`relative flex flex-col rounded-3xl p-8 xl:p-10 transition-all duration-300 ${
+                tier.mostPopular
+                  ? 'bg-blue-600 text-white shadow-xl scale-105 z-10 ring-2 ring-blue-600'
+                  : 'bg-white dark:bg-[#1E293B] text-slate-900 dark:text-white ring-1 ring-slate-200 dark:ring-slate-800 hover:shadow-lg'
+              }`}
+            >
+              {tier.mostPopular && (
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 px-4 py-1 rounded-full bg-blue-200 text-blue-800 text-xs font-bold uppercase tracking-widest shadow-sm">
+                  Most Popular
+                </div>
+              )}
+              <div className="flex items-center justify-between gap-x-4 mb-4">
+                <h3 className="text-xl font-bold flex items-center gap-2">
+                  <tier.icon className={`w-6 h-6 ${tier.mostPopular ? 'text-blue-200' : 'text-blue-600 dark:text-blue-400'}`} />
+                  {tier.name}
+                </h3>
+              </div>
+              <p className={`text-sm leading-6 mb-6 ${tier.mostPopular ? 'text-blue-100' : 'text-slate-500 dark:text-slate-400'}`}>
+                {tier.description}
+              </p>
+              <div className="mt-2 flex items-baseline gap-x-1">
+                <span className="text-5xl font-bold tracking-tight">
+                  {tier.price.monthly === 0 ? 'Free' : `₦${(annual ? Math.round(tier.price.annually / 12) : tier.price.monthly).toLocaleString()}`}
+                </span>
+                <span className={`text-sm font-semibold leading-6 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
+                  /month
+                </span>
+              </div>
+              {annual && tier.price.annually > 0 && (
+                <p className={`text-sm mt-1 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
+                  Billed ₦{tier.price.annually.toLocaleString()} annually
+                </p>
+              )}
+              
+              <button
+                onClick={() => handleSubscribe(tier.name, annual ? tier.price.annually : tier.price.monthly)}
+                className={`mt-8 w-full rounded-xl px-4 py-3.5 text-center text-sm font-semibold transition-all duration-200 active:scale-[0.98] flex items-center justify-center gap-2 ${
+                  tier.mostPopular
+                    ? 'bg-white text-blue-600 hover:bg-slate-50 shadow-sm'
+                    : 'bg-blue-600 text-white hover:bg-blue-500 shadow-sm hover:shadow-blue-500/25'
+                }`}
+              >
+                Get started today
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              
+              <ul className={`mt-10 space-y-4 text-sm leading-6 flex-1 ${tier.mostPopular ? 'text-blue-50' : 'text-slate-600 dark:text-slate-300'}`}>
+                {tier.features.map((feature) => (
+                  <li key={feature} className="flex gap-x-3">
+                    <Check className={`h-6 w-5 flex-none ${tier.mostPopular ? 'text-blue-200' : 'text-blue-600 dark:text-blue-400'}`} aria-hidden="true" />
+                    {feature}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

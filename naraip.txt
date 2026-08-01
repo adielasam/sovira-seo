@@ -1,0 +1,33 @@
+sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs
+
+here is an experiend devlper just before you did some major job this evening so check which one to fix if it is not yet done
+
+The Keyword search, Is it possible to click on each keyword to expand on the view?
+
+This can be a Pro feature, you can even reduce what the user sees in this page if you have more info to show.
+
+But then again, it depends on the data you are receiving
+Do you track all submissions? more like every search the user has done.
+Nice. 
+
+It seems you’ve not started showing data based on one’s own account? 
+
+It is still showing one general dashboard for all users.
+ALTER TABLE user_profiles ADD COLUMN base_website TEXT;
+
+Although i can see Track, but i dont know what that does at the moment
+Your competitors page, i didnt see where to add my own website or where to put in my website and then my competitors website to compete with.
+
+The input form just says input your competitor website with no base for what it is competing for.
+The rank tracker needs some refinement sha, i really do not understand it, If i had known, i wouldve tracked the keyword from my earlier SEO search.
+
+Nevertheless, you could add a dropdown that shows the keyword the user is tracking.
+
+You can even add that starter plan keywrd is 5 keywords Max, Pro is 15 keywords, XXXXX is 30  keywords Max or any figure you see fit
+
+you forget to add cursor to buttons. so this will help user know that the buton is clickable aslo just add cursor-pointer to buttons and profiles.
+
+So that when the mouse hovers over it, it lets the user know that that place is clickable.
+Move the Integration to the top of settings so that settings comes last.
+
+
