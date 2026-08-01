@@ -312,7 +312,7 @@ export default function DataAnalyserPage() {
       chartData = Object.keys(grouped).map(k => ({
         [chartSpec.categoryKey]: k,
         [chartSpec.dataKey]: grouped[k]
-      })).sort((a, b) => b[chartSpec.dataKey] - a[chartSpec.dataKey]).slice(0, 15);
+      })).sort((a: any, b: any) => Number(b[chartSpec.dataKey]) - Number(a[chartSpec.dataKey])).slice(0, 15);
     }
     const commonTooltipStyle = {
       backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
