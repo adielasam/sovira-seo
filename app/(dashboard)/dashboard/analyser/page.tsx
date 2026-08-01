@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, TrendingUp, TrendingDown, Minus, Lock, Download, FileText } from 'lucide-react'
+import { useState, useRef, useMemo } from 'react'
+import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, TrendingUp, TrendingDown, Minus, Lock, Download, FileText, Filter } from 'lucide-react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
@@ -41,21 +41,89 @@ export default function DataAnalyserPage() {
   const [paywallDate, setPaywallDate] = useState<string | null>(null)
   const dashboardRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
+  const [isExportingForPDF, setIsExportingForPDF] = useState(false)
+  const [slicerCol, setSlicerCol] = useState<string | null>(null)
+  const [slicerVal, setSlicerVal] = useState<string | null>(null)
+
+  const categoricalColumns = useMemo(() => columnMeta.filter(c => c.type === 'categorical'), [columnMeta])
+  const uniqueSlicerValues = useMemo(() => {
+    if (!slicerCol) return []
+    const vals = new Set(parsedData.map(row => String(row[slicerCol] || '').trim()).filter(Boolean))
+    return Array.from(vals).sort()
+  }, [parsedData, slicerCol])
+  
+  const filteredData = useMemo(() => {
+    if (!slicerCol || !slicerVal) return parsedData
+    return parsedData.filter(row => String(row[slicerCol] || '').trim() === slicerVal)
+  }, [parsedData, slicerCol, slicerVal])
+
+  const localSummary = useMemo(() => {
+    if (!slicerVal || filteredData.length === 0) return null
+    return generateDatasetSummary(filteredData, columnMeta)
+  }, [filteredData, slicerVal, columnMeta])
+
+  const handleExportPNG = async () => {
+    if (!dashboardRef.current) return
+    setIsExporting(true)
+    setIsExportingForPDF(true)
+    try {
+      await new Promise(resolve => setTimeout(resolve, 800))
+      const originalWidth = dashboardRef.current.style.width
+      const originalMaxWidth = dashboardRef.current.style.maxWidth
+      const originalBg = dashboardRef.current.style.backgroundColor
+      
+      dashboardRef.current.style.width = '1200px'
+      dashboardRef.current.style.maxWidth = '1200px'
+      dashboardRef.current.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#f8fafc'
+      
+      void dashboardRef.current.offsetHeight
+      
+      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, logging: false })
+      
+      dashboardRef.current.style.backgroundColor = originalBg
+      dashboardRef.current.style.width = originalWidth
+      dashboardRef.current.style.maxWidth = originalMaxWidth
+
+      const imgData = canvas.toDataURL('image/png')
+      const link = document.createElement('a')
+      link.href = imgData
+      link.download = `sovira-ai-dashboard-${new Date().toISOString().split('T')[0]}.png`
+      link.click()
+      
+      toast.success('PNG downloaded successfully!')
+    } catch (err: any) {
+      console.error(err)
+      toast.error(`Failed to generate PNG: ${err.message}`)
+    } finally {
+      setIsExporting(false)
+      setIsExportingForPDF(false)
+    }
+  }
 
   const handleExportPDF = async () => {
     if (!dashboardRef.current) return
     setIsExporting(true)
     try {
-      // 1. Wait for any Recharts SVG animations to finish drawing (default is ~1500ms)
-      await new Promise(resolve => setTimeout(resolve, 2000))
+      setIsExportingForPDF(true)
+      // 1. Wait for Recharts SVG animations to finish drawing
+      await new Promise(resolve => setTimeout(resolve, 800))
 
-      // 2. Temporarily add a white background for the PDF capture since it might be transparent
+      // 2. Temporarily lock width and add a white background for PDF capture
+      const originalWidth = dashboardRef.current.style.width
+      const originalMaxWidth = dashboardRef.current.style.maxWidth
       const originalBg = dashboardRef.current.style.backgroundColor
+      
+      dashboardRef.current.style.width = '1200px'
+      dashboardRef.current.style.maxWidth = '1200px'
       dashboardRef.current.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#f8fafc'
       
-      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true })
+      void dashboardRef.current.offsetHeight // force reflow
+      
+      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, logging: false })
       
       dashboardRef.current.style.backgroundColor = originalBg
+      dashboardRef.current.style.width = originalWidth
+      dashboardRef.current.style.maxWidth = originalMaxWidth
 
       const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
@@ -81,11 +149,12 @@ export default function DataAnalyserPage() {
 
       pdf.save(`sovira-ai-dashboard-${new Date().toISOString().split('T')[0]}.pdf`)
       toast.success('PDF downloaded successfully!')
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      toast.error('Failed to generate PDF')
+      toast.error(`Failed to generate PDF: ${err.message}`)
     } finally {
       setIsExporting(false)
+      setIsExportingForPDF(false)
     }
   }
 
@@ -232,6 +301,19 @@ export default function DataAnalyserPage() {
   }
 
   const renderChart = (chartSpec: any) => {
+    let chartData = chartSpec.data;
+    if (slicerVal) {
+      const grouped: Record<string, number> = {};
+      filteredData.forEach(row => {
+        const cat = String(row[chartSpec.categoryKey] || 'Unknown').trim();
+        const val = parseFloat(String(row[chartSpec.dataKey]).replace(/[^0-9.-]+/g, "")) || 0;
+        grouped[cat] = (grouped[cat] || 0) + val;
+      });
+      chartData = Object.keys(grouped).map(k => ({
+        [chartSpec.categoryKey]: k,
+        [chartSpec.dataKey]: grouped[k]
+      })).sort((a: any, b: any) => Number(b[chartSpec.dataKey]) - Number(a[chartSpec.dataKey])).slice(0, 15);
+    }
     const commonTooltipStyle = {
       backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
       border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
@@ -245,13 +327,13 @@ export default function DataAnalyserPage() {
 
     if (chartSpec.type === 'bar') {
       return (
-        <ResponsiveContainer width="100%" height={300}>
-          <BarChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={240}>
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid {...commonGridStyle} />
             <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
             <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
             <Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} contentStyle={commonTooltipStyle} />
-            <Bar dataKey={chartSpec.dataKey} fill={isDark ? "#06b6d4" : "#2563eb"} radius={[4, 4, 0, 0]} barSize={32} />
+            <Bar isAnimationActive={!isExportingForPDF} dataKey={chartSpec.dataKey} fill={isDark ? "#06b6d4" : "#2563eb"} radius={[4, 4, 0, 0]} barSize={32} />
           </BarChart>
         </ResponsiveContainer>
       )
@@ -259,13 +341,13 @@ export default function DataAnalyserPage() {
     
     if (chartSpec.type === 'line') {
       return (
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={240}>
+          <LineChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid {...commonGridStyle} />
             <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
             <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
             <Tooltip contentStyle={commonTooltipStyle} />
-            <Line type="monotone" dataKey={chartSpec.dataKey} stroke={isDark ? "#a855f7" : "#8b5cf6"} strokeWidth={3} dot={{ r: 4, fill: isDark ? '#1e293b' : '#fff', stroke: isDark ? '#a855f7' : '#8b5cf6', strokeWidth: 2 }} activeDot={{ r: 6, fill: isDark ? '#a855f7' : '#8b5cf6', stroke: isDark ? '#fff' : '#fff' }} />
+            <Line isAnimationActive={!isExportingForPDF} type="monotone" dataKey={chartSpec.dataKey} stroke={isDark ? "#a855f7" : "#8b5cf6"} strokeWidth={3} dot={{ r: 4, fill: isDark ? '#1e293b' : '#fff', stroke: isDark ? '#a855f7' : '#8b5cf6', strokeWidth: 2 }} activeDot={{ r: 6, fill: isDark ? '#a855f7' : '#8b5cf6', stroke: isDark ? '#fff' : '#fff' }} />
           </LineChart>
         </ResponsiveContainer>
       )
@@ -274,10 +356,11 @@ export default function DataAnalyserPage() {
     if (chartSpec.type === 'pie') {
       const PIE_COLORS = ['#06b6d4', '#a855f7', '#f59e0b', '#10b981', '#ec4899', '#3b82f6'];
       return (
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={240}>
           <PieChart>
             <Pie
-              data={chartSpec.data}
+              isAnimationActive={!isExportingForPDF}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={70}
@@ -317,6 +400,14 @@ export default function DataAnalyserPage() {
                <AlertCircle className="w-3.5 h-3.5" />
                Usage counted
              </span>
+             <button
+               onClick={handleExportPNG}
+               disabled={isExporting}
+               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+             >
+               {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+               Download PNG
+             </button>
              <button
                onClick={handleExportPDF}
                disabled={isExporting}
@@ -396,7 +487,7 @@ export default function DataAnalyserPage() {
       {dashboardSpec && !isGenerating && (
         <div ref={dashboardRef} className="animate-in slide-in-from-bottom-4 duration-700 mt-4 bg-white dark:bg-slate-900 shadow-md ring-1 ring-slate-200 dark:ring-slate-800 text-slate-900 dark:text-white font-sans w-full rounded-xl">
            {/* Header */}
-           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-6 border-b border-slate-200 dark:border-slate-800 rounded-t-xl">
+           <div className="flex justify-between items-center bg-slate-50 dark:bg-slate-900 p-4 border-b border-slate-200 dark:border-slate-800 rounded-t-xl">
              <div className="flex items-center gap-4">
                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-[#2563EB] to-blue-600 flex items-center justify-center shadow-md">
                  <FileSpreadsheet className="w-5 h-5 text-white" />
@@ -408,19 +499,67 @@ export default function DataAnalyserPage() {
                  <p className="text-xs font-semibold tracking-widest text-[#2563EB] dark:text-cyan-400 uppercase mt-0.5">Sovira AI Analytics</p>
                </div>
              </div>
-             <button 
-                onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setDashboardSpec(null); }}
-                className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-md shadow-sm transition-all"
-                data-html2canvas-ignore="true"
-             >
-                New Analysis
-             </button>
+             <div className="flex items-center gap-3" data-html2canvas-ignore="true">
+               {categoricalColumns.length > 0 && (
+                 <div className="flex items-center gap-2 mr-2 bg-white dark:bg-slate-800 p-1.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                   <Filter className="w-4 h-4 text-slate-500 ml-2" />
+                   <select 
+                     className="bg-transparent text-xs font-semibold text-slate-700 dark:text-slate-300 outline-none cursor-pointer"
+                     value={slicerCol || ''}
+                     onChange={(e) => { setSlicerCol(e.target.value); setSlicerVal(null); }}
+                   >
+                     <option value="">Filter By</option>
+                     {categoricalColumns.map(c => (
+                       <option key={c.key} value={c.key}>{c.key}</option>
+                     ))}
+                   </select>
+                   {slicerCol && (
+                     <>
+                       <span className="text-slate-300 dark:text-slate-600">|</span>
+                       <select 
+                         className="bg-transparent text-xs font-semibold text-blue-600 dark:text-blue-400 outline-none cursor-pointer max-w-[120px]"
+                         value={slicerVal || ''}
+                         onChange={(e) => setSlicerVal(e.target.value || null)}
+                       >
+                         <option value="">All Data</option>
+                         {uniqueSlicerValues.map(v => (
+                           <option key={String(v)} value={String(v)}>{String(v)}</option>
+                         ))}
+                       </select>
+                     </>
+                   )}
+                 </div>
+               )}
+               <button 
+                  onClick={() => { setParsedData([]); setFileName(null); setColumnMeta([]); setDashboardSpec(null); setSlicerCol(null); setSlicerVal(null); }}
+                  className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-md shadow-sm transition-all"
+               >
+                  New Analysis
+               </button>
+             </div>
            </div>
 
-           <div className="p-6 space-y-6">
+           <div className="p-4 space-y-4">
              {/* KPIs Grid */}
-             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-               {dashboardSpec.kpis.map((kpi, idx) => {
+             <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+               {dashboardSpec.kpis.map((originalKpi, idx) => {
+                 let kpi = { ...originalKpi };
+                 if (slicerVal && localSummary) {
+                   const lowerTitle = kpi.title.toLowerCase();
+                   if (lowerTitle.includes('revenue') || lowerTitle.includes('sales')) {
+                     kpi.value = localSummary.aggregates.totalRevenue.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                     kpi.delta = null;
+                   } else if (lowerTitle.includes('margin')) {
+                     kpi.value = localSummary.aggregates.profitMargin.toFixed(1) + '%';
+                     kpi.delta = null;
+                   } else if (lowerTitle.includes('profit') || lowerTitle.includes('net')) {
+                     kpi.value = localSummary.aggregates.netProfit.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                     kpi.delta = null;
+                   } else if (lowerTitle.includes('cost') || lowerTitle.includes('spend')) {
+                     kpi.value = localSummary.aggregates.totalCost.toLocaleString(undefined, { style: 'currency', currency: 'USD', minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                     kpi.delta = null;
+                   }
+                 }
                  const isPos = kpi.sentiment === 'positive'
                  const isNeg = kpi.sentiment === 'negative'
                  
@@ -432,7 +571,7 @@ export default function DataAnalyserPage() {
                  const pseudoPercentage = 65 + (idx * 10) % 30
                  
                  return (
-                   <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
+                   <div key={idx} className="bg-white dark:bg-slate-900 p-3 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden group">
                      {/* Left accent line instead of top */}
                      <div className={`absolute top-0 left-0 bottom-0 w-1 ${isPos ? 'bg-emerald-500' : isNeg ? 'bg-rose-500' : 'bg-slate-400'}`} />
                      
@@ -465,7 +604,7 @@ export default function DataAnalyserPage() {
              </div>
 
              {/* Charts Grid */}
-             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
                {/* Executive Summary takes up full width or half width */}
                {dashboardSpec.executiveSummary && (
                  <div className="lg:col-span-2 bg-slate-50 dark:bg-slate-800/50 p-6 rounded-xl border border-slate-200 dark:border-slate-700/50 shadow-sm">
@@ -483,7 +622,7 @@ export default function DataAnalyserPage() {
                  const chart = dashboardSpec.charts.find(c => c.id === chartId)
                  if (!chart) return null
                  return (
-                   <div key={chart.id} className="bg-white dark:bg-slate-900 p-6 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
+                   <div key={chart.id} className="bg-white dark:bg-slate-900 p-4 rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm relative overflow-hidden">
                      <h3 className="text-sm font-bold tracking-wide text-slate-900 dark:text-white mb-6 uppercase flex items-center gap-2">
                        <div className={`w-2 h-2 rounded-full ${i % 2 === 0 ? 'bg-[#2563EB] dark:bg-cyan-500' : 'bg-[#10B981] dark:bg-purple-500'}`} />
                        {chart.title}
