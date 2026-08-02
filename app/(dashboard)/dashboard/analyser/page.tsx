@@ -5,7 +5,7 @@ import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, TrendingUp, T
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
-import html2canvas from 'html2canvas'
+import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
 import { generateDatasetSummary } from '@/lib/dashboardAnalytics'
 import { generateDashboardSpec, type DashboardSpec } from '@/app/actions/dashboard'
@@ -78,13 +78,12 @@ export default function DataAnalyserPage() {
       
       void dashboardRef.current.offsetHeight
       
-      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, logging: false })
+      const imgData = await toPng(dashboardRef.current, { cacheBust: true, pixelRatio: 2 })
       
       dashboardRef.current.style.backgroundColor = originalBg
       dashboardRef.current.style.width = originalWidth
       dashboardRef.current.style.maxWidth = originalMaxWidth
 
-      const imgData = canvas.toDataURL('image/png')
       const link = document.createElement('a')
       link.href = imgData
       link.download = `sovira-ai-dashboard-${new Date().toISOString().split('T')[0]}.png`
@@ -119,18 +118,25 @@ export default function DataAnalyserPage() {
       
       void dashboardRef.current.offsetHeight // force reflow
       
-      const canvas = await html2canvas(dashboardRef.current, { scale: 2, useCORS: true, logging: false })
+      const imgData = await toPng(dashboardRef.current, { cacheBust: true, pixelRatio: 2 })
       
       dashboardRef.current.style.backgroundColor = originalBg
       dashboardRef.current.style.width = originalWidth
       dashboardRef.current.style.maxWidth = originalMaxWidth
 
-      const imgData = canvas.toDataURL('image/png')
       const pdf = new jsPDF('p', 'mm', 'a4')
+      
+      // Calculate dimensions from an Image object since toPng returns a base64 string
+      const img = new Image()
+      img.src = imgData
+      await new Promise((resolve) => { img.onload = resolve })
+
+      const canvasWidth = img.width
+      const canvasHeight = img.height
       
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      const imgHeight = (canvas.height * pdfWidth) / canvas.width
+      const imgHeight = (canvasHeight * pdfWidth) / canvasWidth
       
       let heightLeft = imgHeight
       let position = 0
