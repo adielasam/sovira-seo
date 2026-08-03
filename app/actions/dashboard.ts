@@ -32,6 +32,38 @@ const dashboardSpecSchema = z.object({
 
 export type DashboardSpec = z.infer<typeof dashboardSpecSchema>
 
+export async function generateExecutiveInsight(aggregates: any): Promise<{ success: boolean; insight?: string; error?: string }> {
+  try {
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return { success: false, error: 'Unauthorized' }
+    }
+
+    if (!process.env.GROQ_API_KEY) {
+      return { success: false, error: 'GROQ_API_KEY environment variable is missing.' }
+    }
+
+    const systemPrompt = `You are a Data Analyst. Your job is to provide a highly concise, 2-sentence "Executive Insight" summary based ONLY on the provided aggregated data. Do not hallucinate numbers. Point out the top performing metric or any obvious areas of interest based on the provided totals and breakdowns.`;
+
+    // We can use generateObject with a simple schema, or generateText. We already import generateObject.
+    const result = await generateObject({
+      model: groq('llama-3.3-70b-versatile'),
+      mode: 'json',
+      schema: z.object({ insight: z.string().describe("A 2-sentence plain-English executive summary.") }),
+      system: systemPrompt,
+      prompt: `Here is the pre-computed aggregated data (Top KPIs and Breakdowns):\n\n${JSON.stringify(aggregates, null, 2)}\n\nGenerate the 2-sentence insight.`,
+    })
+
+    return { success: true, insight: (result.object as any).insight }
+
+  } catch (error: any) {
+    console.error('AI Insight Generation Error:', error)
+    return { success: false, error: error.message || 'Failed to generate insight' }
+  }
+}
+
 export async function generateDashboardSpec(summary: any): Promise<{ success: boolean; spec?: DashboardSpec; error?: string; resetsAt?: string }> {
   try {
     const supabase = await createClient()

@@ -20,6 +20,7 @@
     "@tailwindcss/typography": "^0.5.20",
     "ai": "^3.4.12",
     "apify-client": "^2.23.4",
+    "arquero": "^8.0.3",
     "cheerio": "^1.2.0",
     "google-trends-api": "^4.9.2",
     "html-to-image": "^1.11.13",
