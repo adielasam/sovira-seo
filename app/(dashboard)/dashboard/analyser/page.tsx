@@ -263,19 +263,19 @@ export default function DataAnalyserPage() {
       boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.05)',
       fontFamily: 'serif'
     };
-    const commonAxisStyle = { stroke: '#cbd5e1', fontSize: 11, tickLine: false, axisLine: false, fontFamily: 'sans-serif' };
+    const commonAxisStyle = { stroke: '#cbd5e1', fontSize: 10, tickLine: false, axisLine: false, fontFamily: 'sans-serif' };
     const commonGridStyle = { stroke: '#f1f5f9', strokeDasharray: '3 3', vertical: false };
 
     if (chartSpec.type === 'donut') {
       return (
-        <ResponsiveContainer width="100%" height={240}>
+        <ResponsiveContainer width="100%" height="100%">
           <PieChart>
             <Pie
               data={chartSpec.data}
               cx="50%"
               cy="50%"
-              innerRadius={60}
-              outerRadius={90}
+              innerRadius="40%"
+              outerRadius="70%"
               paddingAngle={2}
               dataKey="total"
               nameKey={chartSpec.categoryKey}
@@ -286,31 +286,35 @@ export default function DataAnalyserPage() {
               ))}
             </Pie>
             <Tooltip contentStyle={commonTooltipStyle} />
-            <Legend wrapperStyle={{ fontSize: '11px', color: '#64748b', fontFamily: 'serif' }} />
+            <Legend wrapperStyle={{ fontSize: '10px', color: '#64748b', fontFamily: 'serif' }} />
           </PieChart>
         </ResponsiveContainer>
       )
     }
 
     if (chartSpec.type === 'heatmap') {
-      return renderMatrix(chartSpec);
+      return (
+        <div className="h-full overflow-auto">
+          {renderMatrix(chartSpec)}
+        </div>
+      );
     }
 
     if (chartSpec.type === 'combo') {
       return (
-        <ResponsiveContainer width="100%" height={300}>
-          <ComposedChart data={chartSpec.data} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid {...commonGridStyle} />
-            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#64748b', fontSize: 10 }} />
+            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#64748b', fontSize: 9 }} />
             <YAxis yAxisId="left" {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
             {chartSpec.dataKey2 && <YAxis yAxisId="right" orientation="right" {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />}
             <Tooltip contentStyle={commonTooltipStyle} />
-            <Legend wrapperStyle={{ fontSize: '11px', color: '#64748b', fontFamily: 'serif', marginTop: '10px' }} />
-            <Bar isAnimationActive={!isExportingForPDF} yAxisId="left" dataKey={chartSpec.dataKey} fill="#2c5555" barSize={30} />
+            <Legend wrapperStyle={{ fontSize: '10px', color: '#64748b', fontFamily: 'serif', marginTop: '4px' }} />
+            <Bar isAnimationActive={!isExportingForPDF} yAxisId="left" dataKey={chartSpec.dataKey} fill="#2c5555" barSize={16} />
             {chartSpec.dataKey2 ? (
-              <Line isAnimationActive={!isExportingForPDF} yAxisId="right" type="monotone" dataKey={chartSpec.dataKey2} stroke="#d9a05b" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#d9a05b', strokeWidth: 2 }} />
+              <Line isAnimationActive={!isExportingForPDF} yAxisId="right" type="monotone" dataKey={chartSpec.dataKey2} stroke="#d9a05b" strokeWidth={2} dot={{ r: 3, fill: '#fff', stroke: '#d9a05b', strokeWidth: 2 }} />
             ) : (
-               <Line isAnimationActive={!isExportingForPDF} yAxisId="left" type="monotone" dataKey={chartSpec.dataKey} stroke="#d9a05b" strokeWidth={2} dot={{ r: 4, fill: '#fff', stroke: '#d9a05b', strokeWidth: 2 }} />
+               <Line isAnimationActive={!isExportingForPDF} yAxisId="left" type="monotone" dataKey={chartSpec.dataKey} stroke="#d9a05b" strokeWidth={2} dot={{ r: 3, fill: '#fff', stroke: '#d9a05b', strokeWidth: 2 }} />
             )}
           </ComposedChart>
         </ResponsiveContainer>
@@ -320,26 +324,26 @@ export default function DataAnalyserPage() {
     if (chartSpec.type === 'bar') {
       const isHorizontal = chartSpec.orientation === 'horizontal';
       return (
-        <ResponsiveContainer width="100%" height={isHorizontal ? Math.max(240, chartSpec.data.length * 30) : 240}>
+        <ResponsiveContainer width="100%" height="100%">
           <BarChart 
-            data={chartSpec.data.slice(0, isHorizontal ? 20 : 15)} 
+            data={chartSpec.data.slice(0, isHorizontal ? 10 : 15)} 
             layout={isHorizontal ? 'vertical' : 'horizontal'}
-            margin={{ top: 10, right: 20, left: isHorizontal ? 20 : -20, bottom: 0 }}
+            margin={{ top: 10, right: 10, left: isHorizontal ? 10 : -20, bottom: 0 }}
           >
             <CartesianGrid {...commonGridStyle} horizontal={!isHorizontal} vertical={isHorizontal} />
             {isHorizontal ? (
               <>
                 <XAxis type="number" {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
-                <YAxis type="category" dataKey={chartSpec.categoryKey} {...commonAxisStyle} width={80} tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'serif' }} />
+                <YAxis type="category" dataKey={chartSpec.categoryKey} {...commonAxisStyle} width={60} tick={{ fill: '#64748b', fontSize: 9, fontFamily: 'serif' }} />
               </>
             ) : (
               <>
-                <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#64748b', fontSize: 10 }} />
+                <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#64748b', fontSize: 9 }} />
                 <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
               </>
             )}
             <Tooltip cursor={{ fill: 'rgba(0,0,0,0.03)' }} contentStyle={commonTooltipStyle} />
-            <Bar isAnimationActive={!isExportingForPDF} dataKey={chartSpec.dataKey} fill="#4c7286" barSize={16} />
+            <Bar isAnimationActive={!isExportingForPDF} dataKey={chartSpec.dataKey} fill="#4c7286" barSize={12} />
           </BarChart>
         </ResponsiveContainer>
       )
@@ -347,13 +351,13 @@ export default function DataAnalyserPage() {
     
     if (chartSpec.type === 'line') {
       return (
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={chartSpec.data} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
             <CartesianGrid {...commonGridStyle} />
-            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#64748b', fontSize: 10 }} />
+            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#64748b', fontSize: 9 }} />
             <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
             <Tooltip contentStyle={commonTooltipStyle} />
-            <Line isAnimationActive={!isExportingForPDF} type="monotone" dataKey={chartSpec.dataKey} stroke="#2c5555" strokeWidth={2} dot={{ r: 3, fill: '#fff', stroke: '#2c5555', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#2c5555', stroke: '#fff' }} />
+            <Line isAnimationActive={!isExportingForPDF} type="monotone" dataKey={chartSpec.dataKey} stroke="#2c5555" strokeWidth={2} dot={{ r: 2, fill: '#fff', stroke: '#2c5555', strokeWidth: 2 }} activeDot={{ r: 4, fill: '#2c5555', stroke: '#fff' }} />
           </LineChart>
         </ResponsiveContainer>
       )
@@ -493,95 +497,91 @@ export default function DataAnalyserPage() {
         )}
 
         {step === 'DASHBOARD' && dashboardData && (
-          <div className="flex-1 overflow-y-auto p-8 lg:p-12 bg-[#fcfcfc]" ref={dashboardRef}>
+          <div className="flex-1 p-4 lg:p-6 bg-[#fcfcfc] overflow-hidden flex flex-col relative" ref={dashboardRef}>
+            <div className="absolute right-4 top-4 flex gap-3 z-50">
+               <button
+                  onClick={handleExportPNG}
+                  disabled={isExporting}
+                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 text-slate-600 text-xs font-semibold rounded hover:bg-slate-50 transition-all shadow-sm"
+               >
+                  {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
+                  Export
+               </button>
+            </div>
             
-            <div className="max-w-6xl mx-auto flex flex-col gap-10">
+            <div className="max-w-[1600px] w-full mx-auto h-full flex flex-col gap-4">
                
-               {/* Editorial Header */}
-               <div className="flex flex-col gap-4 border-b border-slate-200 pb-8 relative">
-                  <div className="absolute right-0 top-0 flex gap-3">
-                     <button
-                        onClick={handleExportPNG}
-                        disabled={isExporting}
-                        className="inline-flex items-center gap-2 px-3 py-1.5 bg-white border border-slate-300 text-slate-600 text-xs font-semibold rounded hover:bg-slate-50 transition-all"
-                     >
-                        {isExporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />}
-                        Export
-                     </button>
+               {/* Top Bar: Header + KPIs */}
+               <div className="flex flex-col lg:flex-row gap-4 shrink-0 lg:h-[120px]">
+                  {/* Header */}
+                  <div className="w-full lg:w-1/3 flex flex-col justify-end pb-2 relative">
+                    <div className="absolute left-0 top-0 text-[9px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-2">
+                       ANNUAL PERFORMANCE REVIEW
+                    </div>
+                    {isGenerating || !aiData ? (
+                       <div className="animate-pulse flex flex-col gap-2 mt-6">
+                          <div className="h-6 bg-slate-200 rounded w-3/4"></div>
+                          <div className="h-4 bg-slate-100 rounded w-1/2"></div>
+                       </div>
+                    ) : (
+                       <div className="mt-6">
+                          <h1 className="text-2xl lg:text-3xl font-serif text-[#1e293b] leading-tight tracking-tight line-clamp-2 pr-20">
+                             {aiData.headline}
+                          </h1>
+                          <p className="text-xs text-slate-500 font-serif italic line-clamp-2 mt-1">
+                             {aiData.subheadline}
+                          </p>
+                       </div>
+                    )}
                   </div>
                   
-                  <div className="text-[10px] uppercase tracking-[0.2em] text-slate-400 font-bold mb-2">
-                     ANNUAL PERFORMANCE REVIEW
+                  {/* KPIs */}
+                  <div className="w-full lg:w-2/3 grid grid-cols-2 lg:grid-cols-4 gap-4">
+                     {dashboardData.kpis.map((kpi, idx) => (
+                       <div key={idx} className="bg-white border border-slate-100 rounded p-4 shadow-sm flex flex-col justify-between">
+                         <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold line-clamp-1">
+                            {kpi.title}
+                         </span>
+                         <div className="text-2xl lg:text-3xl font-serif text-[#1e293b] font-medium tracking-tight">
+                            {formatKPIValue(kpi.value, kpi.format)}
+                         </div>
+                         <span className="text-[10px] text-slate-400 font-serif italic border-t border-slate-50 pt-1.5 mt-1 line-clamp-1">
+                            {kpi.subtitle}
+                         </span>
+                       </div>
+                     ))}
                   </div>
-                  
-                  {isGenerating || !aiData ? (
-                     <div className="animate-pulse flex flex-col gap-4">
-                        <div className="h-10 bg-slate-200 rounded w-3/4"></div>
-                        <div className="h-6 bg-slate-100 rounded w-1/2"></div>
-                     </div>
-                  ) : (
-                     <>
-                        <h1 className="text-4xl lg:text-5xl font-serif text-[#1e293b] leading-tight tracking-tight max-w-4xl">
-                           {aiData.headline}
-                        </h1>
-                        <p className="text-lg text-slate-500 font-serif italic max-w-3xl leading-relaxed">
-                           {aiData.subheadline}
-                        </p>
-                     </>
-                  )}
                </div>
 
-               {/* Oreate Minimalist KPIs */}
-               <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                 {dashboardData.kpis.map((kpi, idx) => (
-                   <div key={idx} className="bg-white border border-slate-100 rounded-lg p-6 shadow-sm flex flex-col gap-3">
-                     <span className="text-[10px] uppercase tracking-widest text-slate-400 font-bold">
-                        {kpi.title}
-                     </span>
-                     <div className="text-3xl font-serif text-[#1e293b] font-medium tracking-tight">
-                        {formatKPIValue(kpi.value, kpi.format)}
-                     </div>
-                     <span className="text-xs text-slate-400 font-serif italic border-t border-slate-100 pt-3">
-                        {kpi.subtitle}
-                     </span>
-                   </div>
-                 ))}
-               </div>
-
-               {/* Dynamic Masonry Chart Grid matching Oreate Style */}
-               <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+               {/* Charts Grid */}
+               <div className="flex-1 grid grid-cols-1 lg:grid-cols-3 grid-rows-2 gap-4 min-h-0">
                   {dashboardData.charts.map((chart, index) => {
-                     let wrapperClass = "bg-white border border-slate-100 rounded-xl p-8 shadow-sm flex flex-col gap-6";
-                     if (chart.type === 'combo' || chart.id.includes('combo') || index === dashboardData.charts.length - 1) {
-                        wrapperClass += " col-span-1 lg:col-span-2"; 
+                     let wrapperClass = "bg-white border border-slate-100 rounded p-4 shadow-sm flex flex-col overflow-hidden";
+                     if (chart.type === 'combo' || chart.id.includes('combo') || index === dashboardData.charts.length - 1 && dashboardData.charts.length % 2 !== 0) {
+                        wrapperClass += " lg:col-span-2 row-span-1"; 
                      } else {
-                        wrapperClass += " col-span-1";
+                        wrapperClass += " lg:col-span-1 row-span-1";
                      }
 
                      const insightText = aiData?.chartInsights?.[chart.id];
 
                      return (
                         <div key={chart.id} className={wrapperClass}>
-                           <div className="flex flex-col gap-1">
-                              <h3 className="text-lg font-serif text-[#1e293b] font-medium">{chart.title}</h3>
-                              <p className="text-xs text-slate-400 font-serif italic border-b border-slate-100 pb-4">
-                                 Breakdown by {chart.categoryKey.replace(/_/g, ' ')}
-                              </p>
+                           <div className="flex flex-col shrink-0 mb-2">
+                              <h3 className="text-sm font-serif text-[#1e293b] font-medium line-clamp-1">{chart.title}</h3>
+                              <p className="text-[10px] text-slate-400 font-serif italic line-clamp-1">Breakdown by {chart.categoryKey.replace(/_/g, ' ')}</p>
                            </div>
                            
-                           <div className="w-full relative mt-2">
+                           <div className="flex-1 w-full min-h-0 relative">
                               {renderChart(chart)}
                            </div>
                            
                            {/* Per-Chart AI Insight Block */}
-                           <div className="mt-4 pt-4 border-t border-slate-100">
+                           <div className="mt-2 pt-2 border-t border-slate-50 shrink-0">
                               {isGenerating || !aiData ? (
-                                 <div className="animate-pulse flex flex-col gap-2">
-                                    <div className="h-4 bg-slate-100 rounded w-full"></div>
-                                    <div className="h-4 bg-slate-100 rounded w-5/6"></div>
-                                 </div>
+                                 <div className="animate-pulse h-3 bg-slate-100 rounded w-full"></div>
                               ) : (
-                                 <p className="text-xs text-slate-600 font-serif leading-relaxed">
+                                 <p className="text-[10px] text-slate-600 font-serif leading-snug line-clamp-2">
                                     <strong className="text-slate-800">Insight:</strong> {insightText || 'No specific insight available for this metric.'}
                                  </p>
                               )}
