@@ -12,7 +12,7 @@ export interface KPI {
 export interface ChartConfig {
   id: string;
   title: string;
-  type: 'bar' | 'line' | 'pie';
+  type: 'bar' | 'line' | 'pie' | 'radar';
   dataKey: string;
   categoryKey: string;
   orientation?: 'horizontal' | 'vertical'; // for bar charts
@@ -20,6 +20,7 @@ export interface ChartConfig {
 }
 
 export interface AggregatedDashboardData {
+  title: string;
   kpis: KPI[];
   charts: ChartConfig[];
   availableYears: number[];
@@ -33,7 +34,7 @@ export interface AggregatedDashboardData {
 function getBusinessWeight(colName: string): number {
   const lower = colName.toLowerCase();
   const highPriority = ['revenue', 'sales', 'amount', 'profit', 'cost', 'spend', 'budget', 'price', 'expense'];
-  const medPriority = ['region', 'category', 'department', 'status', 'month', 'year', 'date', 'customer', 'country', 'device', 'source', 'traffic'];
+  const medPriority = ['region', 'category', 'department', 'status', 'month', 'year', 'date', 'customer', 'country', 'device', 'source', 'traffic', 'quality', 'satisfaction'];
   
   if (highPriority.some(term => lower.includes(term))) return 3;
   if (medPriority.some(term => lower.includes(term))) return 1.5;
@@ -47,27 +48,22 @@ export function generateDashboardAggregates(
 ): AggregatedDashboardData {
   const { cleanedData, columnTypes } = pipelineResult;
   if (cleanedData.length === 0) {
-    return { kpis: [], charts: [], availableYears: [], availableMonths: [], dataQualityBadge: 0, lowDataQuality: true, aiInsightContext: {} };
+    return { title: 'Analytics Dashboard', kpis: [], charts: [], availableYears: [], availableMonths: [], dataQualityBadge: 0, lowDataQuality: true, aiInsightContext: {} };
   }
 
   let dt = aq.from(cleanedData);
   const totalNumRows = dt.numRows();
   
-  // Extract unique available years and months from ALL data (before filtering)
   const availableYears = new Set<number>();
   const availableMonths = new Set<number>();
   
-  // Find Date columns to extract Year/Month
   const dateColumns = Object.keys(columnTypes).filter(c => columnTypes[c] === 'date');
   
   if (dateColumns.length > 0) {
     const primaryDateCol = dateColumns[0];
-    
-    // We derive Year and Month manually for the slicers if they don't exist as columns
     const hasYearCol = Object.keys(columnTypes).some(c => c.toLowerCase() === 'year');
     const hasMonthCol = Object.keys(columnTypes).some(c => c.toLowerCase() === 'month');
     
-    // Scan all rows to populate available years/months
     for (let i = 0; i < totalNumRows; i++) {
       const row = cleanedData[i];
       let rowYear: number | null = null;
@@ -86,14 +82,13 @@ export function generateDashboardAggregates(
          if (mCol && row[mCol]) rowMonth = Number(row[mCol]);
       } else {
          const d = row[primaryDateCol];
-         if (d instanceof Date) rowMonth = d.getMonth() + 1; // 1-12
+         if (d instanceof Date) rowMonth = d.getMonth() + 1;
       }
       
       if (rowYear) availableYears.add(rowYear);
       if (rowMonth) availableMonths.add(rowMonth);
     }
     
-    // Apply filters if any are active
     if ((selectedYears && selectedYears.size > 0) || (selectedMonths && selectedMonths.size > 0)) {
       dt = dt.filter(aq.escape((d: any) => {
         let matchesYear = true;
@@ -102,12 +97,10 @@ export function generateDashboardAggregates(
         let rowYear: number | null = null;
         let rowMonth: number | null = null;
         
-        // Extract row year
         const yCol = Object.keys(d).find(c => c.toLowerCase() === 'year');
         if (yCol && d[yCol]) rowYear = Number(d[yCol]);
         else if (d[primaryDateCol] instanceof Date) rowYear = d[primaryDateCol].getFullYear();
         
-        // Extract row month
         const mCol = Object.keys(d).find(c => c.toLowerCase() === 'month');
         if (mCol && d[mCol]) rowMonth = Number(d[mCol]);
         else if (d[primaryDateCol] instanceof Date) rowMonth = d[primaryDateCol].getMonth() + 1;
@@ -127,6 +120,7 @@ export function generateDashboardAggregates(
   const numRows = dt.numRows();
   if (numRows === 0) {
     return { 
+       title: 'Analytics Dashboard',
        kpis: [], charts: [], 
        availableYears: Array.from(availableYears).sort(), 
        availableMonths: Array.from(availableMonths).sort(), 
@@ -134,7 +128,6 @@ export function generateDashboardAggregates(
     };
   }
 
-  // 1. Data Quality Badge
   let cleanRows = 0;
   const objects = dt.objects();
   for (let i = 0; i < numRows; i++) {
@@ -162,14 +155,11 @@ export function generateDashboardAggregates(
   });
 
   const kpiCount = lowDataQuality ? 1 : 5;
-  const chartCount = lowDataQuality ? 1 : 5; // Aiming for 5 charts to fill the layout
+  const chartCount = lowDataQuality ? 1 : 5;
 
-  // 3. Select Top KPIs
   const kpis: KPI[] = [];
-  
   const sortedMeasures = [...measures].sort((a, b) => getBusinessWeight(b) - getBusinessWeight(a));
   
-  // Try to fill up to 3 numeric total KPIs
   for (let i = 0; i < Math.min(3, sortedMeasures.length); i++) {
     if (kpis.length >= kpiCount) break;
     const measure = sortedMeasures[i];
@@ -192,7 +182,6 @@ export function generateDashboardAggregates(
     });
   }
 
-  // Fill remaining slots with Categorical Top-Value KPIs
   const catDimensions = dimensions.filter(d => columnTypes[d.replace(/_(Year|Month|Quarter)$/, '')] === 'categorical');
   const sortedCatDims = [...catDimensions].sort((a, b) => getBusinessWeight(b) - getBusinessWeight(a));
   
@@ -220,13 +209,12 @@ export function generateDashboardAggregates(
     }
   }
 
-  // 4. Rank Dimension x Measure pairs for Charts
   const chartCandidates: { dim: string, measure: string, score: number, data: any[], distinctCount: number }[] = [];
 
   for (const dim of dimensions) {
     const distinctCountObj = dt.rollup({ dist: aq.op.distinct(dim) }).objects()[0] as any;
     const distinctCount = distinctCountObj.dist;
-    if (distinctCount > 50 || distinctCount < 2) continue; // Allow up to 50 for horizontal bars
+    if (distinctCount > 50 || distinctCount < 2) continue;
 
     for (const measure of measures) {
       const grouped = dt.groupby(dim).rollup({ total: aq.op.sum(measure) }).orderby(aq.desc('total'));
@@ -249,13 +237,14 @@ export function generateDashboardAggregates(
   let hasLine = false;
   let hasPie = false;
   let hasHorizontalBar = false;
+  let hasRadar = false;
 
   for (const candidate of chartCandidates) {
     if (selectedCharts.length >= Math.min(chartCount, chartCandidates.length)) break;
     if (!usedDims.has(candidate.dim)) {
       usedDims.add(candidate.dim);
       
-      let type: 'bar' | 'line' | 'pie' = 'bar';
+      let type: 'bar' | 'line' | 'pie' | 'radar' = 'bar';
       let orientation: 'vertical' | 'horizontal' = 'vertical';
       
       const baseCol = candidate.dim.replace(/_(Year|Month|Quarter)$/, '');
@@ -264,6 +253,9 @@ export function generateDashboardAggregates(
       if (isDateDim) {
         type = 'line';
         hasLine = true;
+      } else if (!hasRadar && candidate.distinctCount >= 3 && candidate.distinctCount <= 8 && !isDateDim) {
+        type = 'radar';
+        hasRadar = true;
       } else if (!hasPie && candidate.distinctCount <= 6) {
         type = 'pie';
         hasPie = true;
@@ -288,6 +280,18 @@ export function generateDashboardAggregates(
     }
   }
 
+  // Generate dynamic title
+  let dynamicTitle = 'Analytics Dashboard';
+  const primaryKpiStr = kpis.length > 0 ? kpis[0].title.replace('Total ', '') : '';
+  const yrsArr = Array.from(availableYears).sort((a,b)=>a-b);
+  const titleYear = yrsArr.length > 0 ? yrsArr[yrsArr.length - 1] : '';
+  
+  if (primaryKpiStr && titleYear) {
+      dynamicTitle = `${primaryKpiStr} Dashboard ${titleYear}`;
+  } else if (primaryKpiStr) {
+      dynamicTitle = `${primaryKpiStr} Analytics Dashboard`;
+  }
+
   const aiInsightContext = {
     topKPIs: kpis,
     topBreakdowns: selectedCharts.map(c => ({
@@ -297,6 +301,7 @@ export function generateDashboardAggregates(
   };
 
   return {
+    title: dynamicTitle,
     kpis,
     charts: selectedCharts,
     availableYears: Array.from(availableYears).sort(),
