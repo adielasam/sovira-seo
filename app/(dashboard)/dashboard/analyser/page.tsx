@@ -16,25 +16,29 @@ import {
 } from 'recharts'
 import { useDashboardStore } from '@/lib/store/useDashboardStore'
 
-// @ts-ignore
-import PivotTableUI from 'react-pivottable/PivotTableUI'
-import 'react-pivottable/pivottable.css'
+type AppStep = 'UPLOAD' | 'TABLE' | 'DASHBOARD'
+
+const LOADING_STEPS = [
+  "Analyzing data patterns...",
+  "Structuring key findings from the data...",
+  "Identifying trends...",
+  "Summarizing insights...",
+  "Compiling recommendation..."
+]
 
 export const maxDuration = 60
 
 const OREATE_COLORS = ['#2c5555', '#d9a05b', '#4c7286', '#8c9296', '#526D82', '#9DB2BF'];
 
-type AppStep = 'UPLOAD' | 'PIVOT' | 'DASHBOARD'
-
 export default function DataAnalyserPage() {
   const [step, setStep] = useState<AppStep>('UPLOAD')
   const [isDragging, setIsDragging] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
+  const [loadingText, setLoadingText] = useState(LOADING_STEPS[0])
   const [isGenerating, setIsGenerating] = useState(false)
   
   const [rawPipelineResult, setRawPipelineResult] = useState<PipelineResult | null>(null)
   const [rawData, setRawData] = useState<any[]>([])
-  const [pivotState, setPivotState] = useState({})
   
   const [dashboardData, setDashboardData] = useState<AggregatedDashboardData | null>(null)
   const [aiData, setAiData] = useState<{ headline: string, subheadline: string, chartInsights: Record<string, string> } | null>(null)
@@ -125,6 +129,14 @@ export default function DataAnalyserPage() {
     setDashboardData(null)
     setAiData(null)
     clearFilters()
+    
+    // Start automated loading sequence
+    let currentStep = 0;
+    setLoadingText(LOADING_STEPS[0]);
+    const loadingInterval = setInterval(() => {
+       currentStep = (currentStep + 1) % LOADING_STEPS.length;
+       setLoadingText(LOADING_STEPS[currentStep]);
+    }, 600);
 
     try {
       let parsedData: any[] = []
@@ -137,6 +149,7 @@ export default function DataAnalyserPage() {
         const workbook = XLSX.read(buffer, { type: 'array', bookVBA: true })
         
         if (workbook.vbaraw) {
+          clearInterval(loadingInterval)
           toast.error("This file contains macros, which we don't support for security reasons.")
           setIsParsing(false)
           return
@@ -147,6 +160,7 @@ export default function DataAnalyserPage() {
       }
 
       if (parsedData.length === 0) {
+        clearInterval(loadingInterval)
         toast.error('The file appears to be empty.')
         setIsParsing(false)
         return
@@ -156,11 +170,16 @@ export default function DataAnalyserPage() {
       const pipelineResult = processDataPipeline(parsedData)
       setRawPipelineResult(pipelineResult)
       
-      toast.success('Data successfully analyzed!')
+      // Artificial delay to let the user see the "smart" loading sequence
+      await new Promise(r => setTimeout(r, 3500))
+      
+      clearInterval(loadingInterval)
+      toast.success('Data automatically cleaned & structured!')
       setIsParsing(false)
-      setStep('PIVOT')
+      setStep('TABLE')
 
     } catch (err: any) {
+      clearInterval(loadingInterval)
       toast.error(`Failed to read file: ${err.message}`)
       setIsParsing(false)
     }
@@ -372,7 +391,7 @@ export default function DataAnalyserPage() {
             <button onClick={() => setStep('UPLOAD')} className={`p-2 rounded-md transition-colors ${step === 'UPLOAD' ? 'text-slate-800 bg-slate-100' : 'text-slate-400 hover:text-slate-600'}`}>
                <Upload className="w-5 h-5" />
             </button>
-            <button onClick={() => rawData.length > 0 && setStep('PIVOT')} disabled={rawData.length === 0} className={`p-2 rounded-md transition-colors ${step === 'PIVOT' ? 'text-slate-800 bg-slate-100' : 'text-slate-400 hover:text-slate-600 disabled:opacity-30'}`}>
+            <button onClick={() => rawData.length > 0 && setStep('TABLE')} disabled={rawData.length === 0} className={`p-2 rounded-md transition-colors ${step === 'TABLE' ? 'text-slate-800 bg-slate-100' : 'text-slate-400 hover:text-slate-600 disabled:opacity-30'}`}>
                <Table className="w-5 h-5" />
             </button>
             <button onClick={() => dashboardData && setStep('DASHBOARD')} disabled={!dashboardData} className={`p-2 rounded-md transition-colors ${step === 'DASHBOARD' ? 'text-slate-800 bg-slate-100' : 'text-slate-400 hover:text-slate-600 disabled:opacity-30'}`}>
@@ -413,34 +432,62 @@ export default function DataAnalyserPage() {
               </label>
             </div>
             {isParsing && (
-              <div className="absolute inset-0 bg-white/80 flex flex-col items-center justify-center text-teal-700">
-                 <Loader2 className="w-8 h-8 animate-spin mb-4" />
-                 <p className="font-serif italic">Analyzing data structures...</p>
+              <div className="absolute inset-0 bg-white/90 backdrop-blur-sm flex flex-col items-center justify-center text-teal-700 z-50 transition-all duration-500">
+                 <Loader2 className="w-12 h-12 animate-spin mb-6 text-[#2c5555]" />
+                 <h2 className="font-serif text-2xl font-medium text-[#1e293b] mb-2">Processing Data</h2>
+                 <p className="font-serif italic text-[#4c7286] text-lg animate-pulse">{loadingText}</p>
               </div>
             )}
           </div>
         )}
 
-        {step === 'PIVOT' && rawData.length > 0 && (
+        {step === 'TABLE' && rawData.length > 0 && (
           <div className="flex-1 flex flex-col overflow-hidden bg-[#fcfcfc]">
             <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-white shadow-sm z-10">
                <div>
-                 <h2 className="text-2xl font-serif text-slate-800 tracking-tight">Data Explorer</h2>
-                 <p className="text-sm text-slate-500 font-serif italic mt-1">Shape your data before generating the editorial brief.</p>
+                 <h2 className="text-2xl font-serif text-slate-800 tracking-tight">Data Cleansed & Structured</h2>
+                 <p className="text-sm text-slate-500 font-serif italic mt-1">Our AI has automatically formatted and mapped your raw data.</p>
                </div>
                <button 
                   onClick={() => setStep('DASHBOARD')}
-                  className="bg-[#d9a05b] hover:bg-[#c68d4a] text-white px-6 py-2.5 rounded text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
+                  className="bg-[#2c5555] hover:bg-[#204040] text-white px-6 py-2.5 rounded text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
                >
-                  Generate Editorial Dashboard
+                  Generate Smart Dashboard
                </button>
             </div>
+            
             <div className="flex-1 overflow-auto p-6 custom-scrollbar">
-               <PivotTableUI
-                  data={rawData}
-                  onChange={(s: any) => setPivotState(s)}
-                  {...pivotState}
-               />
+               <div className="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                     <table className="w-full text-sm text-left text-slate-600">
+                        <thead className="text-xs text-slate-500 uppercase bg-slate-50 border-b border-slate-200">
+                           <tr>
+                              {Object.keys(rawData[0] || {}).map((key) => (
+                                 <th key={key} scope="col" className="px-6 py-3 font-semibold whitespace-nowrap">
+                                    {key}
+                                 </th>
+                              ))}
+                           </tr>
+                        </thead>
+                        <tbody>
+                           {rawData.slice(0, 50).map((row, idx) => (
+                              <tr key={idx} className="bg-white border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                                 {Object.values(row).map((val: any, jdx) => (
+                                    <td key={jdx} className="px-6 py-4 whitespace-nowrap text-slate-700">
+                                       {val !== null && val !== undefined ? String(val) : <span className="text-slate-300 italic">null</span>}
+                                    </td>
+                                 ))}
+                              </tr>
+                           ))}
+                        </tbody>
+                     </table>
+                  </div>
+                  {rawData.length > 50 && (
+                     <div className="p-4 text-center text-xs text-slate-500 bg-slate-50 border-t border-slate-200 font-serif italic">
+                        Showing first 50 rows of {rawData.length} total rows.
+                     </div>
+                  )}
+               </div>
             </div>
           </div>
         )}
