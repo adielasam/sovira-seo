@@ -32,7 +32,7 @@ const dashboardSpecSchema = z.object({
 
 export type DashboardSpec = z.infer<typeof dashboardSpecSchema>
 
-export async function generateExecutiveInsight(aggregates: any): Promise<{ success: boolean; insight?: any; error?: string }> {
+export async function generateExecutiveInsight(aggregates: any): Promise<{ success: boolean; insight?: string; error?: string }> {
   try {
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
@@ -45,27 +45,18 @@ export async function generateExecutiveInsight(aggregates: any): Promise<{ succe
       return { success: false, error: 'GROQ_API_KEY environment variable is missing.' }
     }
 
-    const systemPrompt = `You are a Data Analyst creating a narrative-driven executive dashboard. 
-Based ONLY on the provided aggregated data (Top KPIs and Breakdowns), generate a structured response:
-1. headline: A conversational, narrative-driven question summarizing the dataset, e.g., 'How did our $2.5M in sales perform across regions?'
-2. subheadline: A 1-2 sentence subtitle elaborating on the headline.
-3. chartInsights: A key-value map where the key is the exact chart ID (e.g. 'chart_1') and the value is a specific 1-2 sentence text insight explaining that chart's top values or trend.
+    const systemPrompt = `You are a Data Analyst. Your job is to provide a highly concise, 2-sentence "Executive Insight" summary based ONLY on the provided aggregated data. Do not hallucinate numbers. Point out the top performing metric or any obvious areas of interest based on the provided totals and breakdowns.`;
 
-Do not hallucinate numbers. Use the data provided.`;
-
+    // We can use generateObject with a simple schema, or generateText. We already import generateObject.
     const result = await generateObject({
       model: groq('llama-3.3-70b-versatile'),
       mode: 'json',
-      schema: z.object({
-        headline: z.string(),
-        subheadline: z.string(),
-        chartInsights: z.record(z.string(), z.string())
-      }),
+      schema: z.object({ insight: z.string().describe("A 2-sentence plain-English executive summary.") }),
       system: systemPrompt,
-      prompt: `Here is the pre-computed aggregated data (Top KPIs and Breakdowns):\n\n${JSON.stringify(aggregates, null, 2)}\n\nGenerate the insights object.`,
+      prompt: `Here is the pre-computed aggregated data (Top KPIs and Breakdowns):\n\n${JSON.stringify(aggregates, null, 2)}\n\nGenerate the 2-sentence insight.`,
     })
 
-    return { success: true, insight: result.object }
+    return { success: true, insight: (result.object as any).insight }
 
   } catch (error: any) {
     console.error('AI Insight Generation Error:', error)
