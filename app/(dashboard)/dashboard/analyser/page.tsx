@@ -1,39 +1,52 @@
 'use client'
 
-import { useState, useRef } from 'react'
-import { Upload, FileSpreadsheet, Loader2, AlertCircle, BarChart2, Download, FileText, CheckCircle2 } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { Upload, FileSpreadsheet, Loader2, Download, FileText, CheckCircle2, ChevronRight, PieChart as PieChartIcon } from 'lucide-react'
 import Papa from 'papaparse'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
 import { toPng } from 'html-to-image'
 import { jsPDF } from 'jspdf'
-import { processDataPipeline } from '@/lib/dataPipeline'
-import { generateDashboardAggregates, AggregatedDashboardData } from '@/lib/dashboardAggregator'
+import { processDataPipeline, PipelineResult } from '@/lib/dataPipeline'
+import { generateDashboardAggregates, AggregatedDashboardData, ChartConfig } from '@/lib/dashboardAggregator'
 import { generateExecutiveInsight } from '@/app/actions/dashboard'
 import {
-  BarChart, Bar, LineChart, Line,
-  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
+  BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend
 } from 'recharts'
-import { useTheme } from 'next-themes'
-import Link from 'next/link'
+import { useDashboardStore } from '@/lib/store/useDashboardStore'
 
 export const maxDuration = 60
 
+const PIE_COLORS = ['#fbbf24', '#f87171', '#34d399', '#60a5fa', '#a78bfa', '#f472b6'];
+
 export default function DataAnalyserPage() {
-  const { resolvedTheme } = useTheme()
-  const isDark = resolvedTheme === 'dark'
   const [isDragging, setIsDragging] = useState(false)
   const [isParsing, setIsParsing] = useState(false)
   const [isGenerating, setIsGenerating] = useState(false)
-  const [fileName, setFileName] = useState<string | null>(null)
   
+  const [rawPipelineResult, setRawPipelineResult] = useState<PipelineResult | null>(null)
   const [dashboardData, setDashboardData] = useState<AggregatedDashboardData | null>(null)
   const [executiveInsight, setExecutiveInsight] = useState<string | null>(null)
-  const [paywallDate, setPaywallDate] = useState<string | null>(null)
   
   const dashboardRef = useRef<HTMLDivElement>(null)
   const [isExporting, setIsExporting] = useState(false)
   const [isExportingForPDF, setIsExportingForPDF] = useState(false)
+  
+  const { selectedYears, selectedMonths, toggleYear, toggleMonth, clearFilters } = useDashboardStore()
+
+  // Whenever the raw pipeline result OR the selected filters change, re-aggregate the dashboard
+  useEffect(() => {
+    if (rawPipelineResult) {
+      const aggregates = generateDashboardAggregates(rawPipelineResult, selectedYears, selectedMonths)
+      setDashboardData(aggregates)
+      
+      // If we just loaded the file and haven't fetched insight yet
+      if (!executiveInsight && !isGenerating) {
+        generateAIInsight(aggregates)
+      }
+    }
+  }, [rawPipelineResult, selectedYears, selectedMonths])
 
   const handleExportPNG = async () => {
     if (!dashboardRef.current) return
@@ -45,9 +58,9 @@ export default function DataAnalyserPage() {
       const originalMaxWidth = dashboardRef.current.style.maxWidth
       const originalBg = dashboardRef.current.style.backgroundColor
       
-      dashboardRef.current.style.width = '1200px'
-      dashboardRef.current.style.maxWidth = '1200px'
-      dashboardRef.current.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#f8fafc'
+      dashboardRef.current.style.width = '1400px'
+      dashboardRef.current.style.maxWidth = '1400px'
+      dashboardRef.current.style.backgroundColor = '#0a0a0a' // dark bg
       
       void dashboardRef.current.offsetHeight
       
@@ -83,9 +96,9 @@ export default function DataAnalyserPage() {
       const originalMaxWidth = dashboardRef.current.style.maxWidth
       const originalBg = dashboardRef.current.style.backgroundColor
       
-      dashboardRef.current.style.width = '1200px'
-      dashboardRef.current.style.maxWidth = '1200px'
-      dashboardRef.current.style.backgroundColor = document.documentElement.classList.contains('dark') ? '#0f172a' : '#f8fafc'
+      dashboardRef.current.style.width = '1400px'
+      dashboardRef.current.style.maxWidth = '1400px'
+      dashboardRef.current.style.backgroundColor = '#0a0a0a'
       
       void dashboardRef.current.offsetHeight 
       
@@ -153,29 +166,26 @@ export default function DataAnalyserPage() {
 
   const processFile = async (file: File) => {
     if (file.size > 10 * 1024 * 1024) {
-      toast.error('File size exceeds 10MB limit. Please upload a smaller file to prevent browser freezing.')
+      toast.error('File size exceeds 10MB limit.')
       return
     }
 
     const fileExt = file.name.includes('.') ? file.name.split('.').pop()?.toLowerCase() : '';
     const fileType = file.type.toLowerCase();
 
-    setFileName(file.name)
     setIsParsing(true)
+    setRawPipelineResult(null)
     setDashboardData(null)
     setExecutiveInsight(null)
-    setPaywallDate(null)
+    clearFilters() // reset slicers
 
     try {
       let rawData: any[] = []
-      
-      // If it looks like a text file or CSV, use PapaParse
       if (['csv', 'tsv', 'txt'].includes(fileExt || '') || fileType.includes('csv') || fileType.includes('text')) {
         const text = await file.text()
         const parsed = Papa.parse(text, { header: true, dynamicTyping: true, skipEmptyLines: true })
         rawData = parsed.data
       } else {
-        // For everything else, assume it's some form of Excel (XLSX, XLS, XLSM) and let the XLSX library try to parse it
         const buffer = await file.arrayBuffer()
         const workbook = XLSX.read(buffer, { type: 'array', bookVBA: true })
         
@@ -195,21 +205,12 @@ export default function DataAnalyserPage() {
         return
       }
 
-      // Phase 1 + 2 Pipeline
+      // Phase 1 + 2 Pipeline execution
       const pipelineResult = processDataPipeline(rawData)
-      const aggregates = generateDashboardAggregates(pipelineResult)
-
-      if (aggregates.lowDataQuality) {
-        toast.error('Low Data Quality detected. The dashboard may have limited capabilities.')
-      } else {
-        toast.success('Data successfully analyzed!')
-      }
-
-      setDashboardData(aggregates)
-      setIsParsing(false)
+      setRawPipelineResult(pipelineResult) // This will trigger the useEffect to generate aggregates
       
-      // Auto-trigger AI Insight generation
-      generateAIInsight(aggregates)
+      toast.success('Data successfully analyzed!')
+      setIsParsing(false)
 
     } catch (err: any) {
       toast.error(`Failed to read file: ${err.message}`)
@@ -225,7 +226,6 @@ export default function DataAnalyserPage() {
         setExecutiveInsight(res.insight)
       } else {
         console.error("AI Error:", res.error)
-        toast.error('Failed to generate AI Insight. Showing dashboard with raw data.')
       }
     } catch (err) {
       console.error(err)
@@ -234,27 +234,66 @@ export default function DataAnalyserPage() {
     }
   }
 
-  const renderChart = (chartSpec: any) => {
+  const renderChart = (chartSpec: ChartConfig) => {
     const commonTooltipStyle = {
-      backgroundColor: isDark ? 'rgba(15, 23, 42, 0.95)' : 'rgba(255, 255, 255, 0.95)',
-      border: isDark ? '1px solid #334155' : '1px solid #e2e8f0',
+      backgroundColor: 'rgba(17, 24, 39, 0.95)',
+      border: '1px solid #374151',
       borderRadius: '8px',
-      color: isDark ? '#f8fafc' : '#0f172a',
-      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-      backdropFilter: 'blur(8px)'
+      color: '#f9fafb',
+      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)',
     };
-    const commonAxisStyle = { stroke: isDark ? '#475569' : '#94a3b8', fontSize: 11, tickLine: false, axisLine: false };
-    const commonGridStyle = { stroke: isDark ? '#1e293b' : '#f1f5f9', strokeDasharray: '3 3', vertical: false };
+    const commonAxisStyle = { stroke: '#6b7280', fontSize: 11, tickLine: false, axisLine: false };
+    const commonGridStyle = { stroke: '#374151', strokeDasharray: '3 3', vertical: false };
+
+    if (chartSpec.type === 'pie') {
+      return (
+        <ResponsiveContainer width="100%" height={260}>
+          <PieChart>
+            <Pie
+              data={chartSpec.data}
+              cx="50%"
+              cy="50%"
+              innerRadius={50}
+              outerRadius={90}
+              paddingAngle={2}
+              dataKey="total"
+              nameKey={chartSpec.categoryKey}
+              isAnimationActive={!isExportingForPDF}
+            >
+              {chartSpec.data.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={PIE_COLORS[index % PIE_COLORS.length]} stroke="transparent" />
+              ))}
+            </Pie>
+            <Tooltip contentStyle={commonTooltipStyle} itemStyle={{ color: '#fff' }} />
+            <Legend wrapperStyle={{ fontSize: '11px', color: '#d1d5db' }} />
+          </PieChart>
+        </ResponsiveContainer>
+      )
+    }
 
     if (chartSpec.type === 'bar') {
+      const isHorizontal = chartSpec.orientation === 'horizontal';
       return (
-        <ResponsiveContainer width="100%" height={240}>
-          <BarChart data={chartSpec.data.slice(0, 15)} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-            <CartesianGrid {...commonGridStyle} />
-            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
-            <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
-            <Tooltip cursor={{ fill: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' }} contentStyle={commonTooltipStyle} />
-            <Bar isAnimationActive={!isExportingForPDF} dataKey={chartSpec.dataKey} fill="#3b82f6" radius={[4, 4, 0, 0]} barSize={32} />
+        <ResponsiveContainer width="100%" height={isHorizontal ? Math.max(300, chartSpec.data.length * 30) : 260}>
+          <BarChart 
+            data={chartSpec.data.slice(0, isHorizontal ? 50 : 15)} 
+            layout={isHorizontal ? 'vertical' : 'horizontal'}
+            margin={{ top: 10, right: 20, left: isHorizontal ? 20 : -20, bottom: 0 }}
+          >
+            <CartesianGrid {...commonGridStyle} horizontal={!isHorizontal} vertical={isHorizontal} />
+            {isHorizontal ? (
+              <>
+                <XAxis type="number" {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
+                <YAxis type="category" dataKey={chartSpec.categoryKey} {...commonAxisStyle} width={80} tick={{ fill: '#d1d5db', fontSize: 10 }} />
+              </>
+            ) : (
+              <>
+                <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#d1d5db', fontSize: 10 }} />
+                <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
+              </>
+            )}
+            <Tooltip cursor={{ fill: 'rgba(255,255,255,0.05)' }} contentStyle={commonTooltipStyle} />
+            <Bar isAnimationActive={!isExportingForPDF} dataKey={chartSpec.dataKey} fill="#ef4444" radius={isHorizontal ? [0, 4, 4, 0] : [4, 4, 0, 0]} barSize={24} />
           </BarChart>
         </ResponsiveContainer>
       )
@@ -262,13 +301,13 @@ export default function DataAnalyserPage() {
     
     if (chartSpec.type === 'line') {
       return (
-        <ResponsiveContainer width="100%" height={240}>
-          <LineChart data={chartSpec.data} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+        <ResponsiveContainer width="100%" height={260}>
+          <LineChart data={chartSpec.data} margin={{ top: 10, right: 20, left: -20, bottom: 0 }}>
             <CartesianGrid {...commonGridStyle} />
-            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} />
+            <XAxis dataKey={chartSpec.categoryKey} {...commonAxisStyle} tick={{ fill: '#d1d5db', fontSize: 10 }} />
             <YAxis {...commonAxisStyle} tickFormatter={(val) => val.toLocaleString()} />
             <Tooltip contentStyle={commonTooltipStyle} />
-            <Line isAnimationActive={!isExportingForPDF} type="monotone" dataKey={chartSpec.dataKey} stroke="#8b5cf6" strokeWidth={3} dot={{ r: 4, fill: isDark ? '#1e293b' : '#fff', stroke: '#8b5cf6', strokeWidth: 2 }} activeDot={{ r: 6, fill: '#8b5cf6', stroke: '#fff' }} />
+            <Line isAnimationActive={!isExportingForPDF} type="monotone" dataKey={chartSpec.dataKey} stroke="#10b981" strokeWidth={2} dot={{ r: 3, fill: '#111827', stroke: '#10b981', strokeWidth: 2 }} activeDot={{ r: 5, fill: '#10b981', stroke: '#fff' }} />
           </LineChart>
         </ResponsiveContainer>
       )
@@ -290,165 +329,187 @@ export default function DataAnalyserPage() {
     return String(value)
   }
 
+  const monthsMap = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+
   return (
-    <div className="space-y-8 pb-20">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-3">
-            <BarChart2 className="w-8 h-8 text-blue-500" />
-            Data Analyser
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 mt-1">Upload a dataset to generate an AI-powered executive dashboard.</p>
-        </div>
+    <div className="bg-[#0a0a0a] min-h-screen text-slate-300 pb-20 font-sans transition-colors duration-500 overflow-x-hidden">
+      
+      {/* Top Header Bar */}
+      <div className="bg-[#111] border-b border-[#222] p-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+        <h1 className="text-xl font-bold text-white flex items-center gap-3 tracking-wide">
+          <span className="bg-red-600 text-white p-1.5 rounded flex items-center justify-center">
+            <PieChartIcon className="w-5 h-5" />
+          </span>
+          YOUTUBE-STYLE ANALYTICS DASHBOARD
+        </h1>
         {dashboardData && (
           <div className="flex items-center gap-3">
              <button
                onClick={handleExportPNG}
                disabled={isExporting}
-               className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
+               className="inline-flex items-center gap-2 px-4 py-2 bg-[#1a1a1a] border border-[#333] hover:border-red-500 hover:text-red-400 text-white text-sm font-semibold rounded shadow-sm transition-all disabled:opacity-50"
              >
                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-               Download PNG
-             </button>
-             <button
-               onClick={handleExportPDF}
-               disabled={isExporting}
-               className="inline-flex items-center gap-2 px-4 py-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-100 text-white dark:text-slate-900 text-sm font-semibold rounded-lg shadow-sm transition-colors disabled:opacity-50"
-             >
-               {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-               Download PDF
+               Export Image
              </button>
              <button 
-                onClick={() => { setFileName(null); setDashboardData(null); setExecutiveInsight(null); }}
-                className="text-xs font-bold uppercase tracking-wider text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 px-4 py-2 rounded-md shadow-sm transition-all"
+                onClick={() => { setRawPipelineResult(null); setDashboardData(null); setExecutiveInsight(null); clearFilters(); }}
+                className="text-xs font-bold uppercase tracking-wider text-[#888] hover:text-white bg-[#1a1a1a] border border-[#333] px-4 py-2 rounded shadow-sm transition-all"
              >
-                New Analysis
+                Close Data
              </button>
           </div>
         )}
       </div>
 
-      {!dashboardData && !isParsing && (
-        <div 
-          className={`border-2 border-dashed rounded-xl p-12 text-center transition-all ${
-            isDragging 
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20' 
-              : 'border-slate-300 dark:border-slate-700 hover:border-slate-400 dark:hover:border-slate-600'
-          }`}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-        >
-          <FileSpreadsheet className="w-12 h-12 text-slate-400 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">Drag and drop your dataset</h3>
-          <p className="text-slate-500 text-sm mb-6">Supports any tabular data file (CSV, Excel, TXT) up to 10MB</p>
-          
-          <label className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2.5 rounded-lg text-sm font-semibold cursor-pointer transition-all inline-flex items-center gap-2">
-            <Upload className="w-4 h-4" />
-            Browse Files
-            <input 
-              type="file" 
-              className="hidden" 
-              onChange={handleFileChange}
-            />
-          </label>
-        </div>
-      )}
+      <div className="max-w-[1800px] mx-auto p-4 sm:p-6 space-y-6">
+        
+        {/* Upload State */}
+        {!rawPipelineResult && !isParsing && (
+          <div 
+            className={`border-2 border-dashed rounded-xl p-16 text-center transition-all max-w-2xl mx-auto mt-20 ${
+              isDragging 
+                ? 'border-red-500 bg-red-900/10' 
+                : 'border-[#333] hover:border-[#555] bg-[#111]'
+            }`}
+            onDragOver={handleDragOver}
+            onDragLeave={handleDragLeave}
+            onDrop={handleDrop}
+          >
+            <PieChartIcon className="w-16 h-16 text-[#444] mx-auto mb-6" />
+            <h3 className="text-2xl font-bold text-white mb-2">Drag and drop your dataset</h3>
+            <p className="text-[#888] text-sm mb-8">Supports any tabular data file (CSV, Excel, TXT) up to 10MB</p>
+            
+            <label className="bg-red-600 hover:bg-red-500 text-white px-8 py-3 rounded text-sm font-bold tracking-wide cursor-pointer transition-all inline-flex items-center gap-2 shadow-lg shadow-red-900/20">
+              <Upload className="w-4 h-4" />
+              BROWSE FILES
+              <input 
+                type="file" 
+                className="hidden" 
+                onChange={handleFileChange}
+              />
+            </label>
+          </div>
+        )}
 
-      {isParsing && (
-        <div className="bg-white dark:bg-slate-900 p-12 rounded-xl shadow-sm ring-1 ring-slate-200 flex flex-col items-center justify-center min-h-[300px]">
-          <Loader2 className="w-10 h-10 text-blue-500 animate-spin mb-4" />
-          <h2 className="text-lg font-semibold text-slate-900 dark:text-white mb-2">
-            Processing Data Pipeline...
-          </h2>
-          <p className="text-sm text-slate-500">Detecting column types and executing Arquero aggregations.</p>
-        </div>
-      )}
+        {isParsing && (
+          <div className="bg-[#111] border border-[#222] p-16 rounded flex flex-col items-center justify-center min-h-[400px] max-w-2xl mx-auto mt-20">
+            <Loader2 className="w-12 h-12 text-red-500 animate-spin mb-6" />
+            <h2 className="text-xl font-bold text-white mb-2 tracking-wide">
+              PROCESSING DATA...
+            </h2>
+            <p className="text-[#666]">Detecting schema, compiling macros, parsing rows.</p>
+          </div>
+        )}
 
-      {dashboardData && (
-        <div ref={dashboardRef} className="animate-in slide-in-from-bottom-4 duration-700 mt-4 bg-slate-50 dark:bg-slate-900 p-6 rounded-xl w-full border border-slate-200 dark:border-slate-800">
-           
-           {/* Top Insight + Quality Panel */}
-           <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-              <div className="md:col-span-3 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col justify-center relative overflow-hidden">
-                 <div className="absolute top-0 left-0 w-1 h-full bg-blue-500"></div>
-                 <h3 className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-2 flex items-center gap-2">
-                   <FileText className="w-4 h-4 text-blue-500" />
-                   AI Executive Insight
-                 </h3>
-                 {isGenerating ? (
-                   <div className="flex items-center gap-2 text-slate-500 mt-2">
-                     <Loader2 className="w-4 h-4 animate-spin" />
-                     <span className="text-sm font-medium">Gemini is analyzing the aggregated data...</span>
-                   </div>
-                 ) : (
-                   <p className="text-base text-slate-800 dark:text-slate-200 leading-relaxed font-medium">
-                     {executiveInsight || "No insight generated."}
-                   </p>
-                 )}
-              </div>
-              <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm flex flex-col items-center justify-center">
-                 <h3 className="text-xs font-bold tracking-widest text-slate-400 uppercase mb-4 text-center">Data Quality</h3>
-                 <div className="relative w-20 h-20 flex items-center justify-center">
-                   <svg className="w-full h-full -rotate-90" viewBox="0 0 36 36">
-                     <path className="text-slate-100 dark:text-slate-700" strokeWidth="3" stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                     <path className={dashboardData.lowDataQuality ? "text-rose-500" : "text-emerald-500"} strokeWidth="3" strokeDasharray={`${dashboardData.dataQualityBadge}, 100`} stroke="currentColor" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                   </svg>
-                   <div className="absolute flex flex-col items-center">
-                     <span className="text-xl font-bold text-slate-800 dark:text-slate-200">{dashboardData.dataQualityBadge}%</span>
-                   </div>
-                 </div>
-                 {dashboardData.lowDataQuality && (
-                   <span className="mt-3 text-[10px] uppercase tracking-wider font-bold text-rose-500 bg-rose-50 px-2 py-1 rounded-full">Low Quality</span>
-                 )}
-              </div>
-           </div>
-
-           {/* KPIs Grid */}
-           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-             {dashboardData.kpis.map((kpi, idx) => (
-               <div key={idx} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                 <p className="text-sm font-semibold text-slate-500 dark:text-slate-400 mb-2">{kpi.title}</p>
-                 <h4 className="text-3xl font-bold text-slate-900 dark:text-white mb-3 tracking-tight">
-                   {formatKPIValue(kpi.value, kpi.format)}
-                 </h4>
-                 {kpi.type === 'top-value' ? (
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-slate-500 bg-slate-50 dark:bg-slate-900/50 w-max px-2.5 py-1 rounded-md">
-                      <span className="w-1.5 h-1.5 rounded-full bg-blue-500"></span>
-                      Represents {kpi.badgePercentage}% of valid records
+        {/* Dashboard Layout */}
+        {dashboardData && (
+          <div ref={dashboardRef} className="flex flex-col lg:flex-row gap-4 animate-in fade-in duration-1000">
+             
+             {/* Left Sidebar (Slicers) */}
+             <div className="lg:w-48 shrink-0 flex flex-col gap-4">
+                
+                {/* Year Slicer */}
+                {dashboardData.availableYears.length > 0 && (
+                  <div className="bg-[#111] border border-[#222] rounded overflow-hidden shadow-md">
+                    <div className="bg-[#151515] border-b border-[#222] px-3 py-2 text-xs font-bold tracking-widest text-[#666] flex justify-between items-center">
+                      YEARS
+                      {selectedYears.size > 0 && <span className="text-red-500 cursor-pointer hover:text-red-400" onClick={clearFilters}>CLEAR</span>}
                     </div>
-                 ) : (
-                    <div className="flex items-center gap-1.5 text-xs font-semibold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 w-max px-2.5 py-1 rounded-md">
-                      <CheckCircle2 className="w-3.5 h-3.5" />
-                      Grand Total
+                    <div className="p-2 flex flex-col gap-1">
+                      {dashboardData.availableYears.map(yr => (
+                        <button 
+                          key={yr} 
+                          onClick={() => toggleYear(yr)}
+                          className={`px-3 py-1.5 rounded text-left text-sm font-medium transition-colors ${
+                            selectedYears.has(yr) 
+                              ? 'bg-red-600 text-white shadow-inner shadow-red-800' 
+                              : 'bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#222]'
+                          }`}
+                        >
+                          {yr}
+                        </button>
+                      ))}
                     </div>
-                 )}
-               </div>
-             ))}
-           </div>
+                  </div>
+                )}
 
-           {/* Charts Grid */}
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-             {dashboardData.charts.map((chart) => (
-               <div key={chart.id} className="bg-white dark:bg-slate-800 p-5 rounded-xl border border-slate-100 dark:border-slate-700 shadow-sm">
-                 <h3 className="text-sm font-bold tracking-wide text-slate-700 dark:text-slate-300 mb-6 uppercase flex items-center gap-2">
-                   <div className="w-2 h-2 rounded-full bg-blue-500" />
-                   {chart.title}
-                 </h3>
-                 <div className="relative z-10 -ml-4">
-                   {renderChart(chart)}
-                 </div>
-               </div>
-             ))}
-             {dashboardData.charts.length === 0 && (
-                <div className="col-span-2 text-center p-8 text-slate-500 border border-dashed rounded-xl border-slate-300">
-                  Insufficient data quality to generate charts.
+                {/* Month Slicer */}
+                {dashboardData.availableMonths.length > 0 && (
+                  <div className="bg-[#111] border border-[#222] rounded overflow-hidden shadow-md">
+                    <div className="bg-[#151515] border-b border-[#222] px-3 py-2 text-xs font-bold tracking-widest text-[#666]">
+                      MONTHS
+                    </div>
+                    <div className="p-2 flex flex-col gap-1">
+                      {dashboardData.availableMonths.map(mo => (
+                        <button 
+                          key={mo} 
+                          onClick={() => toggleMonth(mo)}
+                          className={`px-3 py-1.5 rounded text-left text-sm font-medium transition-colors ${
+                            selectedMonths.has(mo) 
+                              ? 'bg-red-600 text-white shadow-inner shadow-red-800' 
+                              : 'bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#888] hover:text-white border border-[#222]'
+                          }`}
+                        >
+                          {monthsMap[mo - 1] || mo}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+             </div>
+
+             {/* Main Content Area */}
+             <div className="flex-1 flex flex-col gap-4">
+                
+                {/* Top KPIs Row */}
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+                  {dashboardData.kpis.map((kpi, idx) => (
+                    <div key={idx} className="bg-gradient-to-br from-[#451111] to-[#250b0b] border border-[#551a1a] rounded p-4 shadow-lg flex flex-col justify-center items-center text-center relative overflow-hidden group min-h-[90px]">
+                      <div className="absolute inset-0 bg-red-500/10 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                      <div className="flex items-center gap-1.5 text-red-200/80 text-[10px] font-bold uppercase tracking-widest mb-1.5">
+                        <span className="w-1.5 h-1.5 rounded-full bg-red-500 opacity-80 shadow-[0_0_8px_rgba(239,68,68,1)]"></span>
+                        {kpi.title}
+                      </div>
+                      <h4 className="text-xl xl:text-2xl font-black text-white tracking-tight drop-shadow-md">
+                        {formatKPIValue(kpi.value, kpi.format)}
+                      </h4>
+                    </div>
+                  ))}
                 </div>
-             )}
-           </div>
-           
-        </div>
-      )}
+
+                {/* Charts Grid - Masonry style */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {dashboardData.charts.map((chart, idx) => {
+                    // Determine grid spans based on chart type and index to mimic the reference dashboard layout
+                    let spanClass = 'col-span-1';
+                    if (chart.type === 'line') spanClass = 'col-span-1 md:col-span-2 lg:col-span-2';
+                    if (chart.orientation === 'horizontal') spanClass = 'col-span-1 md:col-span-2 lg:col-span-1 lg:row-span-2';
+                    
+                    return (
+                      <div key={chart.id} className={`bg-[#111] border border-[#222] rounded p-4 shadow-xl flex flex-col ${spanClass}`}>
+                        <h3 className="text-[11px] font-bold tracking-widest text-[#ccc] mb-4 text-center border-b border-[#222] pb-3 uppercase">
+                          {chart.title}
+                        </h3>
+                        <div className="flex-1 w-full flex items-center justify-center relative -ml-2">
+                          {renderChart(chart)}
+                        </div>
+                      </div>
+                    )
+                  })}
+                  
+                  {dashboardData.charts.length === 0 && (
+                      <div className="col-span-full text-center p-12 text-[#555] border border-dashed rounded border-[#333]">
+                        Insufficient data matching the selected filters.
+                      </div>
+                  )}
+                </div>
+                
+             </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
