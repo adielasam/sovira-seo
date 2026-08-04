@@ -388,7 +388,7 @@ export default function DataAnalyserPage() {
     if (!dashboardData) return null;
     
     return (
-      <div className={`w-full mx-auto h-full flex flex-col gap-4 ${isPreview ? 'pointer-events-none' : ''}`} ref={!isPreview ? dashboardRef : null}>
+      <div className={`w-full mx-auto h-auto md:h-full flex flex-col gap-4 ${isPreview ? 'pointer-events-none' : ''}`} ref={!isPreview ? dashboardRef : null}>
          {selectedTheme.headerBlockClass && (
             <div className={selectedTheme.headerBlockClass}>
                <h1 className={`text-2xl font-bold tracking-widest uppercase ${selectedTheme.fontHeader}`}>
@@ -460,7 +460,7 @@ export default function DataAnalyserPage() {
                         <h3 className={`${selectedTheme.chartTitleClass} line-clamp-1`}>{chart.title}</h3>
                         <p className={`${selectedTheme.chartSubClass} line-clamp-1`}>Breakdown by {chart.categoryKey.replace(/_/g, ' ')}</p>
                      </div>
-                     <div className="flex-1 w-full min-h-0 relative">
+                     <div className="flex-1 w-full min-h-[250px] md:min-h-0 relative">
                         {renderChart(chart)}
                      </div>
                      {/* Per-Chart AI Insight Block */}
@@ -482,10 +482,10 @@ export default function DataAnalyserPage() {
   };
 
   return (
-    <div className={`${selectedTheme.bgGlobal} min-h-screen font-sans flex h-screen overflow-hidden transition-colors duration-300`}>
+    <div className={`${selectedTheme.bgGlobal} min-h-screen font-sans flex flex-col md:flex-row h-screen overflow-hidden transition-colors duration-300`}>
       
       {/* Sidebar */}
-      <div className={`w-16 ${selectedTheme.bgSidebar} border-r ${selectedTheme.id === 'corporate-dark' ? 'border-slate-800' : 'border-slate-200'} shrink-0 flex flex-col items-center py-6 gap-8 z-10 transition-colors duration-300`}>
+      <div className={`hidden md:flex w-16 ${selectedTheme.bgSidebar} border-r ${selectedTheme.id === 'corporate-dark' ? 'border-slate-800' : 'border-slate-200'} shrink-0 flex-col items-center py-6 gap-8 z-10 transition-colors duration-300`}>
          <div className="w-8 h-8 rounded-full border border-slate-300 flex items-center justify-center">
             <span className="w-4 h-4 rounded-full bg-orange-500 block"></span>
          </div>
@@ -548,14 +548,14 @@ export default function DataAnalyserPage() {
 
         {step === 'TABLE' && rawData.length > 0 && (
           <div className="flex-1 flex flex-col overflow-hidden">
-            <div className={`p-6 border-b flex justify-between items-center shadow-sm z-10 ${selectedTheme.id === 'corporate-dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+            <div className={`p-4 md:p-6 border-b flex flex-col md:flex-row gap-4 justify-between md:items-center shadow-sm z-10 ${selectedTheme.id === 'corporate-dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
                <div>
-                 <h2 className={`text-2xl ${selectedTheme.fontHeader} ${selectedTheme.textMain} tracking-tight`}>Data Cleansed & Structured</h2>
-                 <p className={`text-sm ${selectedTheme.textMuted} ${selectedTheme.fontBody} italic mt-1`}>Our AI has automatically formatted and mapped your raw data.</p>
+                 <h2 className={`text-xl md:text-2xl ${selectedTheme.fontHeader} ${selectedTheme.textMain} tracking-tight`}>Data Cleansed & Structured</h2>
+                 <p className={`text-xs md:text-sm ${selectedTheme.textMuted} ${selectedTheme.fontBody} italic mt-1`}>Our AI has automatically formatted and mapped your raw data.</p>
                </div>
                <button 
                   onClick={() => setStep('THEMES')}
-                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded text-sm font-semibold shadow-sm transition-colors flex items-center gap-2"
+                  className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded text-sm font-semibold shadow-sm transition-colors flex items-center justify-center gap-2"
                >
                   Next: Choose Dashboard Style
                </button>
@@ -597,24 +597,24 @@ export default function DataAnalyserPage() {
         )}
 
         {step === 'THEMES' && dashboardData && (
-          <div className="flex-1 flex overflow-hidden">
+          <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
              {/* Left Preview Pane */}
-             <div className={`flex-1 ${selectedTheme.bgGlobal} p-4 flex flex-col relative transition-colors duration-300`}>
+             <div className={`flex-1 min-h-[40vh] md:min-h-0 ${selectedTheme.bgGlobal} p-4 flex flex-col relative transition-colors duration-300`}>
                 <div className="mb-4">
                   <h2 className={`text-xl font-bold ${selectedTheme.textMain}`}>Style Preview</h2>
-                  <p className={`text-sm ${selectedTheme.textMuted}`}>Select a theme from the right to instantly apply it.</p>
+                  <p className={`text-sm ${selectedTheme.textMuted}`}>Select a theme from the list to instantly apply it.</p>
                 </div>
                 <div className="flex-1 border-2 border-dashed border-slate-300/50 rounded-xl p-4 overflow-hidden shadow-inner relative">
-                   <div className="absolute inset-0 scale-[0.95] origin-top opacity-90 transition-all duration-300">
+                   <div className="absolute inset-0 scale-[0.8] md:scale-[0.95] origin-top opacity-90 transition-all duration-300 overflow-y-auto overflow-x-hidden md:overflow-hidden">
                      {renderDashboardContent(true)}
                    </div>
-                   <div className="absolute inset-0 bg-transparent cursor-pointer" onClick={() => setStep('DASHBOARD')} title="Click to view full screen"></div>
+                   <div className="absolute inset-0 bg-transparent cursor-pointer z-10" onClick={() => setStep('DASHBOARD')} title="Click to view full screen"></div>
                 </div>
              </div>
              
              {/* Right Theme Selector */}
-             <div className={`w-80 border-l flex flex-col shadow-lg z-20 ${selectedTheme.id === 'corporate-dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-                <div className={`p-6 border-b ${selectedTheme.id === 'corporate-dark' ? 'border-slate-800' : 'border-slate-100'}`}>
+             <div className={`w-full md:w-80 border-t md:border-t-0 md:border-l flex flex-col shadow-lg z-20 shrink-0 ${selectedTheme.id === 'corporate-dark' ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
+                <div className={`p-4 md:p-6 border-b ${selectedTheme.id === 'corporate-dark' ? 'border-slate-800' : 'border-slate-100'}`}>
                    <h3 className={`font-bold text-lg ${selectedTheme.textMain}`}>Dashboard Themes</h3>
                    <p className={`text-sm ${selectedTheme.textMuted} mt-1`}>AI Suggestions</p>
                 </div>
@@ -657,8 +657,8 @@ export default function DataAnalyserPage() {
         )}
 
         {step === 'DASHBOARD' && dashboardData && (
-          <div className={`flex-1 p-4 lg:p-6 ${selectedTheme.bgDashboard} overflow-hidden flex flex-col relative transition-colors duration-300`}>
-             <div className="absolute right-4 top-4 flex gap-3 z-50">
+          <div className={`flex-1 p-4 lg:p-6 ${selectedTheme.bgDashboard} overflow-y-auto overflow-x-hidden md:overflow-hidden flex flex-col relative transition-colors duration-300`}>
+             <div className="relative md:absolute md:right-4 md:top-4 flex justify-end gap-3 z-50 mb-4 md:mb-0">
                <button
                   onClick={() => setStep('THEMES')}
                   className={`inline-flex items-center gap-2 px-3 py-1.5 border text-xs font-semibold rounded transition-all shadow-sm ${selectedTheme.id === 'corporate-dark' ? 'bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700' : 'bg-white border-slate-300 text-slate-600 hover:bg-slate-50'}`}
