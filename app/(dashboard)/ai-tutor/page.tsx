@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { BrainCircuit, BookOpen, PenTool, LayoutTemplate, Loader2, Sparkles, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { Flashcards } from '@/components/tutor/Flashcards'
@@ -21,6 +21,7 @@ export default function AITutorPage() {
   const [topic, setTopic] = useState('')
   const [mode, setMode] = useState<TutorMode>('tutor-mindmap')
   const [isLoading, setIsLoading] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
   
   // State to hold the successful generation result
   const [activeResult, setActiveResult] = useState<{
@@ -28,6 +29,28 @@ export default function AITutorPage() {
     topic: string
     data: any
   } | null>(null)
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    // Simple text file reader
+    const reader = new FileReader()
+    reader.onload = (event) => {
+      const text = event.target?.result as string
+      if (text) {
+        setTopic((prev) => prev ? `${prev}\n\n[File Content: ${file.name}]\n${text}` : `[File Content: ${file.name}]\n${text}`)
+        toast.success(`Attached ${file.name}`)
+      }
+    }
+    reader.onerror = () => {
+      toast.error('Failed to read file. Please ensure it is a text file.')
+    }
+    reader.readAsText(file)
+    
+    // Reset input
+    e.target.value = ''
+  }
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -120,16 +143,24 @@ export default function AITutorPage() {
               </div>
 
               <div className="flex items-center gap-3">
+                <input 
+                  type="file" 
+                  ref={fileInputRef}
+                  onChange={handleFileUpload}
+                  accept=".txt,.md,.csv,.json"
+                  className="hidden"
+                />
                 <button 
+                  onClick={() => fileInputRef.current?.click()}
                   className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors rounded-full hover:bg-slate-100 dark:hover:bg-slate-800"
-                  title="Upload file (Coming Soon)"
+                  title="Upload text file"
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m21.44 11.05-9.19 9.19a6 6 0 0 1-8.49-8.49l8.57-8.57A4 4 0 1 1 18 8.84l-8.59 8.57a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>
                 </button>
                 <button
                   onClick={handleGenerate}
                   disabled={isLoading || !topic.trim()}
-                  className="p-2.5 bg-[#FF6B35] hover:bg-[#ff5515] text-white rounded-full transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-md"
+                  className="p-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-full transition-transform hover:scale-105 disabled:opacity-50 disabled:hover:scale-100 shadow-md"
                 >
                   {isLoading ? (
                     <Loader2 className="w-5 h-5 animate-spin" />
