@@ -53,12 +53,13 @@ function Cursor({ x, y, clicking }: { x: number; y: number; clicking: boolean })
 export function FullDashboardDemo() {
   const { containerRef, scale } = useResponsiveScale(1024)
   
-  const [activeTab, setActiveTab] = useState<'home'|'keywords'|'competitors'|'content'>('home')
+  const [activeTab, setActiveTab] = useState<string>('home')
   const [cursor, setCursor] = useState({ x: 500, y: 300 })
   const [clicking, setClicking] = useState(false)
   
   // States for individual panels
   const [homeScore, setHomeScore] = useState(0)
+  const [analyserPhase, setAnalyserPhase] = useState<'upload'|'table'|'theme'>('upload')
   const [keywordPhase, setKeywordPhase] = useState<'idle'|'typing'|'searching'|'results'>('idle')
   const [keywordTyped, setKeywordTyped] = useState('')
   const [compPhase, setCompPhase] = useState<'idle'|'typing'|'analyzing'|'results'|'modal'>('idle')
@@ -185,7 +186,7 @@ export function FullDashboardDemo() {
             <h2 className="text-xl font-bold text-slate-900 dark:text-white">
               {activeTab === 'home' && 'Dashboard Overview'}
               {activeTab === 'keywords' && 'Keyword Research'}
-              {activeTab === 'competitors' && 'Competitor Analysis'}
+              {activeTab === 'analyser' && 'Data Analyser'}
               {activeTab === 'content' && 'Content AI Generator'}
             </h2>
             <div className="flex items-center gap-4">
