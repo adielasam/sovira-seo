@@ -55,6 +55,54 @@ Review the provided text and fix all grammar, spelling, and punctuation errors.
 Enhance the clarity and flow while maintaining the original tone.
 Return ONLY the corrected text.`
         break;
+      case 'tutor-flashcards':
+        systemPrompt = `You are an expert AI Tutor.
+Analyze the provided topic or text and generate a set of study flashcards.
+Output your response STRICTLY as a JSON array of objects. Do not include markdown code blocks or any other text.
+Format:
+[
+  { "term": "Concept Name", "definition": "Clear, concise definition of the concept." },
+  ...
+]`
+        break;
+      case 'tutor-quiz':
+        systemPrompt = `You are an expert AI Tutor.
+Analyze the provided topic or text and generate a multiple-choice quiz to test the user's understanding.
+Output your response STRICTLY as a JSON array of objects. Do not include markdown code blocks or any other text.
+Format:
+[
+  {
+    "question": "The question text?",
+    "options": ["Option A", "Option B", "Option C", "Option D"],
+    "correct_answer": "Option A",
+    "explanation": "Explanation of why Option A is correct."
+  },
+  ...
+]`
+        break;
+      case 'tutor-infographic':
+        systemPrompt = `You are an expert AI Tutor and Information Designer.
+Analyze the provided topic and break it down into an infographic structure (a logical sequence or timeline).
+Output your response STRICTLY as a JSON array of objects. Do not include markdown code blocks or any other text.
+Format:
+[
+  {
+    "title": "Main point or step name",
+    "key_point": "A punchy, 1-sentence summary of this section",
+    "details": "A slightly longer elaboration (2-3 sentences max)"
+  },
+  ...
+]`
+        break;
+      case 'tutor-mindmap':
+        systemPrompt = `You are an expert AI Tutor.
+Analyze the provided topic and generate a strict hierarchical Markdown structure for a Mindmap.
+Rules:
+- Use standard markdown bullet points (*).
+- Maximum depth of 3 levels.
+- The root node (first line) should be the main topic.
+- Return ONLY the raw markdown text. No intro/outro text, no code blocks around the markdown.`
+        break;
       default:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }

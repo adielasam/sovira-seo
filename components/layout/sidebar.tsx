@@ -21,6 +21,7 @@ const navigationGroups = [
       { name: 'Keywords', href: '/keywords', icon: Tag },
       { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
       { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
+      { name: 'AI Tutor', href: '/ai-tutor', icon: GraduationCap },
     ]
   },
   {
