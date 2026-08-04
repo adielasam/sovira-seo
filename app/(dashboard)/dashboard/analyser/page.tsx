@@ -176,6 +176,15 @@ export default function DataAnalyserPage() {
       setIsParsing(false)
       setStep('TABLE')
 
+      fetch('/api/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'Data Analyzed',
+          details: { file: file.name, rows: parsedData.length }
+        })
+      }).catch(console.error)
+
     } catch (err: any) {
       clearInterval(loadingInterval)
       toast.error(`Failed to read file: ${err.message}`)

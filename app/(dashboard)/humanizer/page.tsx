@@ -146,6 +146,12 @@ export default function DashboardHumanizerPage() {
       setOutput(data.result)
       toast.success('Text humanized successfully!')
       
+      fetch('/api/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'Text Humanized', details: { rewriteLevel } })
+      }).catch(console.error)
+      
       // Automatically run detection scan on the humanized output
       await runDetection(data.result)
     } catch (err: any) {

@@ -51,6 +51,13 @@ export default function ReportsPage() {
       }
     } else if (success) {
       toast.success('Report generated successfully')
+      
+      fetch('/api/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'Report Generated', details: { type, name } })
+      }).catch(console.error)
+
       await loadData()
     }
     setIsGenerating(false)
@@ -69,6 +76,13 @@ export default function ReportsPage() {
       toast.error(error)
     } else if (success) {
       toast.success('Schedule saved successfully!')
+      
+      fetch('/api/log-activity', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'Report Scheduled', details: { frequency: scheduleFreq, type: scheduleType } })
+      }).catch(console.error)
+
       setIsModalOpen(false)
       await loadData()
     }

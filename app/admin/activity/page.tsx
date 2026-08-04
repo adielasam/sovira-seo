@@ -1,12 +1,14 @@
 import { createClient } from '@/lib/supabase/server'
-import { Download, Search, Filter } from 'lucide-react'
+import { Download } from 'lucide-react'
+import { ActivityChart } from '@/components/admin/ActivityChart'
+import { ActivityFilters } from '@/components/admin/ActivityFilters'
 
 export const dynamic = 'force-dynamic'
 
 export default async function AdminActivityPage({
   searchParams,
 }: {
-  searchParams: { user_id?: string }
+  searchParams: { user_id?: string; search?: string; action?: string }
 }) {
   const supabase = await createClient()
 
@@ -14,17 +16,37 @@ export default async function AdminActivityPage({
     .from('activity_logs')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(100)
+    .limit(500) // Increased limit to provide meaningful chart data
 
   if (searchParams.user_id) {
     query = query.eq('user_id', searchParams.user_id)
   }
 
-  const { data: logs } = await query
+  if (searchParams.action) {
+    query = query.eq('action', searchParams.action)
+  }
+
+  const { data: rawLogs } = await query
   
   // Manually fetch user emails to avoid foreign key relation crashes if the DB schema is missing it
   const { data: profiles } = await supabase.from('user_profiles').select('id, email')
   const emailMap = Object.fromEntries(profiles?.map((p: any) => [p.id, p.email]) || [])
+
+  // In-memory filtering for the search term to include emails and JSON details
+  let logs = rawLogs || []
+  if (searchParams.search) {
+    const s = searchParams.search.toLowerCase()
+    logs = logs.filter((log) => {
+      const email = emailMap[log.user_id] || ''
+      const action = log.action || ''
+      const detailsStr = JSON.stringify(log.details || {})
+      return (
+        email.toLowerCase().includes(s) ||
+        action.toLowerCase().includes(s) ||
+        detailsStr.toLowerCase().includes(s)
+      )
+    })
+  }
 
   const renderDetails = (details: any) => {
     if (!details || Object.keys(details).length === 0) return <span className="text-slate-400 italic">No details</span>
@@ -65,21 +87,13 @@ export default async function AdminActivityPage({
         </div>
       </div>
 
+      {/* Activity Chart */}
+      <ActivityChart logs={rawLogs || []} />
+
+      {/* Filterable Table */}
       <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="p-4 border-b border-slate-200 dark:border-slate-700 flex gap-4">
-          <div className="relative flex-1 max-w-md">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-            <input 
-              type="text" 
-              placeholder="Search logs..." 
-              className="w-full pl-9 pr-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-          <button className="flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700">
-            <Filter className="w-4 h-4" />
-            Filter
-          </button>
-        </div>
+        
+        <ActivityFilters />
         
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
@@ -93,7 +107,7 @@ export default async function AdminActivityPage({
               </tr>
             </thead>
             <tbody>
-              {logs?.map((log) => (
+              {logs.slice(0, 100).map((log) => (
                 <tr key={log.id} className="border-b dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800/50">
                   <td className="px-6 py-4 whitespace-nowrap">{new Date(log.created_at).toLocaleString()}</td>
                   <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">
@@ -110,13 +124,20 @@ export default async function AdminActivityPage({
                   <td className="px-6 py-4 text-xs font-mono">{log.ip_address || 'N/A'}</td>
                 </tr>
               ))}
-              {(!logs || logs.length === 0) && (
+              {logs.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">No activity logs found.</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                    No activity logs found for the selected filters.
+                  </td>
                 </tr>
               )}
             </tbody>
           </table>
+          {logs.length > 100 && (
+            <div className="p-4 text-center text-xs text-slate-500 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/50">
+              Showing first 100 results of {logs.length} total.
+            </div>
+          )}
         </div>
       </div>
     </div>

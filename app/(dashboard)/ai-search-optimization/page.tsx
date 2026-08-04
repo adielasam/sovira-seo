@@ -35,6 +35,12 @@ export default function GeoPage() {
       if (res.ok && data.result) {
         setContent(data.result)
         toast.success('Optimized successfully')
+        
+        fetch('/api/log-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'AI Search Optimization', details: { focus } })
+        }).catch(console.error)
       } else {
         toast.error(data.error || 'Failed to optimize')
       }

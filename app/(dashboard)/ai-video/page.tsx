@@ -62,6 +62,12 @@ export default function AiVideoPage() {
             setIsGenerating(false)
             setJobId(null)
             toast.success('Video generation complete!')
+            
+            fetch('/api/log-activity', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'AI Video Generated', details: { mode: 'text-to-video' } })
+            }).catch(console.error)
           } else if (data.status === 'failed' || data.status === 'error') {
             toast.error(data.error || 'Video generation failed')
             setIsGenerating(false)
@@ -163,6 +169,12 @@ export default function AiVideoPage() {
         setIsGenerating(false)
         setStatusText('')
         toast.success('Image generated!')
+
+        fetch('/api/log-activity', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'AI Image Generated', details: { mode } })
+        }).catch(console.error)
       } else if (data.id) {
         // Video jobs go into polling mode
         setJobId(data.id)
