@@ -43,6 +43,7 @@ export default async function AdminLayout({
     { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
     { name: 'Blog', href: '/admin/blog', icon: FileText },
     { name: 'Scheme of Work', href: '/admin/scheme-of-work', icon: GraduationCap },
+    { name: 'Security Settings', href: '/admin/settings', icon: Settings },
   ]
 
   return (
