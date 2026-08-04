@@ -72,12 +72,12 @@ function FadeInSection({ children, delay = 0, className = "" }: { children: Reac
 
 // --- Data ---
 const features = [
+  { name: 'Smart Data Analyser', description: 'Upload raw messy data and let AI instantly clean, structure, and build stunning visual dashboards. Zero pivot tables required.', icon: BarChart },
   { name: 'AI SEO Audit', description: 'Full site crawl with actionable fixes powered by AI to identify critical SEO issues instantly.', icon: Search },
   { name: 'Keyword Research', description: 'Discover high-value keywords instantly with accurate search volumes and difficulty scores.', icon: BarChart },
   { name: 'Competitor Analysis', description: 'Track competitor rankings, discover their top keywords, and uncover their backlink strategies.', icon: Users },
   { name: 'Content Generator', description: 'Generate perfectly optimized SEO articles, meta tags, and headings with a single click.', icon: Sparkles },
   { name: 'Rank Tracker', description: 'Monitor your daily ranking progress on Google and track position changes over time.', icon: TrendingUp },
-  { name: 'Backlink Monitor', description: 'Keep a close eye on your link profile, track lost links, and identify toxic domains.', icon: LinkIcon },
 ]
 
 const steps = [
@@ -121,8 +121,8 @@ const testimonials = [
 ]
 
 const faqs = [
-  { q: "What is Sovira SEO?", a: "Sovira SEO is an all-in-one AI-powered SEO platform designed to help you audit your site, find keywords, generate optimized content, and track your rankings." },
-  { q: "Do I need technical skills to use it?", a: "Not at all. We built Sovira to be incredibly intuitive. If you can use social media, you can use Sovira to rank your website." },
+  { q: "What is Sovira SEO?", a: "Sovira SEO is an all-in-one AI-powered platform designed to help you analyze messy data instantly, audit your site, find keywords, and generate optimized content." },
+  { q: "Do I need technical skills to use the Data Analyser?", a: "Not at all. You just upload your raw Excel or CSV file and click next. Our AI cleans the data, structures it, and builds a beautiful executive dashboard automatically without you needing to do any manual sorting." },
   { q: "Can I cancel anytime?", a: "Yes, you can cancel your subscription at any time directly from your billing dashboard with zero hassle." },
   { q: "Do you support local payments?", a: "Yes! We integrate with Paystack, allowing you to pay easily in local currencies alongside standard card payments." },
   { q: "Is there a free trial?", a: "Yes, we offer a risk-free trial so you can experience the power of the AI audit and keyword tools before committing." },
@@ -130,7 +130,7 @@ const faqs = [
 ]
 
 const marqueeTags = [
-  "Keyword Research", "AI Content", "Rank Tracking", "Backlink Monitor", 
+  "Automated Dashboards", "AI Data Cleaning", "Keyword Research", "AI Content", "Rank Tracking", 
   "Competitor Analysis", "SEO Audits", "Local SEO", "Technical SEO",
   "Search Volume", "Keyword Difficulty", "White-label Reports"
 ]

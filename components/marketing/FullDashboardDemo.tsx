@@ -98,7 +98,7 @@ export function FullDashboardDemo() {
       }
 
       // 2. KEYWORDS SEQUENCE (4s - 9s)
-      t(() => click(80, 240, () => setActiveTab('keywords')), 3500)
+      t(() => click(80, 275, () => setActiveTab('keywords')), 3500)
       t(() => click(400, 160), 4500) // Click search bar
       t(() => setKeywordPhase('typing'), 5400)
       const kw = 'content marketing nigeria'
@@ -108,7 +108,7 @@ export function FullDashboardDemo() {
       t(() => setCursor({ x: 500, y: 350 }), 5500 + kw.length*40 + 2000) // Move cursor out of way
 
       // 3. COMPETITORS SEQUENCE (10s - 16s)
-      t(() => click(80, 290, () => setActiveTab('competitors')), 10000)
+      t(() => click(80, 320, () => setActiveTab('competitors')), 10000)
       t(() => click(400, 190), 11000) // Click input
       t(() => setCompPhase('typing'), 11900)
       const domain = 'competitor.com'
@@ -118,7 +118,7 @@ export function FullDashboardDemo() {
       t(() => setCompPhase('modal'), 12000 + domain.length*50 + 2200)
 
       // 4. CONTENT AI SEQUENCE (17s - 24s)
-      t(() => click(80, 340, () => setActiveTab('content')), 17000)
+      t(() => click(80, 365, () => setActiveTab('content')), 17000)
       t(() => click(300, 210), 18000) // Click input
       t(() => setContentPhase('typing'), 18900)
       const topic = 'Best SEO practices 2026'
@@ -155,15 +155,15 @@ export function FullDashboardDemo() {
           </div>
           
           <div className="flex-1 py-4 px-3 space-y-1">
+            <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-3 mb-2 mt-2">AI Search</div>
             {[
-              { id: 'home', icon: Activity, label: 'Home' },
-              { id: 'audit', icon: BarChart2, label: 'SEO Audit' },
-              { id: 'keywords', icon: Search, label: 'Keywords' },
-              { id: 'competitors', icon: Users, label: 'Competitors' },
-              { id: 'content', icon: Sparkles, label: 'Content AI' },
+              { id: 'home', icon: Activity, label: 'Dashboard' },
+              { id: 'analyser', icon: BarChart2, label: 'Data Analyser' },
+              { id: 'audit', icon: Search, label: 'Site Audit' },
               { id: 'rank', icon: TrendingUp, label: 'Rank Tracker' },
+              { id: 'keywords', icon: FileText, label: 'Keywords' },
               { id: 'backlinks', icon: Link2, label: 'Backlinks' },
-              { id: 'reports', icon: FileText, label: 'Reports' },
+              { id: 'content', icon: Sparkles, label: 'Content AI' },
             ].map(item => (
               <div key={item.id} className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === item.id ? 'bg-blue-600 text-white' : 'hover:bg-white/5'}`}>
                 <item.icon className={`w-4 h-4 ${activeTab === item.id ? 'text-white' : 'text-slate-400'}`} />
@@ -422,6 +422,48 @@ export function FullDashboardDemo() {
             )}
             
           </div>
+          
+          {/* Sovira Agent Chat Widget overlay */}
+          <div className="absolute bottom-6 right-6 w-80 bg-white dark:bg-[#1E293B] shadow-2xl rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 flex flex-col z-40">
+            <div className="bg-[#007AFF] text-white p-3 flex items-center justify-between">
+              <div className="flex items-center gap-2 font-semibold text-sm">
+                <div className="w-6 h-6 rounded bg-white/20 flex items-center justify-center">
+                  <Sparkles className="w-3.5 h-3.5" />
+                </div>
+                Sovira Agent
+              </div>
+              <div className="flex items-center gap-2 opacity-80">
+                <ArrowUpRight className="w-4 h-4" />
+                <Settings className="w-4 h-4" />
+                <X className="w-4 h-4" />
+              </div>
+            </div>
+            
+            <div className="p-4 flex-1 overflow-y-auto text-xs bg-slate-50 dark:bg-slate-900/50 flex flex-col gap-4">
+              <p className="text-slate-500 leading-relaxed bg-white dark:bg-slate-800 p-3 rounded-lg border border-slate-100 dark:border-slate-700 shadow-sm text-[11px]">
+                By joining this chat, you confirm that you agree to and understand our <span className="text-blue-500">Privacy Policy</span> and <span className="text-blue-500">Terms of Service</span>.
+                Please note that this AI-powered assistant may occasionally provide inaccurate information.
+              </p>
+              
+              <div className="flex items-start gap-2 max-w-[85%]">
+                <div className="w-6 h-6 shrink-0 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center mt-1">
+                  <Sparkles className="w-3 h-3" />
+                </div>
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-2xl rounded-tl-sm border border-slate-200 dark:border-slate-700 shadow-sm text-slate-700 dark:text-slate-200">
+                  This is Sovira Agent! How can I assist you today?
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-3 bg-white dark:bg-[#1E293B] border-t border-slate-200 dark:border-slate-700">
+              <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-800 rounded-full px-3 py-2 border border-slate-200 dark:border-slate-700">
+                <Search className="w-4 h-4 text-slate-400" /> {/* Mic icon representation */}
+                <input type="text" placeholder="Type your message..." className="bg-transparent flex-1 outline-none text-xs text-slate-700 dark:text-slate-300 min-w-0" disabled />
+                <ArrowUp className="w-4 h-4 text-slate-400" />
+              </div>
+            </div>
+          </div>
+          
         </div>
 
       </div>
