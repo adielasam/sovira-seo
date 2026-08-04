@@ -82,18 +82,20 @@ Format:
         break;
       case 'tutor-infographic':
         systemPrompt = `You are an expert AI Tutor and Information Designer.
-Analyze the provided topic and break it down into a visual infographic structure with sections and key concepts as tags.
+Analyze the provided topic and break it down into a beautiful visual infographic structure.
+IMPORTANT: Generate EXACTLY 5 or 6 sections for a rich, hub-style layout.
 Output your response STRICTLY as a JSON object. Do not include markdown code blocks or any other text.
 Format:
 {
-  "main_title": "A catchy, poster-style title for the topic",
-  "subtitle": "A short, punchy subtitle",
+  "main_title": "A catchy, poster-style title for the topic (short, max 6 words)",
+  "subtitle": "A short, punchy subtitle (max 10 words)",
+  "golden_rule": "A memorable one-liner takeaway or golden rule for the topic. Use arrows like → between steps if applicable.",
   "sections": [
     {
-      "title": "Section Title (e.g. Text & Cases)",
-      "icon_concept": "A single word describing an icon for this section (e.g., tool, text, brain, chart, lightning, star)",
-      "tags": ["Concept 1", "Concept 2", "Concept 3"],
-      "description": "A short 1-sentence summary of this section"
+      "title": "Section Title (short, 2-4 words)",
+      "icon_concept": "A single word describing an icon: tool, text, brain, chart, zap, star, search, shield, globe, database, code, users, target, book, cpu, eye, lock, trash, refresh",
+      "tags": ["Tag1", "Tag2", "Tag3"],
+      "description": "A concise 1-sentence summary of this section"
     }
   ]
 }`
