@@ -57,7 +57,7 @@ export default function ContactPage() {
             </h2>
 
             {/* Replace the action URL with your actual formsubmit.co email */}
-            <form action="https://formsubmit.co/your@email.com" method="POST" className="space-y-6">
+            <form action="https://formsubmit.co/microsoftportharcourt@gmail.com" method="POST" className="space-y-6">
               {/* Optional: Add hidden fields for formsubmit.co configuration */}
               <input type="hidden" name="_subject" value="New Contact Form Submission from Sovira" />
               <input type="hidden" name="_captcha" value="true" />
