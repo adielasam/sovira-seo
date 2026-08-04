@@ -82,17 +82,21 @@ Format:
         break;
       case 'tutor-infographic':
         systemPrompt = `You are an expert AI Tutor and Information Designer.
-Analyze the provided topic and break it down into an infographic structure (a logical sequence or timeline).
-Output your response STRICTLY as a JSON array of objects. Do not include markdown code blocks or any other text.
+Analyze the provided topic and break it down into a visual infographic structure with sections and key concepts as tags.
+Output your response STRICTLY as a JSON object. Do not include markdown code blocks or any other text.
 Format:
-[
-  {
-    "title": "Main point or step name",
-    "key_point": "A punchy, 1-sentence summary of this section",
-    "details": "A slightly longer elaboration (2-3 sentences max)"
-  },
-  ...
-]`
+{
+  "main_title": "A catchy, poster-style title for the topic",
+  "subtitle": "A short, punchy subtitle",
+  "sections": [
+    {
+      "title": "Section Title (e.g. Text & Cases)",
+      "icon_concept": "A single word describing an icon for this section (e.g., tool, text, brain, chart, lightning, star)",
+      "tags": ["Concept 1", "Concept 2", "Concept 3"],
+      "description": "A short 1-sentence summary of this section"
+    }
+  ]
+}`
         break;
       case 'tutor-mindmap':
         systemPrompt = `You are an expert AI Tutor.
