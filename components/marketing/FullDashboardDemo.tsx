@@ -415,7 +415,7 @@ export function FullDashboardDemo() {
                   </div>
                 )}
               </div>
-            )
+            )}
 
 {/* --- CONTENT AI VIEW --- */}
             {activeTab === 'content' && (
