@@ -87,6 +87,7 @@ export function FullDashboardDemo() {
         setKeywordPhase('idle')
         setCompPhase('idle')
         setContentPhase('idle')
+        setAnalyserPhase('upload')
         setKeywordTyped('')
         setCompTyped('')
         setContentTyped('')
@@ -98,38 +99,36 @@ export function FullDashboardDemo() {
         t(() => setHomeScore(Math.round(80 * (i/20))), 500 + i * 50)
       }
 
-      // 2. KEYWORDS SEQUENCE (4s - 9s)
-      t(() => click(80, 275, () => setActiveTab('keywords')), 3500)
-      t(() => click(400, 160), 4500) // Click search bar
-      t(() => setKeywordPhase('typing'), 5400)
+      // 2. DATA ANALYSER SEQUENCE (4s - 13s)
+      t(() => click(80, 140, () => setActiveTab('analyser')), 3500)
+      t(() => setCursor({ x: 450, y: 350 }), 4500)
+      t(() => click(450, 350, () => setAnalyserPhase('table')), 5500) // Click upload
+      t(() => click(850, 100, () => setAnalyserPhase('theme')), 8500) // Click Next
+      t(() => click(900, 300), 10500) // Click theme on sidebar
+      t(() => setCursor({ x: 500, y: 350 }), 11500) // Move cursor out
+
+      // 3. KEYWORDS SEQUENCE (14s - 20s)
+      t(() => click(80, 275, () => setActiveTab('keywords')), 13500)
+      t(() => click(400, 160), 14500) // Click search bar
+      t(() => setKeywordPhase('typing'), 15400)
       const kw = 'content marketing nigeria'
-      kw.split('').forEach((ch, i) => t(() => setKeywordTyped(prev => prev + ch), 5500 + i * 40))
-      t(() => click(830, 160, () => setKeywordPhase('searching')), 5500 + kw.length*40 + 400)
-      t(() => setKeywordPhase('results'), 5500 + kw.length*40 + 1500)
-      t(() => setCursor({ x: 500, y: 350 }), 5500 + kw.length*40 + 2000) // Move cursor out of way
+      kw.split('').forEach((ch, i) => t(() => setKeywordTyped(prev => prev + ch), 15500 + i * 40))
+      t(() => click(830, 160, () => setKeywordPhase('searching')), 15500 + kw.length*40 + 400)
+      t(() => setKeywordPhase('results'), 15500 + kw.length*40 + 1500)
+      t(() => setCursor({ x: 500, y: 350 }), 15500 + kw.length*40 + 2000)
 
-      // 3. COMPETITORS SEQUENCE (10s - 16s)
-      t(() => click(80, 320, () => setActiveTab('competitors')), 10000)
-      t(() => click(400, 190), 11000) // Click input
-      t(() => setCompPhase('typing'), 11900)
-      const domain = 'competitor.com'
-      domain.split('').forEach((ch, i) => t(() => setCompTyped(prev => prev + ch), 12000 + i * 50))
-      t(() => click(900, 190, () => setCompPhase('analyzing')), 12000 + domain.length*50 + 400)
-      t(() => setCompPhase('results'), 12000 + domain.length*50 + 1500)
-      t(() => setCompPhase('modal'), 12000 + domain.length*50 + 2200)
-
-      // 4. CONTENT AI SEQUENCE (17s - 24s)
-      t(() => click(80, 365, () => setActiveTab('content')), 17000)
-      t(() => click(300, 210), 18000) // Click input
-      t(() => setContentPhase('typing'), 18900)
+      // 4. CONTENT AI SEQUENCE (21s - 28s)
+      t(() => click(80, 365, () => setActiveTab('content')), 20500)
+      t(() => click(300, 210), 21500) // Click input
+      t(() => setContentPhase('typing'), 22400)
       const topic = 'Best SEO practices 2026'
-      topic.split('').forEach((ch, i) => t(() => setContentTyped(prev => prev + ch), 19000 + i * 40))
-      t(() => click(300, 480, () => setContentPhase('generating')), 19000 + topic.length*40 + 400) // Click generate
-      t(() => setContentPhase('done'), 19000 + topic.length*40 + 3000)
-      t(() => setCursor({ x: 700, y: 400 }), 19000 + topic.length*40 + 3500)
+      topic.split('').forEach((ch, i) => t(() => setContentTyped(prev => prev + ch), 22500 + i * 40))
+      t(() => click(300, 480, () => setContentPhase('generating')), 22500 + topic.length*40 + 400) // Click generate
+      t(() => setContentPhase('done'), 22500 + topic.length*40 + 3000)
+      t(() => setCursor({ x: 700, y: 400 }), 22500 + topic.length*40 + 3500)
 
       // LOOP
-      t(() => runSequence(), 26000)
+      t(() => runSequence(), 29000)
     }
 
     runSequence()
@@ -309,61 +308,116 @@ export function FullDashboardDemo() {
               </div>
             )}
 
-            {/* --- COMPETITORS VIEW --- */}
-            {activeTab === 'competitors' && (
-              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 relative">
-                <div className="bg-white dark:bg-[#1E293B] p-6 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm mb-8">
-                  <h3 className="font-bold text-slate-900 dark:text-white mb-4">Step 2: Add Competitors</h3>
-                  <div className="flex gap-4">
-                    <div className="flex-1 flex items-center gap-3 bg-slate-50 dark:bg-slate-900 rounded-xl px-4 py-3 border border-slate-200 dark:border-slate-700">
-                      <Search className="w-5 h-5 text-slate-400" />
-                      <span className="text-slate-700 dark:text-slate-200">
-                        {compTyped || <span className="text-slate-400">Enter competitor URL...</span>}
-                        {compPhase === 'typing' && <span className="inline-block w-[2px] h-4 bg-blue-600 ml-1 animate-pulse" />}
-                      </span>
+                        {/* --- ANALYSER VIEW --- */}
+            {activeTab === 'analyser' && (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 h-full flex flex-col">
+                {analyserPhase === 'upload' && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl p-16 text-center max-w-2xl w-full bg-white dark:bg-[#1E293B]">
+                      <div className="w-16 h-16 bg-blue-50 dark:bg-blue-900/30 text-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-6">
+                        <Activity className="w-8 h-8" />
+                      </div>
+                      <h3 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Upload your dataset</h3>
+                      <p className="text-slate-500 mb-8">Supports CSV, Excel, TXT up to 10MB</p>
+                      <button className="px-8 py-3 bg-[#4F46E5] hover:bg-[#4338CA] text-white rounded-lg font-semibold flex items-center gap-2 mx-auto transition-colors">
+                        <ArrowUp className="w-4 h-4" /> Select File
+                      </button>
                     </div>
-                    <button className="bg-blue-600 text-white px-8 rounded-xl font-bold flex items-center justify-center w-40 gap-2">
-                      {compPhase === 'analyzing' ? <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <><Plus className="w-4 h-4"/> Analyze</>}
-                    </button>
                   </div>
-                </div>
-
-                {compPhase === 'results' || compPhase === 'modal' ? (
-                  <div className="relative">
-                    <h3 className="font-bold text-slate-900 dark:text-white mb-4">Domain Comparison</h3>
-                    <div className="bg-white dark:bg-[#1E293B] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden">
-                      <table className="w-full text-left">
-                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-xs uppercase tracking-wider text-slate-500">
-                          <tr><th className="p-4 font-semibold">Metric</th><th className="p-4 font-semibold text-emerald-600">Your Site</th><th className="p-4 font-semibold text-blue-600">{compTyped}</th></tr>
+                )}
+                {analyserPhase === 'table' && (
+                  <div className="flex-1 flex flex-col">
+                    <div className="flex justify-between items-center mb-6">
+                      <div>
+                        <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Data Cleansed & Structured</h2>
+                        <p className="text-slate-500 italic">Our AI has automatically formatted and mapped your raw data.</p>
+                      </div>
+                      <button className="px-6 py-2.5 bg-[#4F46E5] text-white rounded-lg font-semibold hover:bg-[#4338CA] transition-colors">
+                        Next: Choose Dashboard Style
+                      </button>
+                    </div>
+                    <div className="flex-1 bg-white dark:bg-[#1E293B] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm overflow-hidden flex flex-col">
+                      <table className="w-full text-left text-sm">
+                        <thead className="bg-slate-50 dark:bg-slate-800/50 text-slate-500 uppercase tracking-wider text-xs border-b border-slate-200 dark:border-slate-700">
+                          <tr>
+                            <th className="p-4 font-semibold">Row Labels</th>
+                            <th className="p-4 font-semibold">Sum of Sales</th>
+                            <th className="p-4 font-semibold">Row Labels 1</th>
+                            <th className="p-4 font-semibold">Sum of Sales 1</th>
+                          </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                          <tr><td className="p-4 font-medium text-slate-900 dark:text-white">Domain Authority</td><td className="p-4">32</td><td className="p-4 font-bold">84</td></tr>
-                          <tr><td className="p-4 font-medium text-slate-900 dark:text-white">Backlinks</td><td className="p-4">15k</td><td className="p-4 font-bold">1.2M</td></tr>
-                          <tr className={compPhase === 'modal' ? 'blur-sm opacity-50' : ''}><td className="p-4 font-medium text-slate-900 dark:text-white">Organic Traffic</td><td className="p-4">8.4k</td><td className="p-4 font-bold">450k</td></tr>
+                          <tr><td className="p-4 text-slate-900 dark:text-white">South</td><td className="p-4 text-slate-600 dark:text-slate-300">595566.27</td><td className="p-4 text-slate-900 dark:text-white">Apparel</td><td className="p-4 text-slate-600 dark:text-slate-300">854616.61</td></tr>
+                          <tr><td className="p-4 text-slate-900 dark:text-white">North</td><td className="p-4 text-slate-600 dark:text-slate-300">661211.95</td><td className="p-4 text-slate-900 dark:text-white">Electronics</td><td className="p-4 text-slate-600 dark:text-slate-300">915701.93</td></tr>
+                          <tr><td className="p-4 text-slate-900 dark:text-white">West</td><td className="p-4 text-slate-600 dark:text-slate-300">662344.00</td><td className="p-4 text-slate-900 dark:text-white">Home Goods</td><td className="p-4 text-slate-600 dark:text-slate-300">812167.99</td></tr>
+                          <tr><td className="p-4 font-bold text-slate-900 dark:text-white">Grand Total</td><td className="p-4 font-bold text-slate-900 dark:text-white">2582486.54</td><td className="p-4 font-bold text-slate-900 dark:text-white">Grand Total</td><td className="p-4 font-bold text-slate-900 dark:text-white">2582486.54</td></tr>
                         </tbody>
                       </table>
                     </div>
-
-                    {compPhase === 'modal' && (
-                      <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 dark:bg-slate-900/60 backdrop-blur-sm rounded-2xl animate-in fade-in zoom-in-95 duration-300">
-                        <div className="bg-white dark:bg-slate-800 p-8 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 text-center max-w-sm">
-                          <div className="w-12 h-12 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <Shield className="w-6 h-6" />
-                          </div>
-                          <h4 className="text-xl font-bold text-slate-900 dark:text-white mb-2">Unlock Deep Insights</h4>
-                          <p className="text-slate-500 dark:text-slate-400 mb-6">Upgrade to a premium plan to reveal full competitor data, keyword gaps, and automated exports.</p>
-                          <button className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl shadow-md hover:bg-blue-500 transition-colors">
-                            Upgrade to Pro
-                          </button>
+                  </div>
+                )}
+                {analyserPhase === 'theme' && (
+                  <div className="flex-1 flex gap-6">
+                    <div className="flex-1">
+                      <h2 className="text-2xl font-bold text-slate-900 dark:text-white">Style Preview</h2>
+                      <p className="text-slate-500 mb-6">Select a theme from the list to instantly apply it.</p>
+                      <div className="w-full h-[400px] bg-[#FDFBF7] dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col gap-4 overflow-hidden relative shadow-inner">
+                        <div className="flex gap-4">
+                           <div className="flex-1 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
+                             <div className="text-xs text-slate-400 uppercase tracking-widest mb-1">Annual Performance</div>
+                             <div className="text-3xl font-serif text-slate-900 dark:text-white font-bold">How did our</div>
+                             <div className="text-3xl font-serif text-slate-900 dark:text-white font-bold mb-2">$5.16M in sales...</div>
+                             <div className="text-sm italic text-slate-500">The total sum of sales is $5.16M, with the top region being SOUTH.</div>
+                           </div>
+                           <div className="w-32 bg-white dark:bg-slate-800 p-4 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700">
+                             <div className="text-[10px] text-slate-400 uppercase mb-2">Total Sum</div>
+                             <div className="text-2xl font-serif text-slate-900 dark:text-white">$5.16M</div>
+                           </div>
+                        </div>
+                        <div className="flex-1 flex gap-4">
+                           <div className="flex-1 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 flex items-end p-4 gap-2">
+                             <div className="w-8 bg-slate-800 dark:bg-slate-200 rounded-t h-1/2"></div>
+                             <div className="w-8 bg-slate-800 dark:bg-slate-200 rounded-t h-3/4"></div>
+                             <div className="w-8 bg-slate-800 dark:bg-slate-200 rounded-t h-1/4"></div>
+                             <div className="w-8 bg-slate-800 dark:bg-slate-200 rounded-t h-full"></div>
+                           </div>
+                           <div className="w-48 bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-slate-100 dark:border-slate-700 flex items-center justify-center">
+                             <div className="w-24 h-24 rounded-full border-[8px] border-slate-800 dark:border-slate-200 border-r-slate-200 dark:border-r-slate-700"></div>
+                           </div>
                         </div>
                       </div>
-                    )}
+                    </div>
+                    <div className="w-72 bg-white dark:bg-[#1E293B] rounded-xl border border-slate-200 dark:border-slate-800 shadow-sm p-4 h-fit">
+                      <h3 className="font-bold text-slate-900 dark:text-white mb-1">Dashboard Themes</h3>
+                      <p className="text-xs text-slate-500 mb-4">AI Suggestions</p>
+                      <div className="space-y-4">
+                        <div className="p-4 border-2 border-[#4F46E5] rounded-xl bg-[#4F46E5]/5 cursor-pointer relative">
+                          <div className="flex gap-1 mb-3">
+                            <div className="w-3 h-3 rounded-full bg-slate-800"></div>
+                            <div className="w-3 h-3 rounded-full bg-orange-400"></div>
+                            <div className="w-3 h-3 rounded-full bg-blue-400"></div>
+                          </div>
+                          <div className="font-bold text-slate-900 dark:text-white">Oreate Editorial</div>
+                          <div className="text-xs text-slate-500 mt-1">Premium, journalistic layout with muted tones.</div>
+                          <div className="absolute top-4 right-4 text-[#4F46E5]"><CheckCircle2 className="w-5 h-5"/></div>
+                        </div>
+                        <div className="p-4 border border-slate-200 dark:border-slate-700 rounded-xl cursor-pointer hover:border-slate-300">
+                          <div className="flex gap-1 mb-3">
+                            <div className="w-3 h-3 rounded-full bg-purple-500"></div>
+                            <div className="w-3 h-3 rounded-full bg-emerald-400"></div>
+                            <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                          </div>
+                          <div className="font-bold text-slate-900 dark:text-white">Vibrant Modern</div>
+                          <div className="text-xs text-slate-500 mt-1">Energetic startup aesthetic with pastel cards.</div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                ) : null}
+                )}
               </div>
-            )}
+            )
 
-            {/* --- CONTENT AI VIEW --- */}
+{/* --- CONTENT AI VIEW --- */}
             {activeTab === 'content' && (
               <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 flex gap-8 h-full">
                 <div className="w-[320px] shrink-0 space-y-6">
