@@ -5,7 +5,7 @@ import Image from 'next/image'
 import { 
   Shield, Search, Activity, Users, FileText, TrendingUp, Link2, 
   Settings, LogOut, Bell, Moon, ChevronDown, Plus, Globe, 
-  Sparkles, CheckCircle2, ArrowUpRight, ArrowUp, BarChart2
+  Sparkles, CheckCircle2, ArrowUpRight, ArrowUp, BarChart2, X
 } from 'lucide-react'
 
 // --- Custom Hooks ---
