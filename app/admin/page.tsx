@@ -1,10 +1,17 @@
 import { createClient } from '@/lib/supabase/server'
 import { Users, FileText, Tag, Activity, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
+import { UserGrowthChart } from '@/components/admin/UserGrowthChart'
+import { PlanDistributionChart } from '@/components/admin/PlanDistributionChart'
+import { UserFilters } from '@/components/admin/UserFilters'
 
 export const dynamic = 'force-dynamic'
 
-export default async function AdminOverviewPage() {
+export default async function AdminOverviewPage({
+  searchParams,
+}: {
+  searchParams: { search?: string; role?: string; plan?: string }
+}) {
   const supabase = await createClient()
 
   // Fetch counts
@@ -18,8 +25,6 @@ export default async function AdminOverviewPage() {
   const today = new Date()
   today.setUTCHours(0, 0, 0, 0)
   
-  // Note: we can't easily COUNT DISTINCT in supabase client without RPC, 
-  // so we'll fetch today's logs and count unique users manually (fine for MVP)
   const { data: todayLogs } = await supabase
     .from('activity_logs')
     .select('user_id')
@@ -27,12 +32,37 @@ export default async function AdminOverviewPage() {
     
   const activeTodayCount = new Set(todayLogs?.map(log => log.user_id)).size || 0
 
-  // Get recent signups (last 10)
-  const { data: recentUsers } = await supabase
+  // Fetch users for charts (last 30 days)
+  const thirtyDaysAgo = new Date()
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  const { data: chartUsers } = await supabase
+    .from('user_profiles')
+    .select('created_at, plan')
+    .gte('created_at', thirtyDaysAgo.toISOString())
+
+  // Get recent users with filters
+  let query = supabase
     .from('user_profiles')
     .select('*')
     .order('created_at', { ascending: false })
-    .limit(10)
+    .limit(50)
+
+  if (searchParams.search) {
+    query = query.ilike('email', `%${searchParams.search}%`)
+  }
+  if (searchParams.role) {
+    query = query.eq('role', searchParams.role)
+  }
+  if (searchParams.plan) {
+    // Some free users might have plan=null, so we handle "free" explicitly
+    if (searchParams.plan === 'free') {
+      query = query.or('plan.eq.free,plan.is.null')
+    } else {
+      query = query.eq('plan', searchParams.plan)
+    }
+  }
+
+  const { data: recentUsers } = await query
 
   const stats = [
     { name: 'Total Users', value: userCount || 0, icon: Users, color: 'text-blue-600', bg: 'bg-blue-100' },
@@ -64,10 +94,20 @@ export default async function AdminOverviewPage() {
         ))}
       </div>
 
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
-        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-          <h2 className="font-semibold text-slate-900 dark:text-white">Recent Users</h2>
+      {/* Charts Section */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-2">
+          <UserGrowthChart users={chartUsers || []} />
         </div>
+        <div className="lg:col-span-1">
+          <PlanDistributionChart users={chartUsers || []} />
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
+        
+        <UserFilters />
+
         <div className="overflow-x-auto">
           <table className="w-full text-sm text-left text-slate-500 dark:text-slate-400">
             <thead className="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-300">
@@ -99,7 +139,9 @@ export default async function AdminOverviewPage() {
               ))}
               {(!recentUsers || recentUsers.length === 0) && (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center">No users found.</td>
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
+                    No users found matching your filters.
+                  </td>
                 </tr>
               )}
             </tbody>
