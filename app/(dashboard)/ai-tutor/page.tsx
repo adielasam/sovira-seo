@@ -91,11 +91,9 @@ export default function AITutorPage() {
       parentOverflow: parent?.style.overflow || '',
       parentHeight: parent?.style.height || '',
     }
-    // Expand to full scroll dimensions — no cut-offs
     element.style.overflow = 'visible'
     element.style.height = 'auto'
     element.style.maxHeight = 'none'
-    // Force a consistent desktop width so mobile exports look great
     element.style.minWidth = '1024px'
     element.style.width = '1024px'
     if (parent) {
@@ -118,6 +116,32 @@ export default function AITutorPage() {
     }
   }
 
+  // Capture a single element as a PNG data URL
+  const captureElement = async (element: HTMLElement, toPng: any) => {
+    const saved = prepareForCapture(element)
+    await new Promise(r => setTimeout(r, 200))
+    const dataUrl = await toPng(element, { quality: 1, pixelRatio: 2, backgroundColor: '#ffffff' })
+    restoreAfterCapture(element, saved)
+    return dataUrl
+  }
+
+  // Navigate infographic slides programmatically
+  const navigateInfographicSlide = async (slideIndex: number) => {
+    const dots = document.querySelectorAll('[data-infographic-dot]')
+    if (dots[slideIndex]) {
+      (dots[slideIndex] as HTMLButtonElement).click()
+      await new Promise(r => setTimeout(r, 350))
+    }
+  }
+
+  const getInfographicSlideCount = (): number => {
+    const container = document.querySelector('[data-infographic-total]')
+    if (container) {
+      return parseInt(container.getAttribute('data-infographic-total') || '0', 10)
+    }
+    return 0
+  }
+
   const handleExportPDF = async () => {
     if (!activeResult) return
     setIsExporting(true)
@@ -129,42 +153,51 @@ export default function AITutorPage() {
       const element = document.getElementById('tutor-export-canvas')
       if (!element) throw new Error('Canvas element not found')
 
-      // Expand container to full content size
-      const saved = prepareForCapture(element)
-
-      // Wait a tick for layout to settle
-      await new Promise(r => setTimeout(r, 300))
-
-      const dataUrl = await toPng(element, { 
-        quality: 1, 
-        pixelRatio: 2,
-        backgroundColor: '#ffffff'
-      })
-
-      // Restore original styles
-      restoreAfterCapture(element, saved)
-      
-      const pdf = new jsPDF('p', 'mm', 'a4')
+      const pdf = new jsPDF('l', 'mm', 'a4') // landscape for slides
       const pdfWidth = pdf.internal.pageSize.getWidth()
       const pageHeight = pdf.internal.pageSize.getHeight()
-      
-      const imgProps = pdf.getImageProperties(dataUrl)
-      const scaledHeight = (imgProps.height * pdfWidth) / imgProps.width
 
-      // Multi-page support: if content is taller than one page, split across pages
-      if (scaledHeight <= pageHeight) {
-        pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, scaledHeight)
+      // Check if this is an infographic with multiple slides
+      const slideCount = getInfographicSlideCount()
+
+      if (activeResult.mode === 'tutor-infographic' && slideCount > 0) {
+        // Capture each slide individually
+        for (let i = 0; i < slideCount; i++) {
+          await navigateInfographicSlide(i)
+          const slideEl = document.querySelector('[data-infographic-slide]') as HTMLElement
+          if (!slideEl) continue
+
+          const saved = prepareForCapture(slideEl)
+          await new Promise(r => setTimeout(r, 300))
+          const dataUrl = await toPng(slideEl, { quality: 1, pixelRatio: 2, backgroundColor: '#ffffff' })
+          restoreAfterCapture(slideEl, saved)
+
+          if (i > 0) pdf.addPage()
+          const imgProps = pdf.getImageProperties(dataUrl)
+          const scaledHeight = (imgProps.height * pdfWidth) / imgProps.width
+          const finalHeight = Math.min(scaledHeight, pageHeight)
+          const yOffset = (pageHeight - finalHeight) / 2
+          pdf.addImage(dataUrl, 'PNG', 0, yOffset, pdfWidth, finalHeight)
+        }
+        // Go back to first slide
+        await navigateInfographicSlide(0)
       } else {
-        let yOffset = 0
-        let pageNum = 0
-        while (yOffset < scaledHeight) {
-          if (pageNum > 0) pdf.addPage()
-          pdf.addImage(dataUrl, 'PNG', 0, -yOffset, pdfWidth, scaledHeight)
-          yOffset += pageHeight
-          pageNum++
+        // Single capture for other modes
+        const dataUrl = await captureElement(element, toPng)
+        const imgProps = pdf.getImageProperties(dataUrl)
+        const scaledHeight = (imgProps.height * pdfWidth) / imgProps.width
+        if (scaledHeight <= pageHeight) {
+          pdf.addImage(dataUrl, 'PNG', 0, 0, pdfWidth, scaledHeight)
+        } else {
+          let yOff = 0; let page = 0
+          while (yOff < scaledHeight) {
+            if (page > 0) pdf.addPage()
+            pdf.addImage(dataUrl, 'PNG', 0, -yOff, pdfWidth, scaledHeight)
+            yOff += pageHeight; page++
+          }
         }
       }
-      
+
       pdf.save(`${activeResult.topic.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`)
       toast.success('PDF downloaded!', { id: toastId })
     } catch (err: any) {
@@ -178,47 +211,53 @@ export default function AITutorPage() {
   const handleExportPPTX = async () => {
     if (!activeResult) return
     setIsExporting(true)
-    const toastId = toast.loading('Generating PPTX with visuals...')
+    const toastId = toast.loading('Generating PPTX slides...')
     try {
       const { toPng } = await import('html-to-image')
       const pptxgen = (await import('pptxgenjs')).default
-      
+
       const element = document.getElementById('tutor-export-canvas')
       if (!element) throw new Error('Canvas element not found')
 
-      // Expand container to full content size
-      const saved = prepareForCapture(element)
-      await new Promise(r => setTimeout(r, 300))
-
-      const dataUrl = await toPng(element, { 
-        quality: 1, 
-        pixelRatio: 2,
-        backgroundColor: '#ffffff'
-      })
-
-      // Restore original styles
-      restoreAfterCapture(element, saved)
-
       const pptx = new pptxgen()
-      pptx.layout = 'LAYOUT_WIDE' // 13.33 x 7.5 inches
+      pptx.layout = 'LAYOUT_WIDE'
       const title = activeResult.topic
 
-      // Title Slide
-      let slide = pptx.addSlide()
-      slide.addText(title, { x: 1, y: 2.5, w: '85%', h: 1.5, fontSize: 36, bold: true, align: 'center', color: '363636' })
-      slide.addText("Generated by Sovira AI Tutor", { x: 1, y: 4.2, w: '85%', h: 0.8, fontSize: 18, align: 'center', color: '888888' })
+      const slideCount = getInfographicSlideCount()
 
-      // Full Visual Slide — the captured image fills the slide
-      let visualSlide = pptx.addSlide()
-      visualSlide.addImage({ data: dataUrl, x: 0.3, y: 0.3, w: 12.7, h: 6.9, sizing: { type: 'contain', w: 12.7, h: 6.9 } })
+      if (activeResult.mode === 'tutor-infographic' && slideCount > 0) {
+        // Capture each infographic slide as its own PPTX slide
+        for (let i = 0; i < slideCount; i++) {
+          await navigateInfographicSlide(i)
+          const slideEl = document.querySelector('[data-infographic-slide]') as HTMLElement
+          if (!slideEl) continue
 
-      // Text slides for accessibility (flashcards)
-      if (activeResult.mode === 'tutor-flashcards') {
-        activeResult.data.forEach((card: any) => {
-          let s = pptx.addSlide()
-          s.addText(card.front || card.term || '', { x: 0.5, y: 1, w: '90%', fontSize: 24, bold: true, color: '003366' })
-          s.addText(card.back || card.definition || '', { x: 0.5, y: 2.5, w: '90%', fontSize: 18, color: '333333' })
-        })
+          const saved = prepareForCapture(slideEl)
+          await new Promise(r => setTimeout(r, 300))
+          const dataUrl = await toPng(slideEl, { quality: 1, pixelRatio: 2, backgroundColor: '#ffffff' })
+          restoreAfterCapture(slideEl, saved)
+
+          const s = pptx.addSlide()
+          s.addImage({ data: dataUrl, x: 0, y: 0, w: 13.33, h: 7.5, sizing: { type: 'contain', w: 13.33, h: 7.5 } })
+        }
+        await navigateInfographicSlide(0)
+      } else {
+        // Title + single visual for other modes
+        let titleSlide = pptx.addSlide()
+        titleSlide.addText(title, { x: 1, y: 2.5, w: '85%', h: 1.5, fontSize: 36, bold: true, align: 'center', color: '363636' })
+        titleSlide.addText("Generated by Sovira AI Tutor", { x: 1, y: 4.2, w: '85%', h: 0.8, fontSize: 18, align: 'center', color: '888888' })
+
+        const dataUrl = await captureElement(element, toPng)
+        let visualSlide = pptx.addSlide()
+        visualSlide.addImage({ data: dataUrl, x: 0.3, y: 0.3, w: 12.7, h: 6.9, sizing: { type: 'contain', w: 12.7, h: 6.9 } })
+
+        if (activeResult.mode === 'tutor-flashcards') {
+          activeResult.data.forEach((card: any) => {
+            let s = pptx.addSlide()
+            s.addText(card.front || card.term || '', { x: 0.5, y: 1, w: '90%', fontSize: 24, bold: true, color: '003366' })
+            s.addText(card.back || card.definition || '', { x: 0.5, y: 2.5, w: '90%', fontSize: 18, color: '333333' })
+          })
+        }
       }
 
       await pptx.writeFile({ fileName: `${title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pptx` })

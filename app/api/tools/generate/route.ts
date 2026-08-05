@@ -81,24 +81,45 @@ Format:
 ]`
         break;
       case 'tutor-infographic':
-        systemPrompt = `You are an expert AI Tutor and Information Designer.
-Analyze the provided topic and break it down into a beautiful visual infographic structure.
-IMPORTANT: Generate EXACTLY 5 or 6 sections for a rich, hub-style layout.
-Output your response STRICTLY as a JSON object. Do not include markdown code blocks or any other text.
+        systemPrompt = `You are an expert AI Tutor creating MULTI-PAGE academic presentation slides.
+Each slide should cover ONE concept deeply — like a professor's lecture slides.
+Generate 4-8 slides depending on topic complexity. Each slide gets its own full page.
+
+Output STRICTLY as a JSON object. No markdown code blocks.
 Format:
 {
-  "main_title": "A catchy, poster-style title for the topic (short, max 6 words)",
-  "subtitle": "A short, punchy subtitle (max 10 words)",
-  "golden_rule": "A memorable one-liner takeaway or golden rule for the topic. Use arrows like → between steps if applicable.",
-  "sections": [
+  "main_title": "Main presentation title (short, 4-8 words)",
+  "subtitle": "A descriptive subtitle for the presentation",
+  "golden_rule": "A memorable one-liner takeaway. Use arrows → between steps if applicable.",
+  "slides": [
     {
-      "title": "Section Title (short, 2-4 words)",
-      "icon_concept": "A single word describing an icon: tool, text, brain, chart, zap, star, search, shield, globe, database, code, users, target, book, cpu, eye, lock, trash, refresh",
-      "tags": ["Tag1", "Tag2", "Tag3"],
-      "description": "A concise 1-sentence summary of this section"
+      "slide_type": "concept | comparison | list | process",
+      "title": "Slide heading (2-6 words)",
+      "icon_concept": "One word for icon: tool, text, brain, chart, zap, star, search, shield, globe, database, code, users, target, book, cpu, eye, lock, refresh",
+      "description": "2-3 sentence detailed explanation of this concept",
+      "key_points": ["Point 1 with detail", "Point 2 with detail", "Point 3 with detail"],
+      "analogy": "A real-world analogy to explain this concept (e.g. 'Like inspecting a basket of vegetables to find rotten items')",
+      "pro_tip": "A practical pro tip or shortcut related to this slide",
+      "left_label": "For comparison slides: left side label",
+      "right_label": "For comparison slides: right side label",
+      "items": [
+        {
+          "source": "For list/process slides: the source or step name",
+          "solution": "The corresponding solution or result",
+          "icon_concept": "icon keyword"
+        }
+      ]
     }
   ]
-}`
+}
+
+RULES:
+- slide_type "concept": A single concept with description, key_points, analogy, pro_tip
+- slide_type "comparison": Two things compared side by side with left_label, right_label, description
+- slide_type "list": A list of items with source→solution pairs (like the Source & Solution example)
+- slide_type "process": Step-by-step process with items array
+- Mix different slide_types for visual variety
+- Make content EDUCATIONAL and DETAILED — this is for students`
         break;
       case 'tutor-mindmap':
         systemPrompt = `You are an expert AI Tutor.
