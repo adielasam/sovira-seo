@@ -119,7 +119,7 @@ export function Flashcards({ data, topic = "Flashcards", subtopic = "Review your
           </div>
           {/* Small progress line */}
           <div className="w-12 h-1 bg-slate-200 rounded-full overflow-hidden">
-             <div className="h-full bg-[#3b82f6] rounded-full transition-all" style={{ width: \`\${((currentIndex + 1) / data.length) * 100}%\` }} />
+             <div className="h-full bg-[#3b82f6] rounded-full transition-all" style={{ width: `${((currentIndex + 1) / data.length) * 100}%` }} />
           </div>
         </div>
 

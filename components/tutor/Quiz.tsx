@@ -85,7 +85,7 @@ export function Quiz({ data, topic = "Quiz" }: { data: Question[], topic?: strin
       <div className="w-full h-2.5 bg-[#f1f5f9] rounded-full mb-12 overflow-hidden">
         <div 
           className="h-full bg-[#4f46e5] transition-all duration-300 rounded-full"
-          style={{ width: \`\${((currentIndex + (selectedAnswer ? 1 : 0)) / data.length) * 100}%\` }}
+          style={{ width: `${((currentIndex + (selectedAnswer ? 1 : 0)) / data.length) * 100}%` }}
         />
       </div>
 
@@ -164,7 +164,7 @@ export function Quiz({ data, topic = "Quiz" }: { data: Question[], topic?: strin
                   {/* Inline Explanation */}
                   {showResult && isSelected && (
                     <div className="mt-4 pl-12">
-                      <p className={\`text-sm \${isCorrect ? 'text-[#065f46]' : 'text-[#991b1b]'}\`}>
+                      <p className={`text-sm ${isCorrect ? 'text-[#065f46]' : 'text-[#991b1b]'}`}>
                         {isCorrect ? 'Correct! ' : 'Incorrect. '}
                         {currentQ.explanation}
                       </p>
