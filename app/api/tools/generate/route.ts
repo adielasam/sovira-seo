@@ -102,6 +102,8 @@ Format:
       "pro_tip": "A practical pro tip or shortcut related to this slide",
       "left_label": "For comparison slides: left side label",
       "right_label": "For comparison slides: right side label",
+      "left_emoji": "For comparison slides: 1-2 emojis representing the left concept (e.g. 🍅🔍)",
+      "right_emoji": "For comparison slides: 1-2 emojis representing the right concept (e.g. 🔪🍅)",
       "items": [
         {
           "source": "For list/process slides: the source or step name",
@@ -111,7 +113,7 @@ Format:
       ]
     }
   ]
-}
+}`
 
 RULES:
 - slide_type "concept": A single concept with description, key_points, analogy, pro_tip

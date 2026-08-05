@@ -146,55 +146,85 @@ function ConceptSlide({ slide, index }: { slide: any; index: number }) {
 /* ═══════════════════════════════════════════════════════════════
    SLIDE TYPE: COMPARISON  (left vs right)
    ═══════════════════════════════════════════════════════════════ */
-function ComparisonSlide({ slide, index }: { slide: any; index: number }) {
+function ComparisonSlide({ slide, index, goldenRule }: { slide: any; index: number; goldenRule?: string }) {
   return (
     <SlideFrame bg="#e8f0e9">
       <div className="absolute top-6 right-8 text-8xl font-black select-none pointer-events-none" style={{ color: '#d0dfd3', fontFamily: '"Montserrat", sans-serif' }}>
         {String(index + 1).padStart(2, '0')}
       </div>
 
-      <div className="w-full max-w-4xl mx-auto text-center">
-        <h2 className="text-[clamp(1.5rem,3.5vw,2.5rem)] font-extrabold mb-3" style={{ fontFamily: '"Montserrat", "Inter", sans-serif', color: '#1a3821' }}>
+      <div className="w-full max-w-5xl mx-auto flex flex-col items-center justify-center min-h-[450px]">
+        {/* Large Centered Title */}
+        <h2 className="text-[clamp(2rem,4vw,3rem)] font-extrabold mb-8 text-center leading-tight" style={{ fontFamily: '"Montserrat", "Inter", sans-serif', color: '#1a3821' }}>
           {slide.title}
         </h2>
-        <p className="mb-10 mx-auto" style={{ color: '#3d5a42', maxWidth: '600px' }}>{slide.description}</p>
 
-        <div className="flex flex-col md:flex-row items-stretch gap-6">
-          {/* Left */}
-          <div className="flex-1 bg-white rounded-2xl p-8 text-center" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white mx-auto mb-5" style={{ background: '#10b981', boxShadow: '0 8px 20px #10b98144' }}>
-              {getIcon(slide.icon_concept, 30)}
+        {/* Split Screen Design */}
+        <div className="flex flex-col md:flex-row items-center justify-between w-full gap-8 md:gap-4 relative">
+          
+          {/* Left Side */}
+          <div className="flex-1 flex flex-col items-center text-center">
+            {/* Illustrative Emoji (Concept A) */}
+            <div className="text-[120px] leading-none mb-6 drop-shadow-xl select-none filter hover:brightness-110 transition-all duration-300">
+              {slide.left_emoji || '🔍'}
             </div>
-            <h3 className="text-xl font-bold mb-3" style={{ fontFamily: '"Montserrat", sans-serif', color: '#1a3821' }}>
+            
+            {/* Bold Subheading */}
+            <h3 className="text-2xl font-bold mb-3" style={{ fontFamily: '"Montserrat", sans-serif', color: '#1a3821' }}>
               {slide.left_label || 'Option A'}
             </h3>
-            {slide.key_points?.[0] && <p className="text-sm" style={{ color: '#3d5a42' }}>{slide.key_points[0]}</p>}
+            
+            {/* Short Description */}
+            <p className="text-base" style={{ color: '#3d5a42', maxWidth: '300px' }}>
+              {slide.key_points?.[0] || 'Description for this concept.'}
+            </p>
           </div>
 
-          {/* VS */}
-          <div className="flex items-center justify-center py-4">
-            <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: '#1a3821', boxShadow: '0 6px 16px rgba(26,56,33,0.3)' }}>
+          {/* Center Directional Arrow (Hand-drawn style) */}
+          <div className="hidden md:flex flex-col items-center justify-center shrink-0 w-[120px]">
+            <svg width="100" height="60" viewBox="0 0 100 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-80">
+              {/* Curved, organic arrow path */}
+              <path d="M5 30 Q 30 -10, 75 30" stroke="#7ba884" strokeWidth="4" fill="none" strokeLinecap="round" />
+              <path d="M 60 20 L 78 31 L 62 42" stroke="#7ba884" strokeWidth="4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </div>
+
+          {/* Mobile vs divider */}
+          <div className="md:hidden flex items-center justify-center py-4">
+             <div className="w-12 h-12 rounded-full flex items-center justify-center text-white" style={{ background: '#1a3821', boxShadow: '0 6px 16px rgba(26,56,33,0.3)' }}>
               <ArrowRightLeft size={20} />
             </div>
           </div>
 
-          {/* Right */}
-          <div className="flex-1 bg-white rounded-2xl p-8 text-center" style={{ boxShadow: '0 4px 20px rgba(0,0,0,0.08)' }}>
-            <div className="w-16 h-16 rounded-full flex items-center justify-center text-white mx-auto mb-5" style={{ background: '#f97316', boxShadow: '0 8px 20px #f9731644' }}>
-              {getIcon(slide.icon_concept, 30)}
+          {/* Right Side */}
+          <div className="flex-1 flex flex-col items-center text-center">
+            {/* Illustrative Emoji (Concept B) */}
+            <div className="text-[120px] leading-none mb-6 drop-shadow-xl select-none filter hover:brightness-110 transition-all duration-300">
+              {slide.right_emoji || '💡'}
             </div>
-            <h3 className="text-xl font-bold mb-3" style={{ fontFamily: '"Montserrat", sans-serif', color: '#1a3821' }}>
+            
+            {/* Bold Subheading */}
+            <h3 className="text-2xl font-bold mb-3" style={{ fontFamily: '"Montserrat", sans-serif', color: '#1a3821' }}>
               {slide.right_label || 'Option B'}
             </h3>
-            {slide.key_points?.[1] && <p className="text-sm" style={{ color: '#3d5a42' }}>{slide.key_points[1]}</p>}
+            
+            {/* Short Description */}
+            <p className="text-base" style={{ color: '#3d5a42', maxWidth: '300px' }}>
+              {slide.key_points?.[1] || 'Description for this concept.'}
+            </p>
           </div>
         </div>
 
-        {/* Analogy below */}
-        {slide.analogy && (
-          <div className="mt-8 rounded-xl p-5 text-left mx-auto" style={{ background: '#f0f5f1', borderLeft: '4px solid #7ba884', maxWidth: '600px' }}>
-            <p className="text-xs font-bold uppercase tracking-wider mb-1" style={{ color: '#5c8564' }}>💡 Analogy</p>
-            <p className="text-sm italic" style={{ color: '#2d3a30' }}>{slide.analogy}</p>
+        {/* Pill-shaped Takeaway Banner (Golden Rule) */}
+        {(goldenRule || slide.pro_tip) && (
+          <div className="mt-14 inline-flex items-center gap-3 px-8 py-3 rounded-full text-white shadow-lg relative z-10" 
+               style={{ background: 'linear-gradient(90deg, #3d6b4a, #5c8564)' }}>
+            <span className="font-bold text-[#b8d4bd] tracking-wider uppercase text-sm">
+              {goldenRule ? 'Golden Rule:' : 'Takeaway:'}
+            </span>
+            <span className="font-semibold text-[15px]">
+              {goldenRule || slide.pro_tip}
+            </span>
           </div>
         )}
       </div>
@@ -360,7 +390,7 @@ export function Infographic({ data }: { data: any }) {
     const sl = parsed.slides[idx];
     if (!sl) return null;
     switch (sl.slide_type) {
-      case 'comparison': return <ComparisonSlide slide={sl} index={idx} />;
+      case 'comparison': return <ComparisonSlide slide={sl} index={idx} goldenRule={parsed.golden_rule} />;
       case 'list': return <ListSlide slide={sl} index={idx} />;
       case 'process': return <ProcessSlide slide={sl} index={idx} />;
       default: return <ConceptSlide slide={sl} index={idx} />;
