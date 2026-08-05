@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { CheckCircle2, XCircle, ChevronRight, RotateCcw } from 'lucide-react'
+import { CheckCircle2, XCircle, RotateCcw } from 'lucide-react'
 
 interface Question {
   question: string
@@ -10,11 +10,13 @@ interface Question {
   explanation: string
 }
 
-export function Quiz({ data }: { data: Question[] }) {
+export function Quiz({ data, topic = "Quiz" }: { data: Question[], topic?: string }) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [selectedAnswer, setSelectedAnswer] = useState<string | null>(null)
-  const [score, setScore] = useState(0)
-  const [showResults, setShowResults] = useState(false)
+  
+  // Track correct and incorrect counts
+  const [correctCount, setCorrectCount] = useState(0)
+  const [incorrectCount, setIncorrectCount] = useState(0)
 
   if (!data || data.length === 0) return null
 
@@ -23,126 +25,156 @@ export function Quiz({ data }: { data: Question[] }) {
   const handleSelect = (option: string) => {
     if (selectedAnswer) return // Prevent multiple selections
     setSelectedAnswer(option)
+    
     if (option === currentQ.correct_answer) {
-      setScore((s) => s + 1)
-    }
-  }
-
-  const handleNext = () => {
-    if (currentIndex < data.length - 1) {
-      setCurrentIndex((prev) => prev + 1)
-      setSelectedAnswer(null)
+      setCorrectCount(c => c + 1)
     } else {
-      setShowResults(true)
+      setIncorrectCount(c => c + 1)
     }
+
+    // Auto-advance after 3 seconds, or let user click next manually? 
+    // The design doesn't show a "Next" button in the screenshots, implying auto-advance or just scrolling if multiple questions are shown. 
+    // Given standard UI, we'll show a next button when an answer is selected, or auto-advance. Let's auto-advance.
+    setTimeout(() => {
+      if (currentIndex < data.length - 1) {
+        setCurrentIndex(prev => prev + 1)
+        setSelectedAnswer(null)
+      }
+    }, 4000)
   }
 
   const handleRestart = () => {
     setCurrentIndex(0)
     setSelectedAnswer(null)
-    setScore(0)
-    setShowResults(false)
+    setCorrectCount(0)
+    setIncorrectCount(0)
   }
 
-  if (showResults) {
-    const percentage = Math.round((score / data.length) * 100)
-    return (
-      <div className="flex flex-col items-center justify-center w-full max-w-2xl mx-auto bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-10 text-center">
-        <div className="w-24 h-24 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center mb-6">
-          <span className="text-3xl font-bold text-blue-600 dark:text-blue-400">{percentage}%</span>
-        </div>
-        <h2 className="text-2xl font-bold text-slate-900 dark:text-white mb-2">Quiz Completed!</h2>
-        <p className="text-slate-600 dark:text-slate-400 mb-8">
-          You scored {score} out of {data.length} questions correctly.
-        </p>
-        <button
+  const getLetter = (index: number) => String.fromCharCode(65 + index) // 0->A, 1->B, etc.
+
+  // The design shows a specific box with white background, subtle shadow.
+  return (
+    <div className="w-full max-w-3xl mx-auto bg-white rounded-2xl p-6 sm:p-10" style={{ boxShadow: '0 4px 24px rgba(0,0,0,0.06)' }}>
+      {/* Header Row */}
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-2xl font-bold text-[#4338ca]">{topic} Quiz</h2>
+        <button 
           onClick={handleRestart}
-          className="flex items-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl transition-colors"
+          className="flex items-center gap-2 px-4 py-2 bg-[#f1f5f9] hover:bg-[#e2e8f0] text-[#475569] font-medium rounded-lg transition-colors text-sm"
         >
-          <RotateCcw className="w-5 h-5" /> Retake Quiz
+          <RotateCcw className="w-4 h-4" /> Reset
         </button>
       </div>
-    )
-  }
 
-  return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="flex justify-between items-center mb-6">
-        <span className="text-sm font-semibold text-slate-500 uppercase tracking-wider">
-          Question {currentIndex + 1} of {data.length}
+      {/* Progress Stats */}
+      <div className="flex justify-between items-center mb-3">
+        <span className="text-sm font-bold text-[#64748b] tracking-wider uppercase">
+          PROGRESS: {currentIndex + 1}/{data.length}
         </span>
-        <span className="text-sm font-medium text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1 rounded-full">
-          Score: {score}
-        </span>
-      </div>
-
-      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-700 p-6 sm:p-8 mb-6">
-        <h3 className="text-xl font-bold text-slate-900 dark:text-white mb-8 leading-relaxed">
-          {currentQ.question}
-        </h3>
-
-        <div className="space-y-3">
-          {currentQ.options.map((option, idx) => {
-            const isSelected = selectedAnswer === option
-            const isCorrect = option === currentQ.correct_answer
-            
-            let btnClass = "w-full text-left p-4 rounded-xl border-2 transition-all flex justify-between items-center "
-            
-            if (!selectedAnswer) {
-              btnClass += "border-slate-200 dark:border-slate-700 hover:border-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-slate-700 dark:text-slate-300"
-            } else if (isCorrect) {
-              btnClass += "border-emerald-500 bg-emerald-50 dark:bg-emerald-900/20 text-emerald-800 dark:text-emerald-300 font-medium"
-            } else if (isSelected && !isCorrect) {
-              btnClass += "border-red-500 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-300"
-            } else {
-              btnClass += "border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 text-slate-400 dark:text-slate-500 opacity-50"
-            }
-
-            return (
-              <button
-                key={idx}
-                onClick={() => handleSelect(option)}
-                disabled={!!selectedAnswer}
-                className={btnClass}
-              >
-                <span>{option}</span>
-                {selectedAnswer && isCorrect && <CheckCircle2 className="w-5 h-5 text-emerald-500" />}
-                {selectedAnswer && isSelected && !isCorrect && <XCircle className="w-5 h-5 text-red-500" />}
-              </button>
-            )
-          })}
+        <div className="flex items-center gap-4 text-sm font-bold">
+          <span className="flex items-center gap-1 text-[#10b981]">
+            <CheckCircle2 className="w-4 h-4 fill-current text-white bg-[#10b981] rounded-full" /> {correctCount}
+          </span>
+          <span className="flex items-center gap-1 text-[#ef4444]">
+            <XCircle className="w-4 h-4 fill-current text-white bg-[#ef4444] rounded-full" /> {incorrectCount}
+          </span>
         </div>
       </div>
 
-      {selectedAnswer && (
-        <div className="animate-in slide-in-from-bottom-4 duration-300">
-          <div className={`p-5 rounded-2xl mb-6 ${
-            selectedAnswer === currentQ.correct_answer 
-              ? 'bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-200 dark:border-emerald-800'
-              : 'bg-red-100 dark:bg-red-900/30 border border-red-200 dark:border-red-800'
-          }`}>
-            <p className="text-sm font-semibold mb-1 flex items-center gap-2">
-              {selectedAnswer === currentQ.correct_answer ? (
-                <><CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" /> Correct!</>
-              ) : (
-                <><XCircle className="w-4 h-4 text-red-600 dark:text-red-400" /> Incorrect</>
-              )}
-            </p>
-            <p className={`text-sm ${
-              selectedAnswer === currentQ.correct_answer ? 'text-emerald-800 dark:text-emerald-300' : 'text-red-800 dark:text-red-300'
-            }`}>
-              {currentQ.explanation}
-            </p>
+      {/* Progress Bar */}
+      <div className="w-full h-2.5 bg-[#f1f5f9] rounded-full mb-12 overflow-hidden">
+        <div 
+          className="h-full bg-[#4f46e5] transition-all duration-300 rounded-full"
+          style={{ width: \`\${((currentIndex + (selectedAnswer ? 1 : 0)) / data.length) * 100}%\` }}
+        />
+      </div>
+
+      {currentIndex >= data.length ? (
+        <div className="text-center py-12">
+          <h2 className="text-3xl font-bold text-[#1e293b] mb-4">Quiz Completed!</h2>
+          <p className="text-lg text-[#64748b] mb-8">You scored {correctCount} out of {data.length}.</p>
+          <button onClick={handleRestart} className="px-8 py-3 bg-[#4f46e5] text-white font-bold rounded-xl">Play Again</button>
+        </div>
+      ) : (
+        <>
+          {/* Question text */}
+          <div className="mb-8">
+            <span className="text-sm font-bold text-[#94a3b8] uppercase tracking-wider mb-3 block">
+              QUESTION {currentIndex + 1}
+            </span>
+            <h3 className="text-2xl font-semibold text-[#1e293b] leading-relaxed">
+              {currentQ.question}
+            </h3>
           </div>
 
-          <button
-            onClick={handleNext}
-            className="w-full flex items-center justify-center gap-2 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl transition-colors"
-          >
-            {currentIndex < data.length - 1 ? 'Next Question' : 'View Results'}
-            <ChevronRight className="w-5 h-5" />
-          </button>
-        </div>
+          {/* Options */}
+          <div className="space-y-4">
+            {currentQ.options.map((option, idx) => {
+              const isSelected = selectedAnswer === option
+              const isCorrect = option === currentQ.correct_answer
+              const showResult = selectedAnswer !== null
+              
+              let boxClass = "w-full text-left p-5 rounded-xl border-2 transition-all flex flex-col justify-center "
+              let letterClass = "w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm shrink-0 border-2 "
+              
+              if (!showResult) {
+                // Default state
+                boxClass += "border-[#f1f5f9] hover:border-[#cbd5e1] hover:bg-[#f8fafc] text-[#334155]"
+                letterClass += "border-[#e2e8f0] text-[#94a3b8]"
+              } else if (isCorrect && isSelected) {
+                // Selected Correct
+                boxClass += "border-[#10b981] bg-[#ecfdf5] text-[#065f46]"
+                letterClass += "border-[#10b981] bg-[#10b981] text-white"
+              } else if (isCorrect && !isSelected) {
+                // Missed Correct
+                boxClass += "border-[#f1f5f9] opacity-60 text-[#334155]"
+                letterClass += "border-[#e2e8f0] text-[#94a3b8]"
+              } else if (isSelected && !isCorrect) {
+                // Selected Incorrect
+                boxClass += "border-[#ef4444] bg-[#fef2f2] text-[#991b1b]"
+                letterClass += "border-[#ef4444] bg-[#ef4444] text-white"
+              } else {
+                // Unselected Incorrect
+                boxClass += "border-[#f1f5f9] opacity-40 text-[#334155]"
+                letterClass += "border-[#e2e8f0] text-[#94a3b8]"
+              }
+
+              return (
+                <button
+                  key={idx}
+                  onClick={() => handleSelect(option)}
+                  disabled={showResult}
+                  className={boxClass}
+                >
+                  <div className="flex items-center justify-between w-full gap-4">
+                    <div className="flex items-center gap-4">
+                      <div className={letterClass}>{getLetter(idx)}</div>
+                      <span className="font-medium text-[16px]">{option}</span>
+                    </div>
+                    
+                    {/* Result Icon */}
+                    {showResult && isSelected && isCorrect && (
+                      <CheckCircle2 className="w-6 h-6 fill-current text-white bg-[#10b981] rounded-full shrink-0" />
+                    )}
+                    {showResult && isSelected && !isCorrect && (
+                      <XCircle className="w-6 h-6 fill-current text-white bg-[#ef4444] rounded-full shrink-0" />
+                    )}
+                  </div>
+
+                  {/* Inline Explanation */}
+                  {showResult && isSelected && (
+                    <div className="mt-4 pl-12">
+                      <p className={\`text-sm \${isCorrect ? 'text-[#065f46]' : 'text-[#991b1b]'}\`}>
+                        {isCorrect ? 'Correct! ' : 'Incorrect. '}
+                        {currentQ.explanation}
+                      </p>
+                    </div>
+                  )}
+                </button>
+              )
+            })}
+          </div>
+        </>
       )}
     </div>
   )

@@ -113,7 +113,7 @@ Format:
       ]
     }
   ]
-}`
+}
 
 RULES:
 - slide_type "concept": A single concept with description, key_points, analogy, pro_tip
