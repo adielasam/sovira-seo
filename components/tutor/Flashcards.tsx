@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { ArrowLeft, ArrowRight, HelpCircle, Check } from 'lucide-react'
+import { ShareButton } from './ShareButton'
 
 interface Flashcard {
   term: string
@@ -104,7 +105,7 @@ export function Flashcards({ data, topic = "Flashcards", subtopic = "Review your
       </div>
 
       {/* Navigation */}
-      <div className="flex items-center gap-8">
+      <div className="flex items-center gap-8 relative z-20">
         <button
           onClick={handlePrev}
           disabled={currentIndex === 0}
@@ -138,6 +139,8 @@ export function Flashcards({ data, topic = "Flashcards", subtopic = "Review your
         .backface-hidden { backface-visibility: hidden; }
         .rotate-y-180 { transform: rotateY(180deg); }
       `}</style>
+      
+      <ShareButton title="Flashcard" />
     </div>
   )
 }
