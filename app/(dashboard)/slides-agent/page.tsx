@@ -23,6 +23,12 @@ export default function SlidesAgentPage() {
   const [generatedSlides, setGeneratedSlides] = useState<any[]>([])
   const [dataSource, setDataSource] = useState('wikipedia')
 
+  const updateSlide = (index: number, field: string, value: any) => {
+    const newSlides = [...generatedSlides];
+    newSlides[index] = { ...newSlides[index], [field]: value };
+    setGeneratedSlides(newSlides);
+  }
+
   const generateSlidesLocally = async (topic: string, count: number) => {
     let slides = [];
     
@@ -104,54 +110,32 @@ export default function SlidesAgentPage() {
       }
     }
 
-    // Fallback structured generation if Wikipedia has no result or failed
-    if (slides.length < 2) {
-      slides = [
-        {
-          title: topic || "Presentation",
-          subtitle: "Executive Summary",
-          points: []
-        },
-        {
-          title: "Introduction",
-          subtitle: "",
-          points: [
-             `Overview of ${topic || 'the subject'}`,
-             "Historical context and background",
-             "Current challenges and opportunities",
-             "Core objectives of this presentation"
-          ]
-        },
-        {
-          title: "Key Analysis",
-          subtitle: "",
-          points: [
-             "Primary data points and metrics",
-             "Strategic implications",
-             "Market trends and observations",
-             "Risk factors to consider"
-          ]
-        },
-        {
-          title: "Implementation Strategy",
-          subtitle: "",
-          points: [
-             "Phase 1: Planning and Discovery",
-             "Phase 2: Execution and Deployment",
-             "Phase 3: Monitoring and Optimization"
-          ]
-        },
-        {
-          title: "Conclusion",
-          subtitle: "",
-          points: [
-             "Summary of key findings",
-             "Next steps and action items",
-             "Q&A session"
-          ]
-        }
-      ]
+    // Ensure we have exactly `count` slides
+    if (slides.length === 0) {
+      slides.push({
+        title: topic || "Presentation",
+        subtitle: "Executive Summary",
+        points: []
+      })
     }
+
+    let currentLength = slides.length;
+    for (let i = currentLength; i < count; i++) {
+       const sectionTitles = [
+         "Introduction", "Key Analysis", "Implementation Strategy", "Market Trends", "Risk Factors", "Conclusion"
+       ];
+       const idx = (i - 1) % sectionTitles.length;
+       slides.push({
+         title: sectionTitles[idx],
+         subtitle: `Section ${i + 1}`,
+         points: [
+           `Detailed point 1 regarding ${topic || 'the topic'}`,
+           `Detailed point 2 regarding ${topic || 'the topic'}`,
+           `Detailed point 3 regarding ${topic || 'the topic'}`
+         ]
+       })
+    }
+
     
     return slides.slice(0, count)
   }
@@ -404,21 +388,38 @@ export default function SlidesAgentPage() {
               </button>
             </div>
             
-            <div className="p-8 bg-slate-100 dark:bg-slate-950 flex-1 overflow-y-auto flex items-center justify-center">
-              {/* Mock Slide Preview updated with real data if available */}
-              <div className="w-full max-w-2xl aspect-[16/9] bg-white rounded-lg shadow-md flex flex-col items-center justify-center p-12 text-center border-t-8 border-[#F97316]">
-                <h2 className="text-3xl font-extrabold text-slate-800 mb-4">
-                  {generatedSlides.length > 0 ? generatedSlides[0].title : prompt || 'Generated Presentation'}
-                </h2>
-                <p className="text-slate-500">
-                  {generatedSlides.length > 0 && generatedSlides[0].subtitle ? generatedSlides[0].subtitle : 'Prepared exclusively by Sovira Slides Agent'}
-                </p>
-              </div>
+            <div className="p-8 bg-slate-100 dark:bg-slate-950 flex-1 overflow-y-auto flex flex-col items-center gap-6">
+              {generatedSlides.map((slide, index) => (
+                <div key={index} className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-lg shadow-md flex flex-col p-8 border-t-4 border-[#F97316]">
+                  <div className="text-sm font-bold text-slate-400 mb-4">Slide {index + 1}</div>
+                  <input 
+                    value={slide.title}
+                    onChange={(e) => updateSlide(index, 'title', e.target.value)}
+                    placeholder="Slide Title"
+                    className="w-full text-2xl font-extrabold text-slate-800 dark:text-white mb-2 bg-transparent outline-none border-b border-transparent focus:border-slate-300 dark:focus:border-slate-700 transition-colors"
+                  />
+                  <input 
+                    value={slide.subtitle}
+                    onChange={(e) => updateSlide(index, 'subtitle', e.target.value)}
+                    placeholder="Subtitle (optional)"
+                    className="w-full text-sm text-slate-500 mb-6 bg-transparent outline-none border-b border-transparent focus:border-slate-300 dark:focus:border-slate-700 transition-colors"
+                  />
+                  
+                  {index > 0 && (
+                    <textarea 
+                      value={(slide.points || []).join('\n')}
+                      onChange={(e) => updateSlide(index, 'points', e.target.value.split('\n'))}
+                      placeholder="Bullet points (one per line)"
+                      className="w-full text-base text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 outline-none border border-slate-200 dark:border-slate-700 rounded-lg p-4 min-h-[120px] focus:ring-2 focus:ring-[#F97316]/20 transition-all"
+                    />
+                  )}
+                </div>
+              ))}
             </div>
 
             <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
               <button onClick={() => setShowPreview(false)} className="px-5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">
-                Edit Outline
+                Close Preview
               </button>
               <button onClick={exportPPTX} className="flex items-center gap-2 px-6 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-semibold rounded-lg shadow-md transition-colors">
                 <Download className="w-4 h-4" />
