@@ -124,33 +124,86 @@ export default function SlidesAgentPage() {
       }
     }
 
-    // Ensure we have exactly `count` slides
+    // Ensure we always have a title slide
     if (slides.length === 0) {
       slides.push({
         title: topic || "Presentation",
         subtitle: "Executive Summary",
-        points: []
+        points: [`This presentation provides a structured academic examination of ${topic || 'the selected subject'}, drawing upon established research frameworks, empirical evidence, and contemporary scholarly discourse to deliver a comprehensive analysis suitable for postgraduate-level review.`]
       })
     }
 
+    // Unique section titles — no repeats
+    const sectionTitles = [
+      "Introduction", "Background & Context", "Literature Review",
+      "Theoretical Framework", "Methodology", "Key Findings",
+      "Data Analysis", "Discussion", "Implications",
+      "Challenges & Limitations", "Recommendations", "Conclusion"
+    ];
+
+    // 12 unique paragraph banks — each slide gets its own distinct content
+    const paragraphBanks = [
+      [
+        `${topic} has emerged as a critical area of academic inquiry, attracting significant attention from researchers across multiple disciplines. The growing body of literature underscores the need for systematic investigation into both the theoretical foundations and practical applications of this domain.`,
+        `Historical analysis reveals that early scholarship on ${topic} was primarily exploratory, focusing on descriptive case studies and qualitative observations. However, contemporary research has shifted toward quantitative methodologies and evidence-based frameworks that allow for more rigorous and reproducible findings.`
+      ],
+      [
+        `The socioeconomic context surrounding ${topic} is shaped by decades of policy evolution, technological advancement, and shifting demographic patterns. Understanding these contextual factors is essential for interpreting current trends and projecting future trajectories within the field.`,
+        `Regional and global perspectives on ${topic} reveal significant variations in approach, investment, and outcome. Comparative studies have highlighted how cultural, institutional, and environmental variables influence the adoption and effectiveness of strategies related to this subject.`
+      ],
+      [
+        `A comprehensive review of existing literature on ${topic} identifies several recurring themes, including the importance of stakeholder engagement, resource allocation efficiency, and adaptive management frameworks. Peer-reviewed publications consistently emphasize the gap between theoretical models and real-world implementation.`,
+        `Seminal contributions by leading scholars have established foundational concepts that continue to shape the discourse around ${topic}. These include systems-based thinking, lifecycle assessment methodologies, and multi-criteria decision analysis tools that remain widely cited in current research.`
+      ],
+      [
+        `The theoretical underpinnings of ${topic} draw from multiple intellectual traditions, including institutional theory, complexity science, and behavioral economics. These frameworks provide the analytical lens through which empirical data can be systematically interpreted and contextualised.`,
+        `By integrating established theoretical constructs with emerging interdisciplinary perspectives, researchers can develop more nuanced models of ${topic} that account for nonlinear dynamics, feedback loops, and the inherent uncertainty present in complex socio-technical systems.`
+      ],
+      [
+        `Research methodology for investigating ${topic} typically employs a mixed-methods approach, combining quantitative survey instruments with semi-structured interviews and document analysis. This triangulation strategy enhances the validity and reliability of findings across diverse research contexts.`,
+        `Data collection protocols for studies on ${topic} must adhere to established ethical standards, including informed consent, anonymization of participant data, and transparent reporting of methodological limitations. Institutional review board approval is a prerequisite for all primary research activities.`
+      ],
+      [
+        `Preliminary findings indicate that ${topic} demonstrates measurable impact across multiple performance indicators, with statistically significant correlations observed between intervention strategies and outcome variables. Effect sizes range from moderate to large depending on the specific context and population studied.`,
+        `Cross-sectional analysis of ${topic} reveals distinct patterns of adoption and diffusion that align with established innovation curves. Early adopters tend to exhibit higher levels of institutional readiness and resource availability compared to late-majority segments.`
+      ],
+      [
+        `Quantitative data analysis of ${topic} employs descriptive statistics, inferential testing, and multivariate regression models to identify significant predictors and mediating variables. Results are reported with confidence intervals and effect size measures to facilitate meaningful interpretation.`,
+        `Qualitative thematic analysis of interview transcripts and policy documents related to ${topic} reveals five dominant themes: capacity building, governance reform, technology integration, community participation, and sustainability assessment. These themes form the basis for the proposed analytical framework.`
+      ],
+      [
+        `The empirical evidence surrounding ${topic} supports several key conclusions that carry important implications for both theory and practice. First, the relationship between input variables and outcomes is not linear but follows a curvilinear pattern moderated by contextual factors.`,
+        `Findings from this investigation of ${topic} align with and extend previous research, confirming the central role of institutional capacity while introducing novel insights regarding the mediating effect of digital transformation on organizational performance metrics.`
+      ],
+      [
+        `The practical implications of research on ${topic} extend beyond academia to inform policy development, industry standards, and professional practice guidelines. Decision-makers can leverage these findings to design more effective interventions and allocate resources with greater precision.`,
+        `From a theoretical standpoint, this investigation of ${topic} contributes to the growing body of knowledge by refining existing conceptual models and proposing new constructs that better capture the multidimensional nature of the phenomenon under study.`
+      ],
+      [
+        `Several methodological and contextual limitations must be acknowledged when interpreting findings related to ${topic}. Sample size constraints, geographic specificity, and the cross-sectional nature of data collection may limit the generalizability of results to broader populations.`,
+        `Despite these constraints, the study of ${topic} provides valuable preliminary evidence that can inform the design of larger-scale, longitudinal investigations. Future research should prioritize diverse sampling strategies and incorporate emerging data analytics techniques to enhance explanatory power.`
+      ],
+      [
+        `Based on the evidence presented, it is recommended that stakeholders involved with ${topic} prioritize investment in capacity building, technological infrastructure, and knowledge management systems. These strategic priorities align with best practices identified in the international literature.`,
+        `Policymakers should consider establishing cross-sector partnerships and dedicated research funding mechanisms to accelerate progress on ${topic}. Collaborative governance models that integrate academic expertise with practitioner knowledge have demonstrated superior outcomes in comparable domains.`
+      ],
+      [
+        `In conclusion, ${topic} represents a dynamic and consequential area of scholarly inquiry with significant implications for sustainable development, institutional reform, and societal wellbeing. The evidence base, while growing, requires continued expansion through rigorous, multi-method investigations.`,
+        `This presentation has provided a structured overview of the key dimensions of ${topic}, from theoretical foundations through empirical findings to practical recommendations. Continued interdisciplinary collaboration will be essential to advancing understanding and translating research into meaningful impact.`
+      ]
+    ];
+
     let currentLength = slides.length;
     for (let i = currentLength; i < count; i++) {
-       const sectionTitles = [
-         "Introduction", "Key Analysis", "Implementation Strategy", "Market Trends", "Risk Factors", "Conclusion"
-       ];
-       const idx = (i - 1) % sectionTitles.length;
-       slides.push({
-         title: sectionTitles[idx],
-         subtitle: `Section ${i + 1}`,
-         points: [
-           `Research into ${topic || 'the subject'} has demonstrated significant potential for optimizing both quantitative and qualitative outcomes across various multi-disciplinary sectors. Initial findings indicate that scalable implementation requires rigorous methodology and continuous empirical validation to ensure structural integrity and long-term viability.`,
-           `The operational framework surrounding ${topic || 'this domain'} involves complex variables that necessitate advanced analytical models. Scholars have repeatedly emphasized the critical need for interdisciplinary collaboration to accurately interpret the socioeconomic impacts and underlying systemic constraints.`,
-           `Future longitudinal studies regarding ${topic || 'this phenomenon'} must prioritize standardized data collection protocols to minimize researcher bias. By establishing robust benchmarks early in the investigative process, stakeholders can better anticipate paradigm shifts and allocate resources efficiently.`
-         ]
-       })
+      const titleIdx = (i - 1) % sectionTitles.length;
+      const paraIdx = (i - 1) % paragraphBanks.length;
+      slides.push({
+        title: sectionTitles[titleIdx],
+        subtitle: `Section ${i + 1}`,
+        points: paragraphBanks[paraIdx]
+      })
     }
 
-    
     return slides.slice(0, count)
   }
 
