@@ -21,45 +21,87 @@ export default function SlidesAgentPage() {
   const [activeTab, setActiveTab] = useState('Professional')
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null)
   const [generatedSlides, setGeneratedSlides] = useState<any[]>([])
+  const [dataSource, setDataSource] = useState('wikipedia')
 
   const generateSlidesLocally = async (topic: string, count: number) => {
     let slides = [];
-    try {
-      // Try to fetch real factual data from Wikipedia (Free open API)
-      const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles=${encodeURIComponent(topic)}&format=json&origin=*`)
-      const data = await res.json()
-      const pages = data.query?.pages
-      if (pages) {
-        const pageId = Object.keys(pages)[0]
-        const extract = pages[pageId].extract
-        if (extract && extract.length > 50) {
+    
+    if (dataSource === 'academic') {
+      try {
+        const res = await fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(topic)}&limit=5&fields=title,abstract,year,authors`)
+        const data = await res.json()
+        
+        if (data.data && data.data.length > 0) {
           slides.push({
-            title: topic,
-            subtitle: "An Overview",
-            points: []
+            title: `Literature Review: ${topic}`,
+            subtitle: "Academic Research Summary",
+            points: ["Compiled from peer-reviewed publications", "Sourced via Semantic Scholar"]
           })
           
-          // Split into sentences for bullet points
-          const sentences = extract.split('. ').filter((s: string) => s.length > 10)
-          
-          let currentPoints = []
-          for (let i = 0; i < sentences.length; i++) {
-            currentPoints.push(sentences[i] + (sentences[i].endsWith('.') ? '' : '.'))
+          data.data.forEach((paper: any) => {
+            if (slides.length >= count) return;
             
-            if (currentPoints.length >= 4 || i === sentences.length - 1) {
-              slides.push({
-                title: `Key Facts about ${topic}`,
-                subtitle: "",
-                points: [...currentPoints]
-              })
-              currentPoints = []
-              if (slides.length >= count) break;
+            // Extract the first few sentences of the abstract
+            let abstractPoints = [];
+            if (paper.abstract) {
+              const sentences = paper.abstract.split('. ').filter((s: string) => s.length > 20);
+              abstractPoints = sentences.slice(0, 3).map((s: string) => s + (s.endsWith('.') ? '' : '.'));
+            } else {
+              abstractPoints = ["No abstract available for this paper."];
+            }
+            
+            const authorText = paper.authors && paper.authors.length > 0 
+              ? ` (${paper.authors[0].name} et al., ${paper.year || 'N/A'})` 
+              : ` (${paper.year || 'N/A'})`;
+
+            slides.push({
+              title: paper.title,
+              subtitle: `Published${authorText}`,
+              points: abstractPoints
+            })
+          })
+        }
+      } catch (e) {
+        console.log('Semantic Scholar fetch failed', e)
+      }
+    } else {
+      try {
+        // Try to fetch real factual data from Wikipedia (Free open API)
+        const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&exintro&explaintext&titles=${encodeURIComponent(topic)}&format=json&origin=*`)
+        const data = await res.json()
+        const pages = data.query?.pages
+        if (pages) {
+          const pageId = Object.keys(pages)[0]
+          const extract = pages[pageId].extract
+          if (extract && extract.length > 50) {
+            slides.push({
+              title: topic,
+              subtitle: "An Overview",
+              points: []
+            })
+            
+            // Split into sentences for bullet points
+            const sentences = extract.split('. ').filter((s: string) => s.length > 10)
+            
+            let currentPoints = []
+            for (let i = 0; i < sentences.length; i++) {
+              currentPoints.push(sentences[i] + (sentences[i].endsWith('.') ? '' : '.'))
+              
+              if (currentPoints.length >= 4 || i === sentences.length - 1) {
+                slides.push({
+                  title: `Key Facts about ${topic}`,
+                  subtitle: "",
+                  points: [...currentPoints]
+                })
+                currentPoints = []
+                if (slides.length >= count) break;
+              }
             }
           }
         }
+      } catch (e) {
+        console.log('Wikipedia fetch failed', e)
       }
-    } catch (e) {
-      console.log('Wikipedia fetch failed', e)
     }
 
     // Fallback structured generation if Wikipedia has no result or failed
@@ -263,6 +305,17 @@ export default function SlidesAgentPage() {
               {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#F97316]" />}
               Generate Agent
             </button>
+
+            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
+
+            <select 
+              value={dataSource}
+              onChange={(e) => setDataSource(e.target.value)}
+              className="bg-transparent text-sm font-medium text-slate-600 dark:text-slate-300 outline-none cursor-pointer appearance-none px-2 pr-6 relative"
+            >
+              <option value="wikipedia">General Knowledge (Wiki)</option>
+              <option value="academic">Academic Research</option>
+            </select>
 
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
 
