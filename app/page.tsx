@@ -615,7 +615,7 @@ export default function LandingPage() {
                 Ready to scale your organic traffic?
               </h2>
               <p className="mt-4 text-lg text-slate-600 dark:text-slate-400">
-                Join over 520+ creators and businesses worldwide growing their audience with Sovira SEO.
+                Join over {stats?.activeMarketers >= 20 ? `${stats.activeMarketers}+` : ''} creators and businesses worldwide growing their audience with Sovira SEO.
               </p>
               <div className="mt-8 flex flex-col items-center justify-center gap-2">
                 <Link href="/pricing" className="rounded-full bg-[#2563EB] px-8 py-3.5 text-base font-semibold text-white shadow-lg hover:bg-blue-500 hover:-translate-y-0.5 transition-all duration-200 text-center">
