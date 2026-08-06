@@ -3,12 +3,11 @@
 import Image from 'next/image'
 import { Star } from 'lucide-react'
 
-// Social proof avatars — real African creator images
 const DEFAULT_AVATARS = [
-  { src: '/images/avatar-1.jpg', alt: 'Creator 1' },
-  { src: '/images/avatar-2.jpg', alt: 'Creator 2' },
-  { src: '/images/avatar-3.jpg', alt: 'Creator 3' },
-  { src: '/images/avatar-4.jpg', alt: 'Creator 4' },
+  { src: '/images/avatar-1.jpg', alt: 'Creator 1', name: '' },
+  { src: '/images/avatar-2.jpg', alt: 'Creator 2', name: '' },
+  { src: '/images/avatar-3.jpg', alt: 'Creator 3', name: '' },
+  { src: '/images/avatar-4.jpg', alt: 'Creator 4', name: '' },
 ]
 
 const TESTIMONIAL = {
@@ -34,7 +33,7 @@ export function SocialProofBar({ activeMarketers, testimonials = [] }: { activeM
         <div className="flex items-center gap-4">
           {/* Overlapping avatar stack */}
           <div className="flex -space-x-3">
-            {displayAvatars.map((a, i) => {
+            {displayAvatars.map((a: any, i: number) => {
               const initials = a.name ? a.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '';
               return (
                 <div
