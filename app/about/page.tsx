@@ -35,7 +35,7 @@ export default function AboutPage() {
             <div className="flex flex-col md:flex-row items-center gap-10">
               <div className="w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden flex-shrink-0 ring-4 ring-indigo-50 dark:ring-indigo-900/30 shadow-2xl">
                 <Image 
-                  src="/images/sam-placeholder.jpg" 
+                  src="/images/adiela-passport.jpg" 
                   alt="Adiela Sam-Ogide" 
                   width={224} 
                   height={224}

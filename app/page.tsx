@@ -592,7 +592,7 @@ export default function LandingPage() {
             <FadeInSection delay={100}>
               <div className="mx-auto max-w-3xl bg-white dark:bg-[#0F172A] p-8 sm:p-10 rounded-3xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col sm:flex-row items-center gap-8">
                 <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden flex-shrink-0 ring-4 ring-slate-50 dark:ring-[#1E293B] shadow-inner">
-                  <img src="/images/sam-placeholder.jpg" alt="Adiela Sam-Ogide" className="w-full h-full object-cover" />
+                  <img src="/images/adiela-passport.jpg" alt="Adiela Sam-Ogide" className="w-full h-full object-cover" />
                 </div>
                 <div className="text-center sm:text-left">
                   <h3 className="text-xl font-bold text-slate-900 dark:text-white">Adiela Sam-Ogide</h3>
