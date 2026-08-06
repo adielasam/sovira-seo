@@ -10,12 +10,7 @@ const DEFAULT_AVATARS = [
   { src: '/images/avatar-4.jpg', alt: 'Creator 4', name: '' },
 ]
 
-const TESTIMONIAL = {
-  name: 'Chisom Nnadozie',
-  role: 'Content Creator · Lagos',
-  quote: '"Sovira took my channel from 800 to 14k monthly visits in 6 weeks."',
-  stars: 5,
-}
+
 
 export function SocialProofBar({ activeMarketers, testimonials = [] }: { activeMarketers?: number, testimonials?: any[] }) {
   const hasEnoughUsers = activeMarketers !== undefined && activeMarketers >= 20;
@@ -83,41 +78,43 @@ export function SocialProofBar({ activeMarketers, testimonials = [] }: { activeM
         </div>
       )}
 
-      {/* Row 2: floating testimonial card */}
-      <div
-        className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 px-5 py-4 flex flex-col gap-2 max-w-xs"
-        style={{ animation: 'spCardIn 0.6s ease-out 0.4s both' }}
-      >
-        {/* Stars */}
-        <div className="flex gap-0.5">
-          {Array.from({ length: TESTIMONIAL.stars }).map((_, i) => (
-            <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          ))}
-        </div>
-        <p className="text-sm text-slate-700 dark:text-slate-300 leading-snug italic">
-          {TESTIMONIAL.quote}
-        </p>
-        <div className="flex items-center gap-2 mt-1">
-          <div
-            style={{
-              width: 28, height: 28, borderRadius: '50%',
-              background: '#2563EB',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0,
-            }}
-          >
-            CN
+      {/* Row 2: floating testimonial card (only show if we have a real testimonial) */}
+      {testimonials && testimonials.length > 0 && (
+        <div
+          className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg ring-1 ring-slate-200 dark:ring-slate-700 px-5 py-4 flex flex-col gap-2 max-w-xs"
+          style={{ animation: 'spCardIn 0.6s ease-out 0.4s both' }}
+        >
+          {/* Stars */}
+          <div className="flex gap-0.5">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <Star key={i} className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+            ))}
           </div>
-          <div>
-            <p className="text-xs font-bold text-slate-900 dark:text-white leading-none">{TESTIMONIAL.name}</p>
-            <p className="text-[10px] text-slate-400 mt-0.5">{TESTIMONIAL.role}</p>
+          <p className="text-sm text-slate-700 dark:text-slate-300 leading-snug italic">
+            "{testimonials[0].content}"
+          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <div
+              style={{
+                width: 28, height: 28, borderRadius: '50%',
+                background: '#2563EB',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 10, fontWeight: 700, color: '#fff', flexShrink: 0,
+              }}
+            >
+              {testimonials[0].name ? testimonials[0].name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : 'U'}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-slate-900 dark:text-white leading-none">{testimonials[0].name}</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">{testimonials[0].role || 'Creator'}</p>
+            </div>
+            {/* Verified badge */}
+            <span className="ml-auto text-[10px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full">
+              ✓ Verified
+            </span>
           </div>
-          {/* Verified badge */}
-          <span className="ml-auto text-[10px] bg-emerald-50 dark:bg-emerald-900/30 text-emerald-600 dark:text-emerald-400 font-semibold px-2 py-0.5 rounded-full">
-            ✓ Verified
-          </span>
         </div>
-      </div>
+      )}
 
       <style>{`
         @keyframes spCardIn {
