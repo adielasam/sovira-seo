@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -22,6 +22,7 @@ const navigationGroups = [
       { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
       { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
       { name: 'AI Tutor', href: '/ai-tutor', icon: GraduationCap },
+      { name: 'Slides Agent', href: '/slides-agent', icon: Presentation },
     ]
   },
   {
