@@ -533,7 +533,10 @@ export default function DataAnalyserPage() {
             >
               <LayoutDashboard className={`w-12 h-12 mx-auto mb-6 ${selectedTheme.id === 'corporate-dark' ? 'text-slate-500' : 'text-slate-300'}`} />
               <h3 className={`text-2xl ${selectedTheme.fontHeader} mb-2 ${selectedTheme.textMain}`}>Upload your dataset</h3>
-              <p className={`text-sm mb-8 ${selectedTheme.fontBody} ${selectedTheme.textMuted}`}>Supports CSV, Excel, TXT up to 10MB</p>
+              <p className={`text-sm mb-2 ${selectedTheme.fontBody} ${selectedTheme.textMuted}`}>Supports CSV, Excel, TXT up to 10MB</p>
+              <p className={`text-xs mb-8 ${selectedTheme.fontBody} ${selectedTheme.textMuted} opacity-75`}>
+                Your file is processed securely and never shared. <a href="/privacy" target="_blank" className="underline hover:opacity-100">Privacy Policy</a>
+              </p>
               
               <label className={`px-8 py-3 rounded text-sm font-semibold tracking-wide cursor-pointer transition-all inline-flex items-center gap-2 shadow-sm ${selectedTheme.id === 'corporate-dark' ? 'bg-indigo-600 hover:bg-indigo-700 text-white' : 'bg-indigo-600 hover:bg-indigo-700 text-white'}`}>
                 <Upload className="w-4 h-4" />

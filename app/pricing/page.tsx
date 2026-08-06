@@ -241,6 +241,9 @@ export default function PricingPage() {
                 Get started today
                 <ArrowRight className="w-4 h-4" />
               </button>
+              <p className={`text-center text-xs font-medium mt-3 ${tier.mostPopular ? 'text-blue-200' : 'text-slate-500 dark:text-slate-400'}`}>
+                14-day free trial, no card required.
+              </p>
               
               <ul className={`mt-10 space-y-4 text-sm leading-6 flex-1 ${tier.mostPopular ? 'text-blue-50' : 'text-slate-600 dark:text-slate-300'}`}>
                 {tier.features.map((feature) => (

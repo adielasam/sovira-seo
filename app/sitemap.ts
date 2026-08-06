@@ -18,7 +18,15 @@ export default function sitemap(): MetadataRoute.Sitemap {
     '/ai-search-optimization',
     '/ai-humanizer',
     '/technical-seo',
-    '/llms.txt'
+    '/llms.txt',
+    '/features/data-analyzer',
+    '/features/ai-tutor',
+    '/features/ai-detector',
+    '/features/ai-image-video-studio',
+    '/features/site-audit',
+    '/features/rank-tracker',
+    '/features/humanizer',
+    '/features/content-ai'
   ]
 
   const sitemapEntries = routes.map((route) => ({

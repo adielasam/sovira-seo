@@ -17,9 +17,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Action is required' }, { status: 400 })
     }
 
-    // Capture IP and User Agent if possible
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'Unknown'
-    const userAgent = req.headers.get('user-agent') || 'Unknown'
+    // Capture City from Vercel header for Social Proof widget
+    const city = req.headers.get('x-vercel-ip-city') || null
 
     const { error } = await supabase
       .from('activity_logs')
@@ -27,8 +26,7 @@ export async function POST(req: Request) {
         user_id: user.id,
         action,
         details: details || {},
-        ip_address: ip,
-        user_agent: userAgent
+        city: city
       }])
 
     if (error) {
@@ -49,6 +47,15 @@ export async function POST(req: Request) {
         is_global: false,
         is_read: false
       }])
+    }
+
+    // Phase 4: Update last_active_at on user_profiles for lifecycle emails
+    const meaningfulActions = ['audit-run', 'content-generated', 'file-analyzed', 'humanizer-used', 'detector-used', 'tutor-used', 'video-generated', 'image-generated', 'keywords-tracked']
+    // If it's a known meaningful action or not explicitly excluded like login/logout/pageview
+    if (action !== 'login' && action !== 'logout' && action !== 'pageview') {
+      await supabase.from('user_profiles').update({
+        last_active_at: new Date().toISOString()
+      }).eq('id', user.id)
     }
 
     return NextResponse.json({ success: true })

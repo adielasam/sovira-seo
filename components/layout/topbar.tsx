@@ -45,6 +45,8 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
 
   const [notifications, setNotifications] = useState<any[]>([])
   const [isAdmin, setIsAdmin] = useState(false)
+  const [trialDaysRemaining, setTrialDaysRemaining] = useState<number | null>(null)
+  const [isPaidPlan, setIsPaidPlan] = useState(false)
   
   const fetchNotifs = async () => {
     const { data } = await getNotifications()
@@ -61,20 +63,30 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
     }
   }
 
-  const fetchRole = async () => {
+  const fetchUserData = async () => {
     const supabase = createClient()
     const { data: { user } } = await supabase.auth.getUser()
     if (user) {
-      const { data: profile } = await supabase.from('user_profiles').select('role').eq('id', user.id).single()
+      const { data: profile } = await supabase.from('user_profiles').select('role, plan').eq('id', user.id).single()
       if (profile?.role === 'admin') {
         setIsAdmin(true)
+      }
+
+      const plan = profile?.plan || 'free'
+      if (plan !== 'free') {
+        setIsPaidPlan(true)
+      } else {
+        const signupDate = new Date(user.created_at).getTime()
+        const msSinceSignup = Date.now() - signupDate
+        const daysSinceSignup = Math.floor(msSinceSignup / (1000 * 60 * 60 * 24))
+        setTrialDaysRemaining(14 - daysSinceSignup)
       }
     }
   }
 
   useEffect(() => {
     fetchNotifs()
-    fetchRole()
+    fetchUserData()
   }, [])
 
   useEffect(() => {
@@ -152,6 +164,25 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
 
       {/* Right section */}
       <div className="flex items-center gap-x-4 lg:gap-x-6">
+        {/* Trial Indicator */}
+        {!isPaidPlan && trialDaysRemaining !== null && (
+          <div className="hidden sm:flex items-center mr-2">
+            {trialDaysRemaining > 1 ? (
+              <span className="inline-flex items-center rounded-full bg-blue-50 dark:bg-blue-900/30 px-3 py-1 text-xs font-medium text-blue-700 dark:text-blue-400 ring-1 ring-inset ring-blue-700/10 dark:ring-blue-400/20">
+                {trialDaysRemaining} days left in your free trial
+              </span>
+            ) : trialDaysRemaining === 1 || trialDaysRemaining === 0 ? (
+              <span className="inline-flex items-center rounded-full bg-orange-50 dark:bg-orange-900/30 px-3 py-1 text-xs font-medium text-orange-700 dark:text-orange-400 ring-1 ring-inset ring-orange-700/10 dark:ring-orange-400/20">
+                Trial ends today
+              </span>
+            ) : (
+              <Link href="/pricing" className="inline-flex items-center rounded-full bg-red-50 dark:bg-red-900/30 px-3 py-1 text-xs font-medium text-red-700 dark:text-red-400 ring-1 ring-inset ring-red-700/10 dark:ring-red-400/20 hover:bg-red-100 dark:hover:bg-red-900/50 transition-colors">
+                Your trial has ended — upgrade to keep access
+              </Link>
+            )}
+          </div>
+        )}
+
         <ThemeToggle />
         
         {/* Notifications */}

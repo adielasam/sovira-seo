@@ -70,6 +70,9 @@ export default function PrivacyPolicyPage() {
               <li>First name and last name</li>
               <li>Usage Data (IP address, browser type, pages visited)</li>
             </ul>
+            <p className="mt-4">
+              <strong>Social Proof:</strong> We may display your approximate location (derived from your signup IP) anonymously on our platform as social proof.
+            </p>
 
             <h2 className="text-2xl md:text-3xl font-extrabold text-slate-900 dark:text-white mt-12 mb-6">2. Third-Party Data Processing</h2>
             <p>We believe in transparency regarding the infrastructure that powers Sovira SEO.</p>

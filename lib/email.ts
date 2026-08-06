@@ -2,26 +2,20 @@ import { Resend } from 'resend'
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy')
 
-export async function sendWelcomeEmail(email: string, name: string) {
+import { render } from '@react-email/render'
+import WelcomeEmail from '@/emails/WelcomeEmail'
+import ReengagementEmail from '@/emails/ReengagementEmail'
+
+export async function sendWelcomeEmail(email: string, name: string, userId: string) {
   try {
+    const unsubscribeUrl = `https://soviraseo.com/api/unsubscribe?userId=${encodeURIComponent(userId)}`
+    const html = await render(WelcomeEmail({ userEmail: email, unsubscribeUrl }))
+    
     const { data, error } = await resend.emails.send({
       from: 'Sovira SEO <onboarding@resend.dev>',
       to: [email],
       subject: 'Welcome to Sovira SEO!',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #333;">
-          <h1 style="color: #2563eb;">Welcome to Sovira SEO, ${name}!</h1>
-          <p>We are thrilled to have you on board. Sovira SEO is your all-in-one platform for keyword tracking, SEO auditing, and AI-powered content generation.</p>
-          <p>Here are a few things you can do to get started:</p>
-          <ul>
-            <li><strong>Track your keywords:</strong> Add the keywords you want to monitor in the Rank Tracker.</li>
-            <li><strong>Run an SEO Audit:</strong> Scan your website for technical SEO issues.</li>
-            <li><strong>Generate Content:</strong> Use our AI tools to write optimized articles.</li>
-          </ul>
-          <p>If you need any help, feel free to reply to this email or reach out to our support team.</p>
-          <p>Best regards,<br>The Sovira Team</p>
-        </div>
-      `,
+      html: html,
     })
 
     if (error) {
@@ -32,6 +26,35 @@ export async function sendWelcomeEmail(email: string, name: string) {
     return { success: true, data }
   } catch (error) {
     console.error('Error sending welcome email:', error)
+    return { success: false, error }
+  }
+}
+
+export async function sendReengagementEmail(email: string, daysInactive: number, userId: string) {
+  try {
+    const unsubscribeUrl = `https://soviraseo.com/api/unsubscribe?userId=${encodeURIComponent(userId)}`
+    const html = await render(ReengagementEmail({ daysInactive, unsubscribeUrl }))
+
+    
+    let subject = "We miss you! Come see what's new"
+    if (daysInactive === 5) subject = "Still getting settled? We can help!"
+    else if (daysInactive === 14) subject = "Don't lose your momentum!"
+
+    const { data, error } = await resend.emails.send({
+      from: 'Sovira SEO <onboarding@resend.dev>',
+      to: [email],
+      subject: subject,
+      html: html,
+    })
+
+    if (error) {
+      console.error('Failed to send reengagement email:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error sending reengagement email:', error)
     return { success: false, error }
   }
 }

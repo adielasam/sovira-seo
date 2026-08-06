@@ -6,7 +6,7 @@ import Image from 'next/image'
 export function Footer() {
   return (
     <footer className="bg-slate-900 text-white py-16 border-t border-slate-800">
-      <div className="mx-auto max-w-7xl px-6 lg:px-8 grid grid-cols-1 md:grid-cols-5 gap-12">
+      <div className="mx-auto max-w-7xl px-6 lg:px-8 grid grid-cols-1 md:grid-cols-6 gap-8">
         <div className="col-span-1 md:col-span-2">
           <Link href="/" className="flex items-center mb-6 group">
             <Image
@@ -24,11 +24,23 @@ export function Footer() {
         <div>
           <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Product</h3>
           <ul className="space-y-4 text-base text-slate-400">
-            <li><Link href="/#features" className="hover:text-blue-400 transition-colors">Features</Link></li>
             <li><Link href="/pricing" className="hover:text-blue-400 transition-colors">Pricing</Link></li>
             <li><Link href="/integrations" className="hover:text-blue-400 transition-colors">Integrations</Link></li>
             <li><Link href="/blog" className="hover:text-blue-400 transition-colors">Blog</Link></li>
             <li><Link href="/changelog" className="hover:text-blue-400 transition-colors">Changelog</Link></li>
+          </ul>
+        </div>
+        <div>
+          <h3 className="text-lg font-bold mb-6 text-white tracking-wide">Features</h3>
+          <ul className="space-y-4 text-base text-slate-400">
+            <li><Link href="/features/data-analyzer" className="hover:text-blue-400 transition-colors">Data Analyzer</Link></li>
+            <li><Link href="/features/ai-tutor" className="hover:text-blue-400 transition-colors">AI Tutor</Link></li>
+            <li><Link href="/features/ai-detector" className="hover:text-blue-400 transition-colors">AI Detector</Link></li>
+            <li><Link href="/features/ai-image-video-studio" className="hover:text-blue-400 transition-colors">Image & Video Studio</Link></li>
+            <li><Link href="/features/site-audit" className="hover:text-blue-400 transition-colors">AI Site Audit</Link></li>
+            <li><Link href="/features/rank-tracker" className="hover:text-blue-400 transition-colors">Rank Tracker</Link></li>
+            <li><Link href="/features/humanizer" className="hover:text-blue-400 transition-colors">Stealth Humanizer</Link></li>
+            <li><Link href="/features/content-ai" className="hover:text-blue-400 transition-colors">Content AI</Link></li>
           </ul>
         </div>
         <div>

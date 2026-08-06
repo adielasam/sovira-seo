@@ -167,9 +167,6 @@ export async function signupAction(formData: FormData) {
     redirect(`/auth/register?error=${encodeURIComponent(errorMessage)}`)
   }
 
-  // Send welcome email without blocking
-  sendWelcomeEmail(email, fullName || 'User')
-
   if (!data.session) {
     redirect('/auth/login?message=Please check your email for a confirmation link to activate your account.')
   }

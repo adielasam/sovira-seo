@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { sendWelcomeEmail } from '@/lib/email'
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
@@ -10,9 +11,17 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createClient()
-    const { error } = await supabase.auth.exchangeCodeForSession(code)
+    const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code)
     
-    if (!error) {
+    if (!error && session?.user) {
+      // Check if this is a relatively new user (within last 5 minutes)
+      const userAgeMs = Date.now() - new Date(session.user.created_at).getTime()
+      if (userAgeMs < 5 * 60 * 1000) {
+        // Send welcome email without blocking
+        sendWelcomeEmail(session.user.email || '', session.user.user_metadata?.full_name || 'User', session.user.id)
+          .catch(err => console.error('Error sending welcome email in callback:', err))
+      }
+      
       // successful login, redirect to next or dashboard
       return NextResponse.redirect(`${origin}${next}`)
     }

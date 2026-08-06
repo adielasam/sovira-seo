@@ -4,7 +4,7 @@ import Image from 'next/image'
 import { Star } from 'lucide-react'
 
 // Social proof avatars — real African creator images
-const AVATARS = [
+const DEFAULT_AVATARS = [
   { src: '/images/avatar-1.jpg', alt: 'Creator 1' },
   { src: '/images/avatar-2.jpg', alt: 'Creator 2' },
   { src: '/images/avatar-3.jpg', alt: 'Creator 3' },
@@ -18,53 +18,71 @@ const TESTIMONIAL = {
   stars: 5,
 }
 
-export function SocialProofBar() {
+export function SocialProofBar({ activeMarketers, testimonials = [] }: { activeMarketers?: number, testimonials?: any[] }) {
+  const hasEnoughUsers = activeMarketers !== undefined && activeMarketers >= 20;
+  const displayCount = activeMarketers || 0;
+  const displayAvatars = testimonials.length >= 4 
+    ? testimonials.slice(0, 4).map((t, i) => ({ src: t.img, alt: t.name || `Creator ${i+1}`, name: t.name }))
+    : DEFAULT_AVATARS;
+  const avatarColors = ['bg-blue-600','bg-indigo-600','bg-violet-600','bg-teal-600','bg-rose-600','bg-amber-600'];
+
   return (
     <div className="mt-10 flex flex-col items-center lg:items-start gap-5">
 
-      {/* Row 1: stacked avatars + copy */}
-      <div className="flex items-center gap-4">
-        {/* Overlapping avatar stack */}
-        <div className="flex -space-x-3">
-          {AVATARS.map((a, i) => (
+      {/* Row 1: stacked avatars + copy (only show if meaningful threshold is met) */}
+      {hasEnoughUsers && (
+        <div className="flex items-center gap-4">
+          {/* Overlapping avatar stack */}
+          <div className="flex -space-x-3">
+            {displayAvatars.map((a, i) => {
+              const initials = a.name ? a.name.split(' ').map((n: string) => n[0]).join('').substring(0, 2).toUpperCase() : '';
+              return (
+                <div
+                  key={i}
+                  className="relative rounded-full overflow-hidden flex items-center justify-center font-bold text-white text-xs"
+                  style={{
+                    width: 38, height: 38,
+                    border: '2.5px solid #FDFBF7',
+                    position: 'relative', zIndex: displayAvatars.length - i,
+                  }}
+                >
+                  {a.src ? (
+                    <Image src={a.src} alt={a.alt} fill className="object-cover" />
+                  ) : (
+                    <div className={`w-full h-full flex items-center justify-center ${avatarColors[i % avatarColors.length]}`}>
+                      {initials}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+            {/* "+displayCount" overflow badge */}
             <div
-              key={i}
-              className="relative rounded-full overflow-hidden"
               style={{
                 width: 38, height: 38,
+                borderRadius: '50%',
+                background: '#F1F5F9',
                 border: '2.5px solid #FDFBF7',
-                position: 'relative', zIndex: AVATARS.length - i,
+                display: 'flex', alignItems: 'center', justify-content: 'center',
+                fontSize: 11, fontWeight: 700, color: '#64748B',
+                position: 'relative', zIndex: 0,
               }}
             >
-              <Image src={a.src} alt={a.alt} fill className="object-cover" />
+              +{displayCount}
             </div>
-          ))}
-          {/* "+520" overflow badge */}
-          <div
-            style={{
-              width: 38, height: 38,
-              borderRadius: '50%',
-              background: '#F1F5F9',
-              border: '2.5px solid #FDFBF7',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 11, fontWeight: 700, color: '#64748B',
-              position: 'relative', zIndex: 0,
-            }}
-          >
-            +520
+          </div>
+
+          {/* Text */}
+          <div>
+            <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
+              Over {displayCount}+ creators
+            </p>
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              growing their traffic with Sovira
+            </p>
           </div>
         </div>
-
-        {/* Text */}
-        <div>
-          <p className="text-sm font-bold text-slate-800 dark:text-slate-100">
-            Over 520+ creators
-          </p>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            growing their traffic with Sovira
-          </p>
-        </div>
-      </div>
+      )}
 
       {/* Row 2: floating testimonial card */}
       <div

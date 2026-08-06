@@ -6,7 +6,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 import toast from 'react-hot-toast'
 import { AddKeywordModal } from '@/components/rank-tracker/add-keyword-modal'
 import { createClient } from '@/lib/supabase/client'
-import { PaywallBlur } from '@/components/ui/paywall-blur'
 
 export default function RankTrackerPage() {
   const [trackedData, setTrackedData] = useState<any[]>([])
@@ -194,7 +193,6 @@ export default function RankTrackerPage() {
       </div>
 
       {/* Chart Section */}
-      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-semibold text-slate-900 dark:text-white">
@@ -247,10 +245,8 @@ export default function RankTrackerPage() {
           )}
         </div>
       </div>
-      </PaywallBlur>
 
       {/* Table Section */}
-      <PaywallBlur isPro={isPro}>
       <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
         <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-[#0F172A]">
           <h3 className="font-semibold text-slate-900 dark:text-white">Tracked Keywords</h3>
@@ -368,7 +364,6 @@ export default function RankTrackerPage() {
           </table>
         </div>
       </div>
-      </PaywallBlur>
 
       <AddKeywordModal 
         isOpen={isModalOpen} 
