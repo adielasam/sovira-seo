@@ -63,7 +63,7 @@ export function SocialProofBar({ activeMarketers, testimonials = [] }: { activeM
                 borderRadius: '50%',
                 background: '#F1F5F9',
                 border: '2.5px solid #FDFBF7',
-                display: 'flex', alignItems: 'center', justify-content: 'center',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 11, fontWeight: 700, color: '#64748B',
                 position: 'relative', zIndex: 0,
               }}
