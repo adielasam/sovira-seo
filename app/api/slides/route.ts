@@ -10,10 +10,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Prompt is required' }, { status: 400 })
     }
 
-    const apiKey = process.env.BYNARA_API_KEY
+    const apiKey = process.env.NARA_API_KEY
     if (!apiKey) {
       return NextResponse.json({ 
-        error: 'BYNARA_API_KEY is not configured in the environment variables. Please add it to your .env.local file.' 
+        error: 'NARA_API_KEY is not configured in the environment variables. Please add it to your .env.local file.' 
       }, { status: 500 })
     }
 
