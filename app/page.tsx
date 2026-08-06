@@ -592,11 +592,10 @@ export default function LandingPage() {
             <FadeInSection delay={100}>
               <div className="mx-auto max-w-3xl bg-white dark:bg-[#0F172A] p-8 sm:p-10 rounded-3xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 flex flex-col sm:flex-row items-center gap-8">
                 <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-full overflow-hidden flex-shrink-0 ring-4 ring-slate-50 dark:ring-[#1E293B] shadow-inner">
-                  {/* Temporary placeholder - will be replaced before launch */}
-                  <img src="/images/sam-placeholder.jpg" alt="Sam Ogide" className="w-full h-full object-cover" />
+                  <img src="/images/sam-placeholder.jpg" alt="Adiela Sam-Ogide" className="w-full h-full object-cover" />
                 </div>
                 <div className="text-center sm:text-left">
-                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">Sam Ogide</h3>
+                  <h3 className="text-xl font-bold text-slate-900 dark:text-white">Adiela Sam-Ogide</h3>
                   <p className="text-sm text-[#2563EB] font-semibold mb-4 tracking-wide uppercase">Founder, Sovira AI</p>
                   <p className="text-slate-600 dark:text-slate-400 italic text-base leading-relaxed">
                     &ldquo;I built Sovira AI because I was tired of paying $99+/month for SEO tools that weren't built with African creators and small businesses in mind — from the pricing to the payment methods. Sovira is my answer to that.&rdquo;

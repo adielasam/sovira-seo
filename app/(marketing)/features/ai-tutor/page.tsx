@@ -28,32 +28,41 @@ export default function AiTutorPage() {
           </div>
 
           <div className="prose prose-slate dark:prose-invert prose-lg max-w-none prose-headings:font-extrabold prose-headings:tracking-tight prose-a:font-semibold prose-a:text-purple-600 dark:prose-a:text-purple-400 hover:prose-a:text-purple-500 bg-white dark:bg-[#111827] p-8 md:p-12 rounded-3xl shadow-xl ring-1 ring-slate-100 dark:ring-slate-800">
-            <h2 className="mt-0">The Problem with Dense Information</h2>
+            <h2 className="mt-0">Built from Real-World Teaching</h2>
             <p>
-              Whether you are an agency marketer trying to digest a 50-page client briefing, or a professional trying to learn a complex new SEO concept, dense information slows you down. Synthesizing that text into something understandable—let alone designing slides or study aids—usually requires hours of tedious manual work.
+              The AI Tutor wasn't built in a vacuum as a generic "study tool." It exists because our founder, Adiela Sam-Ogide, coaches students daily at Dorvas Technologies. With deep hands-on experience across data analytics, web development, and content strategy, Adiela noticed a recurring pattern: brilliant professionals and students constantly got bogged down trying to synthesize dense, unstructured information.
             </p>
+            <p>
+              We built the AI Tutor to solve this exact problem, taking the proven workflows from real-world coaching and automating them.
+            </p>
+
+            <h3>Who is the AI Tutor For?</h3>
+            <p>We designed this feature specifically to accelerate workflows across four core disciplines:</p>
+            <ul>
+              <li><strong>Teachers & Schools:</strong> Turn a lesson plan or curriculum document into ready-to-use flashcards, quizzes, and mindmaps for students in minutes — built by someone who coaches students on this exact workflow daily.</li>
+              <li><strong>Web Developers:</strong> Turn dense technical documentation into a quick-reference mindmap or study set when picking up a new framework or language.</li>
+              <li><strong>Data Analysts:</strong> Convert a research report or dataset summary into a digestible visual breakdown or presentation-ready infographic.</li>
+              <li><strong>Content Creators:</strong> Turn a script, article, or research doc into structured visual assets (infographics, slides) for audience education content.</li>
+            </ul>
 
             <h3>Instant Visualizations from Any Source</h3>
             <p>
-              The Sovira AI Tutor does the heavy lifting for you. Simply type in a topic or upload your existing files (we natively support TXT, MD, CSV, and JSON formats). In seconds, our AI automatically generates highly structured, visually engaging formats including interactive mindmaps and beautifully laid-out infographics. 
-            </p>
-            <p>
-              Need to turn a raw client research doc into a presentation-ready deck? The AI Tutor instantly transforms paragraphs into visual logic, empowering marketers and agencies to move from research to presentation in minutes rather than days.
+              Simply type in a topic or upload your existing files (we natively support TXT, MD, CSV, and JSON formats). In seconds, the AI Tutor parses the data and automatically generates highly structured, visually engaging formats including interactive <strong>mindmaps</strong> and beautifully laid-out <strong>infographics</strong>.
             </p>
 
-            <h3>Interactive Learning & Onboarding</h3>
+            <h3>Interactive Learning: Quizzes & Flashcards</h3>
             <p>
-              Beyond presentations, the tool features dedicated Quiz and Flashcard modes. This is perfect for testing your own knowledge on a new subject, or rapidly onboarding new team members. Generate interactive Q&A directly from your company's source materials to ensure everyone understands the strategy.
+              Beyond visual summaries, the tool features dedicated <strong>Quiz</strong> and <strong>Flashcard</strong> modes. This is perfect for testing your own knowledge on a new subject, or rapidly onboarding new team members by generating interactive Q&A directly from your company's source materials.
             </p>
 
             <h3>One-Click Export to PDF & PowerPoint</h3>
             <p>
-              We know that your work doesn't stop in the browser. That's why the AI Tutor includes massive time-saving export capabilities. With a single click, you can take your AI-generated infographics, mindmaps, and flashcards and download them as a polished PDF or a fully formatted PowerPoint (PPTX) file.
+              We know that your work doesn't stop in the browser. That's why the AI Tutor includes massive time-saving export capabilities. With a single click, you can take your AI-generated infographics, mindmaps, and flashcards and download them as a polished <strong>PDF</strong> or a fully formatted <strong>PowerPoint (PPTX)</strong> file.
             </p>
 
             <h3>Ready to Learn and Present Faster?</h3>
             <p>
-              Whether you're studying a complex SEO strategy or preparing a crucial client presentation, let our AI Tutor handle the organization and visualization of your data. Head over to our <Link href="/pricing">pricing page</Link> to start your risk-free trial today.
+              Whether you're studying complex code, teaching a class, or preparing a crucial client presentation, let our AI Tutor handle the organization and visualization of your data. Head over to our <Link href="/pricing">pricing page</Link> to start your risk-free trial today.
             </p>
           </div>
         </div>

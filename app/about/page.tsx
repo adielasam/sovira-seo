@@ -5,7 +5,7 @@ import { Metadata } from 'next'
 
 export const metadata: Metadata = {
   title: 'About Us | Sovira AI',
-  description: 'Learn about the mission behind Sovira AI and our founder, Sam Ogide.',
+  description: 'Learn about the mission behind Sovira AI and our founder, Adiela Sam-Ogide.',
 }
 
 export default function AboutPage() {
@@ -36,14 +36,14 @@ export default function AboutPage() {
               <div className="w-40 h-40 md:w-56 md:h-56 rounded-full overflow-hidden flex-shrink-0 ring-4 ring-indigo-50 dark:ring-indigo-900/30 shadow-2xl">
                 <Image 
                   src="/images/sam-placeholder.jpg" 
-                  alt="Sam Ogide" 
+                  alt="Adiela Sam-Ogide" 
                   width={224} 
                   height={224}
                   className="w-full h-full object-cover" 
                 />
               </div>
               <div className="text-center md:text-left">
-                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Sam Ogide</h2>
+                <h2 className="text-3xl font-bold text-slate-900 dark:text-white mb-2">Adiela Sam-Ogide</h2>
                 <p className="text-sm text-indigo-600 dark:text-indigo-400 font-bold tracking-widest uppercase mb-6">
                   Founder, Sovira AI
                 </p>
@@ -63,6 +63,13 @@ export default function AboutPage() {
               </p>
               <p>
                 By combining technical SEO intelligence with generative AI, we've created a unified ecosystem that allows anyone to optimize their content, analyze complex data, and dominate search engine results without breaking the bank.
+              </p>
+              <h3 className="text-2xl font-bold mb-4 mt-10">Built on Real World Experience</h3>
+              <p>
+                Sovira AI isn't just another generic SaaS product—it's built from the ground up by a founder with deep roots in <strong>data analytics, web development, and social media management</strong>. Through daily hands-on coaching and mentoring of students at <strong>Dorvas Technologies</strong>, Adiela saw firsthand the recurring challenges creators and professionals face when trying to scale their digital presence.
+              </p>
+              <p>
+                These real-world insights directly shape the tools we build. Features like our AI Tutor aren't just bolted on; they exist to solve the exact problems we see our students and clients wrestling with every single day.
               </p>
             </div>
           </div>
