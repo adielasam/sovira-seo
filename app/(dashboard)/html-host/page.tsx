@@ -16,6 +16,9 @@ export default function HtmlHostPage() {
   
   const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'phone'>('desktop')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  
+  const [customSlug, setCustomSlug] = useState('')
+  const [isRenaming, setIsRenaming] = useState(false)
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -46,6 +49,44 @@ export default function HtmlHostPage() {
     window.addEventListener('paste', handleGlobalPaste)
     return () => window.removeEventListener('paste', handleGlobalPaste)
   }, [mode])
+
+  // Update custom slug when hosted URL changes
+  useEffect(() => {
+    if (hostedUrl) {
+      const parts = hostedUrl.split('/site/')
+      if (parts[1]) {
+        setCustomSlug(parts[1].replace(/\//g, ''))
+      }
+    }
+  }, [hostedUrl])
+
+  const handleRename = async () => {
+    if (!hostedUrl || !customSlug) return
+    const oldSlug = hostedUrl.split('/site/')[1]?.replace(/\//g, '')
+    if (oldSlug === customSlug) return
+    
+    setIsRenaming(true)
+    try {
+      const res = await fetch('/api/html-host/rename', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ oldSlug, newSlug: customSlug })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setHostedUrl(data.url)
+        alert('URL updated successfully!')
+      } else {
+        alert(data.error || 'Failed to rename URL')
+        setCustomSlug(oldSlug) // revert
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed due to network error')
+    } finally {
+      setIsRenaming(false)
+    }
+  }
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault()
@@ -435,21 +476,33 @@ export default function HtmlHostPage() {
               onChange={handleTitleChange}
               title="Edit project name"
               placeholder="Enter site name..."
-              className="text-sm font-medium text-slate-200 bg-[#1A1A1A] border border-slate-700/50 rounded-md px-2 py-1 hover:border-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[200px] truncate transition-all"
+              className="text-sm font-medium text-slate-200 bg-[#1A1A1A] border border-slate-700/50 rounded-md px-2 py-1 hover:border-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px] truncate transition-all"
             />
             {hostedUrl && (
-              <>
+              <div className="flex items-center gap-2">
                 <span className="text-slate-600">|</span>
-                <a 
-                  href={hostedUrl} 
-                  target="_blank" 
-                  rel="noreferrer" 
-                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline truncate max-w-[200px] flex items-center gap-1"
-                >
-                  {hostedUrl.replace(/^https?:\/\//, '')}
-                  <ExternalLink className="w-3 h-3" />
+                <span className="text-slate-500 text-xs hidden md:inline">sovira.com.ng/site/</span>
+                <div className="flex items-center gap-1 bg-[#1A1A1A] border border-slate-700/50 rounded-md px-2 py-0.5 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+                  <input 
+                    value={customSlug}
+                    onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
+                    className="text-xs font-mono text-blue-400 bg-transparent border-none focus:outline-none focus:ring-0 max-w-[120px] p-0"
+                    placeholder="custom-url"
+                  />
+                  {customSlug !== hostedUrl.split('/site/')[1]?.replace(/\//g, '') && (
+                    <button 
+                      onClick={handleRename}
+                      disabled={isRenaming || !customSlug}
+                      className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded hover:bg-blue-500 transition-colors disabled:opacity-50 ml-1"
+                    >
+                      {isRenaming ? '...' : 'Save'}
+                    </button>
+                  )}
+                </div>
+                <a href={hostedUrl} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors ml-1" title="Open site in new tab">
+                  <ExternalLink className="w-4 h-4" />
                 </a>
-              </>
+              </div>
             )}
           </div>
         </div>
