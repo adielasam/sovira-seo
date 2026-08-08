@@ -90,12 +90,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to upload files' }, { status: 500 })
     }
 
-    return NextResponse.json({ 
-      success: true, 
-      slug,
-      url: `${process.env.NEXT_PUBLIC_APP_URL || 'https://sovira.com.ng'}/site/${slug}`
-    })
+    const hostUrl = process.env.NEXT_PUBLIC_APP_URL || (req.headers.get('origin') || 'http://localhost:3000')
+    const finalUrl = `${hostUrl}/site/${slug}/`
 
+    return NextResponse.json({ url: finalUrl, slug })
   } catch (error) {
     console.error('Upload error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })

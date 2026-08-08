@@ -122,7 +122,12 @@ export default function HtmlHostPage() {
         const zip = new JSZip()
         const contents = await zip.loadAsync(file)
         
-        const filePaths = Object.keys(contents.files).filter(p => !contents.files[p].dir)
+        const filePaths = Object.keys(contents.files).filter(p => {
+          const isDir = contents.files[p].dir
+          const isJunk = p.includes('__MACOSX') || p.includes('.DS_Store')
+          return !isDir && !isJunk
+        })
+        
         let rootPrefix = ''
         if (filePaths.length > 0) {
           const firstPathParts = filePaths[0].split('/')
@@ -137,7 +142,7 @@ export default function HtmlHostPage() {
         const extractedFiles: {path: string, content: string, type: string, isBinary: boolean}[] = []
         
         for (const [path, zipEntry] of Object.entries(contents.files)) {
-          if (!zipEntry.dir) {
+          if (!zipEntry.dir && !path.includes('__MACOSX') && !path.includes('.DS_Store')) {
             const cleanPath = path.startsWith(rootPrefix) ? path.substring(rootPrefix.length) : path
             const type = getMimeType(cleanPath)
             const isBinary = isBinaryMimeType(type)
