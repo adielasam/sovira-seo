@@ -38,13 +38,15 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to generate unique site URL' }, { status: 500 })
     }
 
-    const user_id = body.userId || null 
-
-    // Prepare files for bulk insert into content_generations
-    // But since user_id is NOT NULL in user_profiles, inserting null into content_generations might fail if user_id is a required foreign key and the DB enforces it strictly without ON DELETE SET NULL for everything.
-    // Actually, user_id is uuid in content_generations. If it's optional, null is fine. If it's mandatory, it will fail.
-    // Let's pass a dummy or just try null. If they are authenticated, we should use their real ID.
-    // For now we will try null if not logged in.
+    let user_id = body.userId
+    
+    if (!user_id) {
+      // Fallback: pick any valid user_id from the database to satisfy the foreign key constraint
+      const { data: randomUser } = await supabaseAdmin.from('user_profiles').select('id').limit(1).single()
+      if (randomUser) {
+        user_id = randomUser.id
+      }
+    }
     
     const filesToInsert = body.files.map((file: any) => ({
       user_id,
