@@ -50,7 +50,7 @@ const navigationGroups = [
   {
     name: 'Developer Tools',
     items: [
-      { name: 'HTML Host', href: '/html-host', icon: Code },
+      { name: 'InstantSite', href: '/html-host', icon: Code },
     ]
   },
   {
