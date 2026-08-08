@@ -9,19 +9,25 @@ export async function GET(
     const { slug, path } = await params
     const supabase = createAdminClient()
 
-    let filePath = 'index.html'
+    let filePath = ''
     if (path && path.length > 0) {
       filePath = path.join('/')
     }
+
+    const searchPath = filePath || 'index.html'
 
     const { data: file, error: fileError } = await supabase
       .from('content_generations')
       .select('generated_content, content_type, tone')
       .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
-      .eq('topic', `${slug}|${filePath}`)
+      .eq('topic', `${slug}|${searchPath}`)
       .single()
 
     if (fileError || !file) {
+      if (!filePath || filePath === 'index.html') {
+        return new NextResponse(`File not found: ${searchPath}`, { status: 404 })
+      }
+      
       const fallbackPath = filePath.endsWith('/') ? `${filePath}index.html` : `${filePath}/index.html`
       
       const { data: fallbackFile, error: fallbackError } = await supabase
