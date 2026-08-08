@@ -31,7 +31,7 @@ export async function POST(req: Request) {
     let slug = providedSlug
 
     if (!slug) {
-      const title = extractTitle(body.files)
+      const title = body.projectTitle || extractTitle(body.files)
       const baseSlug = title ? slugify(title) : 'site'
 
       const generateSuffix = () => Math.random().toString(36).substring(2, 5).toLowerCase()

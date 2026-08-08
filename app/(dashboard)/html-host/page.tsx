@@ -206,7 +206,7 @@ export default function HtmlHostPage() {
         const res = await fetch('/api/html-host/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ files: [file], slug: currentSlug })
+          body: JSON.stringify({ files: [file], slug: currentSlug, projectTitle: getProjectTitle() })
         })
         
         const data = await res.json()
@@ -434,7 +434,8 @@ export default function HtmlHostPage() {
               value={getProjectTitle()}
               onChange={handleTitleChange}
               title="Edit project name"
-              className="text-sm font-medium text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-none focus:ring-0 max-w-[200px] truncate"
+              placeholder="Enter site name..."
+              className="text-sm font-medium text-slate-200 bg-[#1A1A1A] border border-slate-700/50 rounded-md px-2 py-1 hover:border-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[200px] truncate transition-all"
             />
             {hostedUrl && (
               <>
