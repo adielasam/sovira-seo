@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -45,6 +45,12 @@ const navigationGroups = [
       { name: 'Trending Topics', href: '/trending', icon: Flame },
       { name: 'Competitors', href: '/competitors', icon: Users },
       { name: 'AI Video', href: '/ai-video', icon: Video },
+    ]
+  },
+  {
+    name: 'Developer Tools',
+    items: [
+      { name: 'HTML Host', href: '/html-host', icon: Code },
     ]
   },
   {
