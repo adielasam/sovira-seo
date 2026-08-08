@@ -210,7 +210,7 @@ export default function HtmlHostPage() {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
             <button 
               onClick={() => {
-                setHtmlContent(\`<!DOCTYPE html>\\n<html>\\n<head>\\n  <title>My Site</title>\\n  <style>\\n    body { font-family: system-ui, sans-serif; padding: 2rem; }\\n    h1 { color: #2563eb; }\\n  </style>\\n</head>\\n<body>\\n  <h1>Hello, World!</h1>\\n  <p>Start typing HTML here...</p>\\n</body>\\n</html>\`)
+                setHtmlContent(`<!DOCTYPE html>\n<html>\n<head>\n  <title>My Site</title>\n  <style>\n    body { font-family: system-ui, sans-serif; padding: 2rem; }\n    h1 { color: #2563eb; }\n  </style>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n  <p>Start typing HTML here...</p>\n</body>\n</html>`)
                 setMode('editor')
               }}
               className="flex items-center gap-2 px-6 py-3 rounded-full bg-transparent border border-slate-700 hover:border-slate-500 transition-colors"
