@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command } from 'lucide-react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2 } from 'lucide-react'
 import JSZip from 'jszip'
 
 export default function HtmlHostPage() {
@@ -160,6 +160,30 @@ export default function HtmlHostPage() {
     setTimeout(() => setCopied(false), 2000)
   }
 
+  const handleDelete = async () => {
+    if (!hostedUrl) return
+    const slug = hostedUrl.split('/').pop()
+    if (!slug) return
+    if (!confirm('Are you sure you want to delete this site?')) return
+    
+    setIsUploading(true) // Reuse loader state
+    try {
+      const res = await fetch(`/api/html-host/delete?slug=${slug}`, { method: 'DELETE' })
+      if (res.ok) {
+        setHostedUrl('')
+        alert('Site deleted successfully!')
+      } else {
+        const data = await res.json()
+        alert(data.error || 'Failed to delete site')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Delete failed due to network error')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
   if (mode === 'landing') {
     return (
       <div 
@@ -311,6 +335,9 @@ export default function HtmlHostPage() {
             <a href={hostedUrl} target="_blank" rel="noreferrer" className="p-2 hover:bg-slate-800 rounded-md transition-colors text-slate-400 hover:text-white" title="Open in new tab">
               <ExternalLink className="w-4 h-4" />
             </a>
+            <button onClick={handleDelete} className="p-2 hover:bg-red-500/10 rounded-md transition-colors text-slate-400 hover:text-red-500" title="Delete Site">
+              <Trash2 className="w-4 h-4" />
+            </button>
           </div>
         </div>
       )}
