@@ -177,21 +177,31 @@ export default function HtmlHostPage() {
     setIsUploading(true)
     setHostedUrl('')
     try {
-      const res = await fetch('/api/html-host/upload', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ files })
-      })
+      let currentSlug = ''
+      let finalUrl = ''
       
-      const data = await res.json()
-      if (res.ok) {
-        setHostedUrl(data.url)
-      } else {
-        alert(data.error || 'Upload failed')
+      // Upload sequentially to avoid Next.js 4.5MB serverless payload limits
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i]
+        const res = await fetch('/api/html-host/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ files: [file], slug: currentSlug })
+        })
+        
+        const data = await res.json()
+        if (res.ok) {
+          currentSlug = data.slug
+          finalUrl = data.url
+        } else {
+          throw new Error(data.error || 'Upload failed')
+        }
       }
+      
+      setHostedUrl(finalUrl)
     } catch (err) {
       console.error(err)
-      alert('Upload failed due to network error')
+      alert(err instanceof Error ? err.message : 'Upload failed due to network error')
     } finally {
       setIsUploading(false)
     }

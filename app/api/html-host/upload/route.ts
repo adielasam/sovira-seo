@@ -27,28 +27,33 @@ export async function POST(req: Request) {
       return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
     }
 
-    const title = extractTitle(body.files)
-    const baseSlug = title ? slugify(title) : 'site'
+    const providedSlug = body.slug
+    let slug = providedSlug
 
-    const generateSuffix = () => Math.random().toString(36).substring(2, 5).toLowerCase()
-    let slug = `${baseSlug}-${generateSuffix()}`
-    
-    // Simple loop to ensure slug uniqueness by checking existing topics
-    let isUnique = false
-    let attempts = 0
-    while (!isUnique && attempts < 5) {
-      const { data } = await supabaseAdmin
-        .from('content_generations')
-        .select('id')
-        .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
-        .like('topic', `${slug}|%`)
-        .limit(1)
+    if (!slug) {
+      const title = extractTitle(body.files)
+      const baseSlug = title ? slugify(title) : 'site'
+
+      const generateSuffix = () => Math.random().toString(36).substring(2, 5).toLowerCase()
+      slug = `${baseSlug}-${generateSuffix()}`
       
-      if (!data || data.length === 0) {
-        isUnique = true
-      } else {
-        slug = `${baseSlug}-${generateSuffix()}`
-        attempts++
+      // Simple loop to ensure slug uniqueness by checking existing topics
+      let isUnique = false
+      let attempts = 0
+      while (!isUnique && attempts < 5) {
+        const { data } = await supabaseAdmin
+          .from('content_generations')
+          .select('id')
+          .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
+          .like('topic', `${slug}|%`)
+          .limit(1)
+        
+        if (!data || data.length === 0) {
+          isUnique = true
+        } else {
+          slug = `${baseSlug}-${generateSuffix()}`
+          attempts++
+        }
       }
     }
 
