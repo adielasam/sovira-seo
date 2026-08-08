@@ -52,7 +52,7 @@ export async function POST(req: Request) {
       user_id,
       topic: `${slug}|${file.path.startsWith('/') ? file.path.substring(1) : file.path}`,
       content_type: file.type || 'text/plain',
-      tone: 'INSTANT_SITE',
+      tone: file.isBinary ? 'INSTANT_SITE_BINARY' : 'INSTANT_SITE',
       generated_content: file.content,
       word_count: file.content.length // Store byte/char length in word_count
     }))

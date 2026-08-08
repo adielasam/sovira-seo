@@ -11,11 +11,11 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'No slug provided' }, { status: 400 })
     }
 
-    // Delete all records in content_generations where tone is INSTANT_SITE and topic starts with slug|
+    // Delete all records in content_generations where tone is INSTANT_SITE or INSTANT_SITE_BINARY and topic starts with slug|
     const { error } = await supabaseAdmin
       .from('content_generations')
       .delete()
-      .eq('tone', 'INSTANT_SITE')
+      .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
       .like('topic', `${slug}|%`)
 
     if (error) {

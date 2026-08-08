@@ -54,12 +54,40 @@ export default function HtmlHostPage() {
   }
 
   const getMimeType = (filename: string) => {
-    if (filename.endsWith('.html')) return 'text/html'
-    if (filename.endsWith('.css')) return 'text/css'
-    if (filename.endsWith('.js')) return 'application/javascript'
-    if (filename.endsWith('.json')) return 'application/json'
-    if (filename.endsWith('.svg')) return 'image/svg+xml'
-    return 'text/plain'
+    const ext = filename.split('.').pop()?.toLowerCase()
+    switch (ext) {
+      case 'html': return 'text/html'
+      case 'css': return 'text/css'
+      case 'js': return 'application/javascript'
+      case 'json': return 'application/json'
+      case 'svg': return 'image/svg+xml'
+      case 'png': return 'image/png'
+      case 'jpg':
+      case 'jpeg': return 'image/jpeg'
+      case 'gif': return 'image/gif'
+      case 'webp': return 'image/webp'
+      case 'ico': return 'image/x-icon'
+      case 'woff': return 'font/woff'
+      case 'woff2': return 'font/woff2'
+      case 'ttf': return 'font/ttf'
+      case 'eot': return 'application/vnd.ms-fontobject'
+      case 'otf': return 'font/otf'
+      case 'mp4': return 'video/mp4'
+      case 'mp3': return 'audio/mpeg'
+      case 'pdf': return 'application/pdf'
+      default: return 'text/plain'
+    }
+  }
+
+  const isBinaryMimeType = (mimeType: string) => {
+    return (
+      (mimeType.startsWith('image/') && mimeType !== 'image/svg+xml') ||
+      mimeType.startsWith('font/') ||
+      mimeType.startsWith('video/') ||
+      mimeType.startsWith('audio/') ||
+      mimeType === 'application/pdf' ||
+      mimeType === 'application/vnd.ms-fontobject'
+    )
   }
 
   const processDrop = async (e: React.DragEvent) => {
@@ -85,15 +113,21 @@ export default function HtmlHostPage() {
         const zip = new JSZip()
         const contents = await zip.loadAsync(file)
         
-        const extractedFiles: {path: string, content: string, type: string}[] = []
+        const extractedFiles: {path: string, content: string, type: string, isBinary: boolean}[] = []
         
         for (const [path, zipEntry] of Object.entries(contents.files)) {
           if (!zipEntry.dir) {
-            const content = await zipEntry.async('string')
+            const type = getMimeType(path)
+            const isBinary = isBinaryMimeType(type)
+            
+            // Read as base64 if binary, else as utf-8 string
+            const content = await zipEntry.async(isBinary ? 'base64' : 'string')
+            
             extractedFiles.push({
               path: path,
               content,
-              type: getMimeType(path)
+              type,
+              isBinary
             })
           }
         }
