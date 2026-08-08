@@ -33,7 +33,7 @@ export default function HtmlHostPage() {
     const handleGlobalPaste = (e: ClipboardEvent) => {
       if (mode === 'landing') {
         const text = e.clipboardData?.getData('text')
-        if (text && text.includes('<html') || text.includes('<div') || text.includes('<!DOCTYPE')) {
+        if (text && (text.includes('<html') || text.includes('<div') || text.includes('<!DOCTYPE'))) {
           setHtmlContent(text)
           setMode('editor')
         }
