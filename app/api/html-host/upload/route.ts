@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       const baseSlug = title ? slugify(title) : 'site'
 
       const generateSuffix = () => Math.random().toString(36).substring(2, 5).toLowerCase()
-      slug = `${baseSlug}-${generateSuffix()}`
+      slug = baseSlug
       
       // Simple loop to ensure slug uniqueness by checking existing topics
       let isUnique = false
