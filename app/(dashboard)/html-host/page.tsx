@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, Image as ImageIcon, Sparkles, MessageSquare } from 'lucide-react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X } from 'lucide-react'
 import JSZip from 'jszip'
+import confetti from 'canvas-confetti'
 
 export default function HtmlHostPage() {
   const [mode, setMode] = useState<'landing' | 'editor'>('landing')
@@ -14,6 +15,7 @@ export default function HtmlHostPage() {
   const [filesPreview, setFilesPreview] = useState<{path: string, type: string}[]>([])
   
   const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'phone'>('desktop')
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -199,6 +201,32 @@ export default function HtmlHostPage() {
       }
       
       setHostedUrl(finalUrl)
+      setShowSuccessModal(true)
+      
+      // Trigger a beautiful confetti animation!
+      const duration = 3000
+      const end = Date.now() + duration
+      const frame = () => {
+        confetti({
+          particleCount: 5,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 },
+          colors: ['#2563eb', '#3b82f6', '#93c5fd'] // Sovira blues
+        })
+        confetti({
+          particleCount: 5,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 },
+          colors: ['#2563eb', '#3b82f6', '#93c5fd']
+        })
+        if (Date.now() < end) {
+          requestAnimationFrame(frame)
+        }
+      }
+      frame()
+      
     } catch (err) {
       console.error(err)
       alert(err instanceof Error ? err.message : 'Upload failed due to network error')
@@ -407,30 +435,8 @@ export default function HtmlHostPage() {
           </div>
         </div>
         
-        {/* Middle: Stats */}
-        <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-slate-500 mr-8">
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-            expires in never
-          </div>
-          <div className="flex items-center gap-1.5">
-            <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
-            {getProjectSize()}
-          </div>
-        </div>
-
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
-          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[#1A1A1A] text-slate-300 text-sm font-medium transition-colors border border-transparent hover:border-slate-800">
-            <ImageIcon className="w-4 h-4" /> Media
-          </button>
-          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[#1A1A1A] text-slate-300 text-sm font-medium transition-colors border border-transparent hover:border-slate-800">
-            <Sparkles className="w-4 h-4 text-blue-400" /> AI Edit
-          </button>
-          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[#1A1A1A] text-slate-300 text-sm font-medium transition-colors border border-transparent hover:border-slate-800">
-            <MessageSquare className="w-4 h-4" /> Chat
-          </button>
-          
           <button 
             onClick={handlePublish}
             disabled={isUploading}
@@ -550,7 +556,7 @@ export default function HtmlHostPage() {
           </div>
           
           {/* Iframe Container */}
-          <div className="flex-1 flex items-center justify-center bg-slate-100 overflow-hidden">
+          <div className="flex-1 flex items-center justify-center bg-slate-100 overflow-hidden relative">
             <iframe 
               ref={iframeRef}
               className={`bg-white border-none shadow-sm transition-all duration-300 ${
@@ -560,6 +566,58 @@ export default function HtmlHostPage() {
               }`}
               title="Live Preview"
             />
+            
+            {/* Success Modal */}
+            {showSuccessModal && hostedUrl && (
+              <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                <div className="bg-[#111111] border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-6 text-center relative">
+                    <button 
+                      onClick={() => setShowSuccessModal(false)}
+                      className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    
+                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <Check className="w-8 h-8 text-blue-500" />
+                    </div>
+                    
+                    <h3 className="text-xl font-bold text-white mb-2">Congratulations!</h3>
+                    <p className="text-slate-400 mb-6 text-sm">
+                      Your InstantSite is live and ready to share with the world.
+                    </p>
+                    
+                    <div className="flex items-center gap-2 bg-[#0a0a0a] border border-slate-800 rounded-lg p-1.5 mb-6">
+                      <div className="flex-1 px-3 py-2 text-sm text-slate-300 font-mono truncate text-left select-all bg-transparent">
+                        {hostedUrl}
+                      </div>
+                      <button 
+                        onClick={copyLink}
+                        className="p-2 hover:bg-[#1A1A1A] rounded-md text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                      >
+                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    
+                    <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setShowSuccessModal(false)}
+                        className="flex-1 px-4 py-2 rounded-lg font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                      >
+                        Close
+                      </button>
+                      <button 
+                        onClick={() => window.open(hostedUrl, '_blank')}
+                        className="flex-1 px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
+                      >
+                        Visit Site <ExternalLink className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
         </div>
