@@ -109,7 +109,12 @@ export default function HtmlHostPage() {
   }
 
   const handleFile = async (file: File) => {
-    if (file.name.endsWith('.zip')) {
+    const isZip = file.name.toLowerCase().endsWith('.zip') || 
+                  file.type === 'application/zip' || 
+                  file.type === 'application/x-zip-compressed' ||
+                  file.type.includes('zip')
+
+    if (isZip) {
       // Process ZIP
       try {
         const zip = new JSZip()
@@ -149,7 +154,7 @@ export default function HtmlHostPage() {
         console.error('ZIP extraction failed', err)
         alert('Failed to read ZIP file. Make sure it contains text/HTML files.')
       }
-    } else if (file.name.endsWith('.html') || file.type === 'text/html') {
+    } else if (file.name.toLowerCase().endsWith('.html') || file.type === 'text/html') {
       // Process Single HTML
       const reader = new FileReader()
       reader.onload = async (event) => {
@@ -160,7 +165,7 @@ export default function HtmlHostPage() {
       }
       reader.readAsText(file)
     } else {
-      alert('Please drop an HTML file or a ZIP file.')
+      alert('Please drop an HTML file or a ZIP file. Recognized type: ' + file.type)
     }
   }
 
@@ -227,6 +232,23 @@ export default function HtmlHostPage() {
     return match ? match[1].trim() : 'Untitled Project'
   }
   
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newTitle = e.target.value
+    let newHtml = htmlContent
+    if (newHtml.match(/<title[^>]*>([^<]+)<\/title>/i)) {
+      newHtml = newHtml.replace(/(<title[^>]*>)([^<]+)(<\/title>)/i, `$1${newTitle}$3`)
+    } else {
+      if (newHtml.includes('<head>')) {
+        newHtml = newHtml.replace('<head>', `<head>\n  <title>${newTitle}</title>`)
+      } else if (newHtml.includes('<html>')) {
+        newHtml = newHtml.replace('<html>', `<html>\n<head>\n  <title>${newTitle}</title>\n</head>`)
+      } else {
+        newHtml = `<title>${newTitle}</title>\n` + newHtml
+      }
+    }
+    setHtmlContent(newHtml)
+  }
+
   const getProjectSize = () => {
     return (new Blob([htmlContent]).size / 1024).toFixed(1) + ' KB'
   }
@@ -246,7 +268,7 @@ export default function HtmlHostPage() {
           ref={fileInputRef} 
           onChange={handleFileInput} 
           className="hidden" 
-          accept=".html,.zip"
+          accept=".html,.zip,application/zip,application/x-zip-compressed"
         />
 
         {/* Drag Overlay */}
@@ -331,7 +353,7 @@ export default function HtmlHostPage() {
         ref={fileInputRef} 
         onChange={handleFileInput} 
         className="hidden" 
-        accept=".html,.zip"
+        accept=".html,.zip,application/zip,application/x-zip-compressed"
       />
 
       {/* Header - Dark IDE Style */}
@@ -352,9 +374,12 @@ export default function HtmlHostPage() {
             <span className="text-[10px] font-bold tracking-widest text-slate-500 border border-slate-700/50 rounded px-1.5 py-0.5 font-mono">
               PROJECT
             </span>
-            <span className="text-sm font-medium text-slate-200 truncate max-w-[200px]">
-              {getProjectTitle()}
-            </span>
+            <input 
+              value={getProjectTitle()}
+              onChange={handleTitleChange}
+              title="Edit project name"
+              className="text-sm font-medium text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-blue-500 focus:outline-none focus:ring-0 max-w-[200px] truncate"
+            />
             {hostedUrl && (
               <>
                 <span className="text-slate-600">|</span>
