@@ -1,211 +1,25 @@
 'use client'
 
 import { useState } from 'react'
-import { Sparkles, FileText, ChevronDown, Paperclip, ArrowUp, ArrowLeft, Loader2, Download, MonitorPlay } from 'lucide-react'
+import { Sparkles, ArrowLeft, Loader2, Paperclip, ArrowUp } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
-import pptxgen from 'pptxgenjs'
+import { generateSlideDeck } from './actions'
+import { SlideDeckViewer } from '@/components/slides/SlideDeckViewer'
+import type { DeckJSON } from './actions'
 
-const TEMPLATES = [
-  { id: '1', title: 'MSc/PhD Research Proposal', color: 'bg-white border-2 border-slate-300 text-slate-800' },
-  { id: '2', title: 'Literature Review Defense', color: 'bg-white border-2 border-slate-300 text-slate-800' },
-  { id: '3', title: 'Methodology Framework', color: 'bg-white border-2 border-slate-300 text-slate-800' },
-  { id: '4', title: 'Data Analysis Findings', color: 'bg-white border-2 border-slate-300 text-slate-800' },
-]
+import { TemplateGallery } from '@/components/slides/TemplateGallery'
+import { BUILT_IN_TEMPLATES, DEFAULT_THEME } from '@/lib/slides/templates'
+import type { SlideTheme } from '@/lib/slides/templates'
 
 export default function SlidesAgentPage() {
   const [prompt, setPrompt] = useState('')
-  const [slideCount, setSlideCount] = useState('5-10 Slides')
+  const [slideCount, setSlideCount] = useState('10')
   const [isGenerating, setIsGenerating] = useState(false)
-  const [showPreview, setShowPreview] = useState(false)
   const [activeTab, setActiveTab] = useState('Professional')
-  const [selectedTemplate, setSelectedTemplate] = useState<string | null>('1')
-  const [generatedSlides, setGeneratedSlides] = useState<any[]>([])
-  const [dataSource, setDataSource] = useState('wikipedia')
-
-  const updateSlide = (index: number, field: string, value: any) => {
-    const newSlides = [...generatedSlides];
-    newSlides[index] = { ...newSlides[index], [field]: value };
-    setGeneratedSlides(newSlides);
-  }
-
-  const generateSlidesLocally = async (topic: string, count: number) => {
-    let slides = [];
-    
-    if (dataSource === 'academic') {
-      try {
-        const res = await fetch(`https://api.semanticscholar.org/graph/v1/paper/search?query=${encodeURIComponent(topic)}&limit=5&fields=title,abstract,year,authors`)
-        const data = await res.json()
-        
-        if (data.data && data.data.length > 0) {
-          slides.push({
-            title: `Literature Review: ${topic}`,
-            subtitle: "Academic Research Summary",
-            points: ["Compiled from peer-reviewed publications", "Sourced via Semantic Scholar"]
-          })
-          
-          data.data.forEach((paper: any) => {
-            if (slides.length >= count) return;
-            
-            // Extract larger chunks of the abstract
-            let abstractPoints = [];
-            if (paper.abstract) {
-              const sentences = paper.abstract.split('. ').filter((s: string) => s.length > 30);
-              // Group sentences to make them longer (~40-60 words)
-              for (let i = 0; i < sentences.length; i += 2) {
-                const chunk = sentences.slice(i, i + 2).join('. ') + '.';
-                abstractPoints.push(chunk);
-                if (abstractPoints.length >= 3) break;
-              }
-            } else {
-              abstractPoints = ["No comprehensive abstract was provided for this academic publication in the database registry."];
-            }
-            
-            const authorText = paper.authors && paper.authors.length > 0 
-              ? ` (${paper.authors[0].name} et al., ${paper.year || 'N/A'})` 
-              : ` (${paper.year || 'N/A'})`;
-
-            slides.push({
-              title: paper.title,
-              subtitle: `Published${authorText}`,
-              points: abstractPoints
-            })
-          })
-        }
-      } catch (e) {
-        console.log('Semantic Scholar fetch failed', e)
-      }
-    } else {
-      try {
-        // Step 1: Use Wikipedia Search API to find the closest matching article title
-        const searchRes = await fetch(`https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(topic)}&utf8=&format=json&origin=*`)
-        const searchData = await searchRes.json()
-        
-        if (searchData.query?.search && searchData.query.search.length > 0) {
-          const bestTitle = searchData.query.search[0].title;
-          
-          // Step 2: Fetch the full plain text extract (without exintro limits)
-          const res = await fetch(`https://en.wikipedia.org/w/api.php?action=query&prop=extracts&explaintext&titles=${encodeURIComponent(bestTitle)}&format=json&origin=*`)
-          const data = await res.json()
-          const pages = data.query?.pages
-          if (pages) {
-            const pageId = Object.keys(pages)[0]
-            const extract = pages[pageId].extract
-            if (extract && extract.length > 50) {
-              slides.push({
-                title: bestTitle,
-                subtitle: "Comprehensive Overview",
-                points: []
-              })
-              
-              // Split into long paragraphs/sentences
-              const sentences = extract.split('. ').filter((s: string) => s.length > 50)
-              
-              let currentPoints = []
-              for (let i = 0; i < sentences.length; i++) {
-                currentPoints.push(sentences[i] + (sentences[i].endsWith('.') ? '' : '.'))
-                
-                // Group every 2 long sentences into a slide (approx 40-80 words per point)
-                if (currentPoints.length >= 2 || i === sentences.length - 1) {
-                  slides.push({
-                    title: `Analysis of ${bestTitle}`,
-                    subtitle: "",
-                    points: [...currentPoints]
-                  })
-                  currentPoints = []
-                  if (slides.length >= count) break;
-                }
-              }
-            }
-          }
-        }
-      } catch (e) {
-        console.log('Wikipedia fetch failed', e)
-      }
-    }
-
-    // Ensure we always have a title slide
-    if (slides.length === 0) {
-      slides.push({
-        title: topic || "Presentation",
-        subtitle: "Executive Summary",
-        points: [`This presentation provides a structured academic examination of ${topic || 'the selected subject'}, drawing upon established research frameworks, empirical evidence, and contemporary scholarly discourse to deliver a comprehensive analysis suitable for postgraduate-level review.`]
-      })
-    }
-
-    // Unique section titles — no repeats
-    const sectionTitles = [
-      "Introduction", "Background & Context", "Literature Review",
-      "Theoretical Framework", "Methodology", "Key Findings",
-      "Data Analysis", "Discussion", "Implications",
-      "Challenges & Limitations", "Recommendations", "Conclusion"
-    ];
-
-    // 12 unique paragraph banks — each slide gets its own distinct content
-    const paragraphBanks = [
-      [
-        `${topic} has emerged as a critical area of academic inquiry, attracting significant attention from researchers across multiple disciplines. The growing body of literature underscores the need for systematic investigation into both the theoretical foundations and practical applications of this domain.`,
-        `Historical analysis reveals that early scholarship on ${topic} was primarily exploratory, focusing on descriptive case studies and qualitative observations. However, contemporary research has shifted toward quantitative methodologies and evidence-based frameworks that allow for more rigorous and reproducible findings.`
-      ],
-      [
-        `The socioeconomic context surrounding ${topic} is shaped by decades of policy evolution, technological advancement, and shifting demographic patterns. Understanding these contextual factors is essential for interpreting current trends and projecting future trajectories within the field.`,
-        `Regional and global perspectives on ${topic} reveal significant variations in approach, investment, and outcome. Comparative studies have highlighted how cultural, institutional, and environmental variables influence the adoption and effectiveness of strategies related to this subject.`
-      ],
-      [
-        `A comprehensive review of existing literature on ${topic} identifies several recurring themes, including the importance of stakeholder engagement, resource allocation efficiency, and adaptive management frameworks. Peer-reviewed publications consistently emphasize the gap between theoretical models and real-world implementation.`,
-        `Seminal contributions by leading scholars have established foundational concepts that continue to shape the discourse around ${topic}. These include systems-based thinking, lifecycle assessment methodologies, and multi-criteria decision analysis tools that remain widely cited in current research.`
-      ],
-      [
-        `The theoretical underpinnings of ${topic} draw from multiple intellectual traditions, including institutional theory, complexity science, and behavioral economics. These frameworks provide the analytical lens through which empirical data can be systematically interpreted and contextualised.`,
-        `By integrating established theoretical constructs with emerging interdisciplinary perspectives, researchers can develop more nuanced models of ${topic} that account for nonlinear dynamics, feedback loops, and the inherent uncertainty present in complex socio-technical systems.`
-      ],
-      [
-        `Research methodology for investigating ${topic} typically employs a mixed-methods approach, combining quantitative survey instruments with semi-structured interviews and document analysis. This triangulation strategy enhances the validity and reliability of findings across diverse research contexts.`,
-        `Data collection protocols for studies on ${topic} must adhere to established ethical standards, including informed consent, anonymization of participant data, and transparent reporting of methodological limitations. Institutional review board approval is a prerequisite for all primary research activities.`
-      ],
-      [
-        `Preliminary findings indicate that ${topic} demonstrates measurable impact across multiple performance indicators, with statistically significant correlations observed between intervention strategies and outcome variables. Effect sizes range from moderate to large depending on the specific context and population studied.`,
-        `Cross-sectional analysis of ${topic} reveals distinct patterns of adoption and diffusion that align with established innovation curves. Early adopters tend to exhibit higher levels of institutional readiness and resource availability compared to late-majority segments.`
-      ],
-      [
-        `Quantitative data analysis of ${topic} employs descriptive statistics, inferential testing, and multivariate regression models to identify significant predictors and mediating variables. Results are reported with confidence intervals and effect size measures to facilitate meaningful interpretation.`,
-        `Qualitative thematic analysis of interview transcripts and policy documents related to ${topic} reveals five dominant themes: capacity building, governance reform, technology integration, community participation, and sustainability assessment. These themes form the basis for the proposed analytical framework.`
-      ],
-      [
-        `The empirical evidence surrounding ${topic} supports several key conclusions that carry important implications for both theory and practice. First, the relationship between input variables and outcomes is not linear but follows a curvilinear pattern moderated by contextual factors.`,
-        `Findings from this investigation of ${topic} align with and extend previous research, confirming the central role of institutional capacity while introducing novel insights regarding the mediating effect of digital transformation on organizational performance metrics.`
-      ],
-      [
-        `The practical implications of research on ${topic} extend beyond academia to inform policy development, industry standards, and professional practice guidelines. Decision-makers can leverage these findings to design more effective interventions and allocate resources with greater precision.`,
-        `From a theoretical standpoint, this investigation of ${topic} contributes to the growing body of knowledge by refining existing conceptual models and proposing new constructs that better capture the multidimensional nature of the phenomenon under study.`
-      ],
-      [
-        `Several methodological and contextual limitations must be acknowledged when interpreting findings related to ${topic}. Sample size constraints, geographic specificity, and the cross-sectional nature of data collection may limit the generalizability of results to broader populations.`,
-        `Despite these constraints, the study of ${topic} provides valuable preliminary evidence that can inform the design of larger-scale, longitudinal investigations. Future research should prioritize diverse sampling strategies and incorporate emerging data analytics techniques to enhance explanatory power.`
-      ],
-      [
-        `Based on the evidence presented, it is recommended that stakeholders involved with ${topic} prioritize investment in capacity building, technological infrastructure, and knowledge management systems. These strategic priorities align with best practices identified in the international literature.`,
-        `Policymakers should consider establishing cross-sector partnerships and dedicated research funding mechanisms to accelerate progress on ${topic}. Collaborative governance models that integrate academic expertise with practitioner knowledge have demonstrated superior outcomes in comparable domains.`
-      ],
-      [
-        `In conclusion, ${topic} represents a dynamic and consequential area of scholarly inquiry with significant implications for sustainable development, institutional reform, and societal wellbeing. The evidence base, while growing, requires continued expansion through rigorous, multi-method investigations.`,
-        `This presentation has provided a structured overview of the key dimensions of ${topic}, from theoretical foundations through empirical findings to practical recommendations. Continued interdisciplinary collaboration will be essential to advancing understanding and translating research into meaningful impact.`
-      ]
-    ];
-
-    let currentLength = slides.length;
-    for (let i = currentLength; i < count; i++) {
-      const titleIdx = (i - 1) % sectionTitles.length;
-      const paraIdx = (i - 1) % paragraphBanks.length;
-      slides.push({
-        title: sectionTitles[titleIdx],
-        subtitle: `Section ${i + 1}`,
-        points: paragraphBanks[paraIdx]
-      })
-    }
-
-    return slides.slice(0, count)
-  }
+  const [selectedTheme, setSelectedTheme] = useState<SlideTheme>(DEFAULT_THEME)
+  const [customThemes, setCustomThemes] = useState<SlideTheme[]>([])
+  const [generatedDeck, setGeneratedDeck] = useState<DeckJSON | null>(null)
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -213,88 +27,28 @@ export default function SlidesAgentPage() {
       return
     }
     setIsGenerating(true)
-    
+
     try {
-      // Parse slide count from dropdown (e.g. "5-10 Slides" -> 10)
-      const maxSlides = parseInt(slideCount.split('-')[1] || slideCount.split(' ')[0] || '10')
-      
-      // UX Delay for "thinking"
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      
-      const newSlides = await generateSlidesLocally(prompt, maxSlides)
-      
-      setGeneratedSlides(newSlides)
-      setIsGenerating(false)
-      setShowPreview(true)
-    } catch (err) {
-      toast.error('Error generating slides.')
-      setIsGenerating(false)
-    }
-  }
+      const count = parseInt(slideCount) || 10
+      const theme = activeTab.toLowerCase()
 
-  const exportPPTX = () => {
-    toast.loading('Generating PowerPoint file...', { id: 'pptx' })
-    
-    try {
-      let pres = new pptxgen()
-      pres.layout = 'LAYOUT_16x9'
+      const result = await generateSlideDeck(prompt, count, theme)
 
-      // Academic Styling Constants
-      const FONT_FAMILY = 'Times New Roman'
-      const COLOR_BLACK = '000000'
-      const COLOR_WHITE = 'FFFFFF'
-      const COLOR_FOOTER = '555555'
-
-      // Define Master Slides for Academic Layouts
-      pres.defineSlideMaster({
-        title: 'TITLE_SLIDE',
-        background: { color: COLOR_WHITE },
-        objects: [] // Pure white, no decorative objects
-      })
-
-      pres.defineSlideMaster({
-        title: 'CONTENT_SLIDE',
-        background: { color: COLOR_WHITE },
-        objects: [
-          // Footer text: presenter info on the left
-          { text: { text: 'Academic Research Presentation', options: { x: 0.5, y: '92%', w: '40%', h: '5%', fontSize: 12, fontFace: FONT_FAMILY, color: COLOR_FOOTER, align: 'left' } } }
-        ],
-        slideNumber: { x: '90%', y: '92%', w: '5%', h: '5%', fontSize: 12, fontFace: FONT_FAMILY, color: COLOR_FOOTER, align: 'right' }
-      })
-
-      // Generate the Slides
-      if (generatedSlides.length === 0) {
-        let titleSlide = pres.addSlide({ masterName: 'TITLE_SLIDE' })
-        titleSlide.addText(prompt || 'Generated Presentation', { x: 1, y: '35%', w: '80%', h: 1.5, fontSize: 36, fontFace: FONT_FAMILY, bold: true, color: COLOR_BLACK, align: 'center' })
-      } else {
-        generatedSlides.forEach((slideData, idx) => {
-          if (idx === 0) {
-            let slide = pres.addSlide({ masterName: 'TITLE_SLIDE' })
-            slide.addText(slideData.title, { x: 1, y: '30%', w: '80%', h: 1.5, fontSize: 36, fontFace: FONT_FAMILY, bold: true, color: COLOR_BLACK, align: 'center' })
-            
-            // Academic Cover Page Structure
-            slide.addText(`A RESEARCH PROPOSAL\nBY\n\nALIKOR, Lawyer\n\nUNIVERSITY OF PORT HARCOURT\n\nAugust 2026`, { x: 1, y: '55%', w: '80%', h: 3, fontSize: 24, fontFace: FONT_FAMILY, color: COLOR_BLACK, align: 'center', bold: true })
-          } else {
-            let slide = pres.addSlide({ masterName: 'CONTENT_SLIDE' })
-            // Title Left-aligned
-            slide.addText(slideData.title, { x: 0.5, y: 0.4, w: '90%', h: 0.8, fontSize: 32, fontFace: FONT_FAMILY, bold: true, color: COLOR_BLACK, align: 'left' })
-            
-            if (slideData.points && slideData.points.length > 0) {
-              // Points: Left aligned, restricted to 70% width for visuals on right, 1.15 line spacing roughly
-              const pointsStr = slideData.points.map((p: string) => `• ${p}`).join('\n')
-              slide.addText(pointsStr, { x: 0.5, y: 1.5, w: '65%', h: '70%', fontSize: 26, fontFace: FONT_FAMILY, color: COLOR_BLACK, align: 'left', valign: 'top', bullet: true, lineSpacing: 35 })
-            }
-          }
-        })
+      if (result.error) {
+        toast.error(result.error)
+        setIsGenerating(false)
+        return
       }
 
-      pres.writeFile({ fileName: 'Academic_Presentation.pptx' }).then(() => {
-        toast.success('Downloaded successfully!', { id: 'pptx' })
-        setShowPreview(false)
-      })
-    } catch (e) {
-      toast.error('Failed to generate PPTX', { id: 'pptx' })
+      if (result.deck) {
+        setGeneratedDeck(result.deck)
+        toast.success(`Generated ${result.deck.slides.length} slides!`)
+      }
+    } catch (err) {
+      toast.error('Failed to generate slides. Please try again.')
     }
+
+    setIsGenerating(false)
   }
 
   return (
@@ -308,20 +62,20 @@ export default function SlidesAgentPage() {
         <h1 className="text-2xl font-bold text-slate-900 dark:text-white">Slides Agent</h1>
         <div className="flex items-center gap-2 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-500 px-3 py-1.5 rounded-full text-xs font-semibold">
           <Sparkles className="w-3.5 h-3.5" />
-          Go Pro from just $9/mo
+          AI-Powered
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Style Tabs */}
       <div className="flex justify-center mb-6">
         <div className="flex space-x-2 bg-slate-100 dark:bg-slate-800/50 p-1 rounded-full border border-slate-200 dark:border-slate-700/50">
-          {['Professional', 'Creative', 'Beautify'].map(tab => (
+          {['Professional', 'Creative', 'Academic'].map(tab => (
             <button
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-6 py-2 text-sm font-medium rounded-full transition-all ${
-                activeTab === tab 
-                  ? 'bg-white dark:bg-slate-700 shadow-sm text-[#F97316] ring-1 ring-slate-200 dark:ring-slate-600' 
+                activeTab === tab
+                  ? 'bg-white dark:bg-slate-700 shadow-sm text-[#F97316] ring-1 ring-slate-200 dark:ring-slate-600'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200'
               }`}
             >
@@ -336,43 +90,35 @@ export default function SlidesAgentPage() {
         <textarea
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
-          placeholder="Enter your presentation topic, idea, or requirements..."
+          placeholder="Describe your presentation topic in detail. E.g. 'Patient Safety Protocols in Nigerian Hospitals — covering key challenges, international standards, and implementation strategies'..."
           className="w-full min-h-[120px] p-6 text-lg bg-transparent border-none outline-none resize-none placeholder:text-slate-400 text-slate-900 dark:text-white"
         />
-        
+
         {/* Bottom Toolbar */}
         <div className="flex items-center justify-between px-4 py-3 bg-slate-50/50 dark:bg-slate-900/20 border-t border-slate-100 dark:border-slate-700/50">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={handleGenerate}
               disabled={isGenerating}
               className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-colors"
             >
               {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4 text-[#F97316]" />}
-              Generate Agent
+              {isGenerating ? 'Generating...' : 'Generate Slides'}
             </button>
 
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
 
-            <select 
-              value={dataSource}
-              onChange={(e) => setDataSource(e.target.value)}
-              className="bg-transparent text-sm font-medium text-slate-600 dark:text-slate-300 outline-none cursor-pointer appearance-none px-2 pr-6 relative"
-            >
-              <option value="wikipedia">General Knowledge (Wiki)</option>
-              <option value="academic">Academic Research</option>
-            </select>
-
-            <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
-
-            <select 
+            <select
               value={slideCount}
               onChange={(e) => setSlideCount(e.target.value)}
               className="bg-transparent text-sm font-medium text-slate-600 dark:text-slate-300 outline-none cursor-pointer appearance-none px-2 pr-6 relative"
             >
-              <option>5-10 Slides</option>
-              <option>10-15 Slides</option>
-              <option>15-20 Slides</option>
+              <option value="5">5 Slides</option>
+              <option value="8">8 Slides</option>
+              <option value="10">10 Slides</option>
+              <option value="12">12 Slides</option>
+              <option value="15">15 Slides</option>
+              <option value="20">20 Slides</option>
             </select>
 
             <div className="h-4 w-px bg-slate-200 dark:bg-slate-700"></div>
@@ -384,16 +130,15 @@ export default function SlidesAgentPage() {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="text-xs font-medium text-slate-400">25 Credits</span>
             <button className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors">
               <Paperclip className="w-4 h-4" />
             </button>
-            <button 
+            <button
               onClick={handleGenerate}
               disabled={isGenerating}
               className="w-8 h-8 rounded-full bg-[#F97316] text-white flex items-center justify-center hover:bg-[#EA580C] transition-colors disabled:opacity-50"
             >
-              <ArrowUp className="w-4 h-4" />
+              {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <ArrowUp className="w-4 h-4" />}
             </button>
           </div>
         </div>
@@ -401,95 +146,21 @@ export default function SlidesAgentPage() {
 
       {/* Templates Section */}
       <div className="mt-12">
-        <div className="flex items-center gap-6 border-b border-slate-200 dark:border-slate-800 mb-6">
-          <button className="text-sm font-bold text-slate-900 dark:text-white pb-3 border-b-2 border-[#F97316]">
-            Recommend Templates
-          </button>
-          <button className="text-sm font-medium text-slate-500 hover:text-slate-900 dark:hover:text-white pb-3">
-            My Templates
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="aspect-[16/9] rounded-xl border-2 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center text-slate-500 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors">
-            <span className="text-2xl mb-2">+</span>
-            <span className="text-xs font-semibold">Click add your template</span>
-          </div>
-          
-          {TEMPLATES.map((t) => (
-            <div 
-              key={t.id} 
-              onClick={() => setSelectedTemplate(t.id)}
-              className={`relative aspect-[16/9] rounded-xl overflow-hidden cursor-pointer group ring-1 ring-slate-200 dark:ring-slate-800 hover:ring-[#F97316] transition-all ${t.color}`}
-            >
-              <div className="absolute inset-0 bg-black/10 group-hover:bg-black/20 transition-colors" />
-              <div className="absolute bottom-4 left-4 right-4">
-                <h3 className="text-sm font-bold text-white shadow-sm leading-tight">{t.title}</h3>
-              </div>
-              {selectedTemplate === t.id && (
-                <div className="absolute top-2 right-2 bg-[#F97316] text-white text-[10px] px-2 py-0.5 rounded-full font-bold">
-                  Selected
-                </div>
-              )}
-            </div>
-          ))}
-        </div>
+        <TemplateGallery
+          selectedTheme={selectedTheme}
+          onSelectTheme={setSelectedTheme}
+          customThemes={customThemes}
+          onAddCustomTheme={(theme) => setCustomThemes(prev => [...prev, theme])}
+        />
       </div>
 
-      {/* Preview Modal (Mocked) */}
-      {showPreview && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-4xl w-full overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100 dark:border-slate-800">
-              <h3 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                <MonitorPlay className="w-5 h-5 text-[#F97316]" />
-                Slides Preview
-              </h3>
-              <button onClick={() => setShowPreview(false)} className="text-slate-400 hover:text-slate-600">
-                ✕
-              </button>
-            </div>
-            
-            <div className="p-8 bg-slate-100 dark:bg-slate-950 flex-1 overflow-y-auto flex flex-col items-center gap-6">
-              {generatedSlides.map((slide, index) => (
-                <div key={index} className="w-full max-w-3xl bg-white dark:bg-slate-900 rounded-lg shadow-md flex flex-col p-8 border-t-4 border-[#F97316]">
-                  <div className="text-sm font-bold text-slate-400 mb-4">Slide {index + 1}</div>
-                  <input 
-                    value={slide.title}
-                    onChange={(e) => updateSlide(index, 'title', e.target.value)}
-                    placeholder="Slide Title"
-                    className="w-full text-2xl font-extrabold text-slate-800 dark:text-white mb-2 bg-transparent outline-none border-b border-transparent focus:border-slate-300 dark:focus:border-slate-700 transition-colors"
-                  />
-                  <input 
-                    value={slide.subtitle}
-                    onChange={(e) => updateSlide(index, 'subtitle', e.target.value)}
-                    placeholder="Subtitle (optional)"
-                    className="w-full text-sm text-slate-500 mb-6 bg-transparent outline-none border-b border-transparent focus:border-slate-300 dark:focus:border-slate-700 transition-colors"
-                  />
-                  
-                  {index > 0 && (
-                    <textarea 
-                      value={(slide.points || []).join('\n')}
-                      onChange={(e) => updateSlide(index, 'points', e.target.value.split('\n'))}
-                      placeholder="Bullet points (one per line)"
-                      className="w-full text-base text-slate-700 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/50 outline-none border border-slate-200 dark:border-slate-700 rounded-lg p-4 min-h-[120px] focus:ring-2 focus:ring-[#F97316]/20 transition-all"
-                    />
-                  )}
-                </div>
-              ))}
-            </div>
-
-            <div className="px-6 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex justify-end gap-3">
-              <button onClick={() => setShowPreview(false)} className="px-5 py-2 text-sm font-medium text-slate-600 hover:text-slate-900">
-                Close Preview
-              </button>
-              <button onClick={exportPPTX} className="flex items-center gap-2 px-6 py-2 bg-[#F97316] hover:bg-[#EA580C] text-white text-sm font-semibold rounded-lg shadow-md transition-colors">
-                <Download className="w-4 h-4" />
-                Export to PowerPoint
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Slide Deck Viewer/Editor Modal */}
+      {generatedDeck && (
+        <SlideDeckViewer
+          initialDeck={generatedDeck}
+          onClose={() => setGeneratedDeck(null)}
+          theme={selectedTheme}
+        />
       )}
     </div>
   )

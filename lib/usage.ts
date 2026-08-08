@@ -1,6 +1,6 @@
 import { createClient } from './supabase/server'
 
-export async function checkUsageLimit(userId: string, actionType: 'audit' | 'keyword' | 'words' | 'image' | 'video' | 'insight'): Promise<{ allowed: boolean, limitReached: boolean, maxLimit: number }> {
+export async function checkUsageLimit(userId: string, actionType: 'audit' | 'keyword' | 'words' | 'image' | 'video' | 'insight' | 'slides'): Promise<{ allowed: boolean, limitReached: boolean, maxLimit: number }> {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -20,10 +20,10 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
 
   // Define limits for all plans
   const limits: Record<string, Record<string, number>> = {
-    free: { keyword: 10, audit: 5, words: 1000, image: 1, video: 0, insight: 0 },
-    starter: { keyword: 50, audit: 50, words: 10000, image: 15, video: 1, insight: 0 },
-    pro: { keyword: 500, audit: Infinity, words: 100000, image: 100, video: 3, insight: Infinity },
-    agency: { keyword: 5000, audit: Infinity, words: Infinity, image: 500, video: 15, insight: Infinity },
+    free: { keyword: 10, audit: 5, words: 1000, image: 1, video: 0, insight: 0, slides: 5 },
+    starter: { keyword: 50, audit: 50, words: 10000, image: 15, video: 1, insight: 0, slides: 15 },
+    pro: { keyword: 500, audit: Infinity, words: 100000, image: 100, video: 3, insight: Infinity, slides: 100 },
+    agency: { keyword: 5000, audit: Infinity, words: Infinity, image: 500, video: 15, insight: Infinity, slides: 500 },
   }
 
   const userLimits = limits[plan] || limits['free']
@@ -79,6 +79,7 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
   if (actionType === 'insight') actionMatch = 'Generated Rank Insight'
   if (actionType === 'image') actionMatch = 'Image Generated'
   if (actionType === 'video') actionMatch = 'Video Generated'
+  if (actionType === 'slides') actionMatch = 'Slide Generated'
   
   const { count } = await supabase
     .from('activity_logs')
