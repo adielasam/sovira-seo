@@ -11,9 +11,27 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'No files provided' }, { status: 400 })
     }
 
-    // Generate a random 6-character alphanumeric slug
-    const generateSlug = () => Math.random().toString(36).substring(2, 8).toLowerCase()
-    let slug = generateSlug()
+    // Helper to extract title from HTML
+    const extractTitle = (files: any[]) => {
+      const htmlFile = files.find(f => f.path.toLowerCase() === 'index.html' || f.path.toLowerCase().endsWith('.html'))
+      if (htmlFile && htmlFile.content && typeof htmlFile.content === 'string') {
+        const match = htmlFile.content.match(/<title[^>]*>([^<]+)<\/title>/i)
+        if (match && match[1]) {
+          return match[1].trim()
+        }
+      }
+      return null
+    }
+
+    const slugify = (text: string) => {
+      return text.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)+/g, '')
+    }
+
+    const title = extractTitle(body.files)
+    const baseSlug = title ? slugify(title) : 'site'
+
+    const generateSuffix = () => Math.random().toString(36).substring(2, 5).toLowerCase()
+    let slug = `${baseSlug}-${generateSuffix()}`
     
     // Simple loop to ensure slug uniqueness by checking existing topics
     let isUnique = false
@@ -22,14 +40,14 @@ export async function POST(req: Request) {
       const { data } = await supabaseAdmin
         .from('content_generations')
         .select('id')
-        .eq('tone', 'INSTANT_SITE')
+        .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
         .like('topic', `${slug}|%`)
         .limit(1)
       
       if (!data || data.length === 0) {
         isUnique = true
       } else {
-        slug = generateSlug()
+        slug = `${baseSlug}-${generateSuffix()}`
         attempts++
       }
     }

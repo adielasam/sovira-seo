@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2 } from 'lucide-react'
+import { useState, useRef, useEffect, useMemo } from 'react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, Image as ImageIcon, Sparkles, MessageSquare } from 'lucide-react'
 import JSZip from 'jszip'
 
 export default function HtmlHostPage() {
@@ -12,6 +12,8 @@ export default function HtmlHostPage() {
   const [copied, setCopied] = useState(false)
   const [isDragging, setIsDragging] = useState(false)
   const [filesPreview, setFilesPreview] = useState<{path: string, type: string}[]>([])
+  
+  const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'phone'>('desktop')
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -26,7 +28,7 @@ export default function HtmlHostPage() {
         doc.close()
       }
     }
-  }, [htmlContent, mode])
+  }, [htmlContent, mode, devicePreview])
 
   // Handle global paste event when in landing mode
   useEffect(() => {
@@ -135,8 +137,10 @@ export default function HtmlHostPage() {
         if (extractedFiles.length > 0) {
           setFilesPreview(extractedFiles.map(f => ({ path: f.path, type: f.type })))
           const indexFile = extractedFiles.find(f => f.path.toLowerCase() === 'index.html') || extractedFiles.find(f => f.path.endsWith('.html'))
-          if (indexFile) {
+          if (indexFile && !indexFile.isBinary) {
             setHtmlContent(indexFile.content)
+          } else if (extractedFiles[0] && !extractedFiles[0].isBinary) {
+            setHtmlContent(extractedFiles[0].content)
           }
           setMode('editor')
           await uploadFiles(extractedFiles)
@@ -152,7 +156,7 @@ export default function HtmlHostPage() {
         const text = event.target?.result as string
         setHtmlContent(text)
         setMode('editor')
-        await uploadFiles([{ path: 'index.html', content: text, type: 'text/html' }])
+        await uploadFiles([{ path: 'index.html', content: text, type: 'text/html', isBinary: false }])
       }
       reader.readAsText(file)
     } else {
@@ -161,10 +165,10 @@ export default function HtmlHostPage() {
   }
 
   const handlePublish = async () => {
-    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html' }])
+    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }])
   }
 
-  const uploadFiles = async (files: {path: string, content: string, type: string}[]) => {
+  const uploadFiles = async (files: {path: string, content: string, type: string, isBinary: boolean}[]) => {
     setIsUploading(true)
     setHostedUrl('')
     try {
@@ -217,6 +221,17 @@ export default function HtmlHostPage() {
       setIsUploading(false)
     }
   }
+
+  const getProjectTitle = () => {
+    const match = htmlContent.match(/<title[^>]*>([^<]+)<\/title>/i)
+    return match ? match[1].trim() : 'Untitled Project'
+  }
+  
+  const getProjectSize = () => {
+    return (new Blob([htmlContent]).size / 1024).toFixed(1) + ' KB'
+  }
+
+  const lineCount = useMemo(() => htmlContent.split('\n').length, [htmlContent])
 
   if (mode === 'landing') {
     return (
@@ -306,7 +321,7 @@ export default function HtmlHostPage() {
   // EDITOR MODE
   return (
     <div 
-      className="flex flex-col h-[calc(100vh-4rem)] bg-[#0B0F19] text-slate-300 font-mono relative overflow-hidden"
+      className="flex flex-col h-[calc(100vh-4rem)] bg-[#0A0A0A] text-slate-300 font-sans relative overflow-hidden"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={processDrop}
@@ -319,106 +334,199 @@ export default function HtmlHostPage() {
         accept=".html,.zip"
       />
 
-      {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b border-slate-800 bg-[#131B2C]">
-        <div className="flex items-center gap-2">
+      {/* Header - Dark IDE Style */}
+      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A2A2A] bg-[#111111]">
+        
+        {/* Left: Back & Project Info */}
+        <div className="flex items-center gap-4 flex-1">
           <button 
             onClick={() => setMode('landing')}
-            className="text-slate-400 hover:text-white mr-2"
+            className="flex items-center gap-1 text-slate-400 hover:text-white text-sm font-medium transition-colors"
           >
             ← Back
           </button>
-          <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white font-bold">
-            i/
+          
+          <div className="h-4 w-px bg-slate-800" />
+          
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] font-bold tracking-widest text-slate-500 border border-slate-700/50 rounded px-1.5 py-0.5 font-mono">
+              PROJECT
+            </span>
+            <span className="text-sm font-medium text-slate-200 truncate max-w-[200px]">
+              {getProjectTitle()}
+            </span>
+            {hostedUrl && (
+              <>
+                <span className="text-slate-600">|</span>
+                <a 
+                  href={hostedUrl} 
+                  target="_blank" 
+                  rel="noreferrer" 
+                  className="text-xs text-blue-400 hover:text-blue-300 hover:underline truncate max-w-[200px] flex items-center gap-1"
+                >
+                  {hostedUrl.replace(/^https?:\/\//, '')}
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </>
+            )}
           </div>
-          <span className="font-semibold text-white tracking-wide">InstantSite</span>
         </div>
         
-        <div className="flex items-center gap-4">
-          {hostedUrl && (
-            <div className="flex items-center gap-2 bg-green-500/10 text-green-400 px-3 py-1.5 rounded-full text-sm font-sans">
-              <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-              Live
-            </div>
-          )}
+        {/* Middle: Stats */}
+        <div className="hidden lg:flex items-center gap-4 text-xs font-mono text-slate-500 mr-8">
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+            expires in never
+          </div>
+          <div className="flex items-center gap-1.5">
+            <span className="w-1.5 h-1.5 rounded-full bg-slate-700"></span>
+            {getProjectSize()}
+          </div>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="flex items-center gap-3">
+          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[#1A1A1A] text-slate-300 text-sm font-medium transition-colors border border-transparent hover:border-slate-800">
+            <ImageIcon className="w-4 h-4" /> Media
+          </button>
+          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[#1A1A1A] text-slate-300 text-sm font-medium transition-colors border border-transparent hover:border-slate-800">
+            <Sparkles className="w-4 h-4 text-blue-400" /> AI Edit
+          </button>
+          <button className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-md hover:bg-[#1A1A1A] text-slate-300 text-sm font-medium transition-colors border border-transparent hover:border-slate-800">
+            <MessageSquare className="w-4 h-4" /> Chat
+          </button>
+          
           <button 
             onClick={handlePublish}
             disabled={isUploading}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded-full font-semibold transition-colors disabled:opacity-50 font-sans shadow-lg shadow-blue-900/20"
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+              hostedUrl 
+                ? 'bg-[#1A1A1A] text-green-400 border border-green-500/30 hover:bg-green-500/10' 
+                : 'bg-blue-600 text-white hover:bg-blue-500 border border-blue-500'
+            }`}
           >
-            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Globe className="w-4 h-4" />}
-            Publish
+            {isUploading ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : hostedUrl ? (
+              <Check className="w-4 h-4" />
+            ) : (
+              <Globe className="w-4 h-4" />
+            )}
+            {hostedUrl ? 'Updated' : 'Publish'}
           </button>
+          
+          {hostedUrl && (
+            <button 
+              onClick={handleDelete}
+              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors ml-1"
+              title="Delete Site"
+            >
+              <Trash2 className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
 
-      {/* Success Banner */}
-      {hostedUrl && (
-        <div className="bg-slate-900 border-b border-slate-800 p-3 flex items-center justify-between font-sans">
-          <div className="flex items-center gap-3">
-            <Check className="w-5 h-5 text-green-500" />
-            <span className="text-slate-300">Site deployed instantly to:</span>
-            <a href={hostedUrl} target="_blank" rel="noreferrer" className="text-blue-400 hover:underline font-medium">
-              {hostedUrl}
-            </a>
-          </div>
-          <div className="flex items-center gap-2">
-            <button onClick={copyLink} className="p-2 hover:bg-slate-800 rounded-md transition-colors text-slate-400 hover:text-white" title="Copy Link">
-              {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-            </button>
-            <a href={hostedUrl} target="_blank" rel="noreferrer" className="p-2 hover:bg-slate-800 rounded-md transition-colors text-slate-400 hover:text-white" title="Open in new tab">
-              <ExternalLink className="w-4 h-4" />
-            </a>
-            <button onClick={handleDelete} className="p-2 hover:bg-red-500/10 rounded-md transition-colors text-slate-400 hover:text-red-500" title="Delete Site">
-              <Trash2 className="w-4 h-4" />
-            </button>
-          </div>
-        </div>
-      )}
-
       {/* Main Split View */}
       <div className="flex-1 flex overflow-hidden">
-        {/* Editor Pane */}
-        <div className="w-1/2 flex flex-col border-r border-slate-800 bg-[#0B0F19]">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-800 bg-[#131B2C] text-xs text-slate-500">
-            <div className="flex items-center gap-2">
-              <Code className="w-4 h-4" />
-              <span>index.html</span>
+        
+        {/* Left Editor Pane */}
+        <div className="w-1/2 flex flex-col border-r border-[#2A2A2A] bg-[#0F0F0F]">
+          {/* Editor Tabs */}
+          <div className="flex items-center border-b border-[#2A2A2A] bg-[#111111]">
+            <div className="flex items-center px-4 py-2 border-r border-[#2A2A2A] text-xs text-slate-500 font-mono">
+              <span className="text-slate-400 mr-2">{'</>'}</span>
             </div>
-            <span>utf-8 html</span>
+            <div className="px-4 py-2 text-xs font-mono text-blue-400 border-b-2 border-blue-500 bg-[#0F0F0F]">
+              index.html
+            </div>
+            <div className="px-3 py-2 text-slate-500 hover:text-slate-300 cursor-pointer">
+              +
+            </div>
+            <div className="flex-1" />
+            <div className="px-4 text-xs font-mono text-slate-600">
+              {lineCount} lines · utf-8 · html
+            </div>
           </div>
           
-          <div className="flex-1 relative">
+          {/* Editor Body with Line Numbers */}
+          <div className="flex-1 flex relative overflow-hidden bg-[#0F0F0F]">
+            {/* Line Numbers Column */}
+            <div className="w-12 flex-shrink-0 bg-[#0A0A0A] border-r border-[#1A1A1A] py-4 text-right pr-3 select-none overflow-hidden text-[13px] font-mono leading-relaxed text-slate-600">
+              {Array.from({ length: Math.max(lineCount, 50) }).map((_, i) => (
+                <div key={i} className={i < lineCount ? 'text-slate-600' : 'text-slate-800'}>
+                  {i + 1}
+                </div>
+              ))}
+            </div>
+            
+            {/* Textarea Code Editor */}
             <textarea
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
               spellCheck={false}
-              className="absolute inset-0 w-full h-full p-4 bg-transparent text-slate-300 resize-none focus:outline-none focus:ring-0 leading-relaxed font-mono text-sm"
+              className="flex-1 w-full h-full p-4 bg-transparent text-[#D4D4D4] resize-none focus:outline-none focus:ring-0 text-[13px] font-mono leading-relaxed whitespace-pre"
               placeholder="Paste HTML here..."
             />
           </div>
         </div>
 
-        {/* Preview Pane */}
-        <div className="w-1/2 flex flex-col bg-white">
-          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-slate-50 text-xs text-slate-500 font-sans">
-            <div className="flex items-center gap-2">
-              <Play className="w-4 h-4" />
-              <span>Live Preview</span>
+        {/* Right Preview Pane */}
+        <div className="w-1/2 flex flex-col bg-white transition-all relative">
+          
+          {/* Preview Header */}
+          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-[#FAFAFA] text-xs font-mono text-slate-500">
+            <div className="flex items-center gap-2 text-slate-600">
+              <Eye className="w-4 h-4" />
+              <span>live preview</span>
             </div>
             
-            {filesPreview.length > 0 && (
-              <div className="flex items-center gap-1 text-blue-600">
-                <FileCode2 className="w-4 h-4" />
-                <span>{filesPreview.length} files loaded from ZIP</span>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3">
+                <button 
+                  onClick={() => setDevicePreview('desktop')}
+                  className={`hover:text-slate-900 transition-colors ${devicePreview === 'desktop' ? 'text-blue-600' : ''}`}
+                >
+                  desktop
+                </button>
+                <button 
+                  onClick={() => setDevicePreview('tablet')}
+                  className={`hover:text-slate-900 transition-colors ${devicePreview === 'tablet' ? 'text-blue-600' : ''}`}
+                >
+                  tablet
+                </button>
+                <button 
+                  onClick={() => setDevicePreview('phone')}
+                  className={`hover:text-slate-900 transition-colors ${devicePreview === 'phone' ? 'text-blue-600' : ''}`}
+                >
+                  phone
+                </button>
               </div>
-            )}
+              <span className="text-slate-300">|</span>
+              <button className="hover:text-slate-900 transition-colors">fullscreen</button>
+              <button 
+                onClick={() => hostedUrl && window.open(hostedUrl, '_blank')}
+                className="hover:text-slate-900 transition-colors"
+                title="Open Live URL"
+              >
+                ↗
+              </button>
+            </div>
           </div>
-          <iframe 
-            ref={iframeRef}
-            className="flex-1 w-full border-none"
-            title="Live Preview"
-          />
+          
+          {/* Iframe Container */}
+          <div className="flex-1 flex items-center justify-center bg-slate-100 overflow-hidden">
+            <iframe 
+              ref={iframeRef}
+              className={`bg-white border-none shadow-sm transition-all duration-300 ${
+                devicePreview === 'desktop' ? 'w-full h-full' :
+                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-md shadow-xl' :
+                'w-[375px] h-[812px] rounded-3xl shadow-2xl border-8 border-slate-900'
+              }`}
+              title="Live Preview"
+            />
+          </div>
+
         </div>
       </div>
     </div>
