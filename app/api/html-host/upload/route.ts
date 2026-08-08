@@ -55,10 +55,10 @@ export async function POST(req: Request) {
           attempts++
         }
       }
-    }
 
-    if (!isUnique) {
-      return NextResponse.json({ error: 'Failed to generate unique site URL' }, { status: 500 })
+      if (!isUnique) {
+        return NextResponse.json({ error: 'Failed to generate unique site URL' }, { status: 500 })
+      }
     }
 
     let user_id = body.userId
