@@ -60,14 +60,15 @@ export async function generateSlideDeck(topic: string, slideCount: number, theme
   }
 
   const aiClient = new GoogleGenerativeAI(apiKey)
-  const model = aiClient.getGenerativeModel({ model: 'gemini-2.5-flash' })
+  const model = aiClient.getGenerativeModel({ 
+    model: 'gemini-2.5-flash',
+    generationConfig: { responseMimeType: "application/json" }
+  })
 
   const prompt = `You are a professional presentation designer. Generate a presentation deck about: "${topic}".
 
 Generate exactly ${slideCount} slides.
 ${theme ? `Style/Tone: ${theme}` : ''}
-
-Return ONLY valid JSON — no markdown fences, no preamble, no explanation text.
 
 The JSON must follow this exact schema:
 {
@@ -88,12 +89,12 @@ Rules:
 - Include at least one "quote" slide with a real or relevant quotation
 - Each bullet point must be a substantive, detailed sentence of 20-40 words — NOT short phrases or single words
 - All content must be factual, informative, and academically sound
-- Slide IDs must be sequential: "slide-1", "slide-2", etc.
-- Return ONLY the JSON object, nothing else`
+- Slide IDs must be sequential: "slide-1", "slide-2", etc.`
 
   async function callModel(currentPrompt: string): Promise<string> {
     const response = await model.generateContent(currentPrompt)
     let text = response.response.text()
+    // Fallback cleanup just in case, though responseMimeType should prevent markdown fences
     text = text.replace(/```json\s*/gi, '').replace(/```\s*/g, '').trim()
     return text
   }
