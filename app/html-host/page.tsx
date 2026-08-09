@@ -334,7 +334,7 @@ export default function HtmlHostPage() {
 
   const handleDelete = async () => {
     if (!hostedUrl) return
-    const slug = hostedUrl.split('/').pop()
+    const slug = extractSlug(hostedUrl)
     if (!slug) return
     if (!confirm('Are you sure you want to delete this site?')) return
     
