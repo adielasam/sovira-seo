@@ -5,77 +5,38 @@ import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, 
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'
+import Editor from '@monaco-editor/react'
 import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
+const EDITOR_OPTIONS = {
+  minimap: { enabled: false },
+  wordWrap: 'on' as const,
+  formatOnPaste: true,
+  fontSize: 14,
+  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+  lineHeight: 1.6,
+  padding: { top: 16 },
+  scrollBeyondLastLine: false,
+  smoothScrolling: true,
+  cursorBlinking: 'smooth' as const,
+  cursorSmoothCaretAnimation: 'on' as const,
+}
+
 const DEFAULT_TEMPLATE = `<!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Awesome Site</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-    </style>
+  <title>My dorvas</title>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 2rem; }
+    h1 { color: #2563eb; }
+  </style>
 </head>
-<body class="bg-gray-50 text-gray-900">
-    <!-- Navigation -->
-    <nav class="p-6 flex justify-between items-center max-w-6xl mx-auto">
-        <h1 class="text-2xl font-extrabold text-blue-600 tracking-tight">Brand.</h1>
-        <div class="space-x-4">
-            <a href="#" class="text-gray-600 hover:text-blue-600 font-semibold transition">Home</a>
-            <a href="#" class="text-gray-600 hover:text-blue-600 font-semibold transition">Features</a>
-            <a href="#" class="bg-blue-600 text-white px-5 py-2 rounded-full font-semibold hover:bg-blue-700 transition shadow-lg">Get Started</a>
-        </div>
-    </nav>
-
-    <!-- Hero Section -->
-    <main class="max-w-6xl mx-auto px-6 py-24 text-center">
-        <h2 class="text-5xl md:text-7xl font-extrabold tracking-tight mb-8">
-            Build something <br/> <span class="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">extraordinary.</span>
-        </h2>
-        <p class="text-xl text-gray-600 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Welcome to your new InstantSite. Modify this code on the left, and watch the changes appear instantly on the right. No setup required.
-        </p>
-        <div class="flex justify-center gap-4">
-            <a href="#" class="bg-blue-600 text-white px-8 py-4 rounded-full font-bold text-lg hover:bg-blue-700 transition shadow-xl hover:-translate-y-1 transform">
-                Start Editing Now
-            </a>
-            <a href="#" class="bg-white text-gray-900 border border-gray-200 px-8 py-4 rounded-full font-bold text-lg hover:bg-gray-50 transition shadow-sm">
-                Learn More
-            </a>
-        </div>
-    </main>
-
-    <!-- Features Section -->
-    <section class="bg-white py-24 border-t border-gray-100">
-        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-3 gap-12">
-            <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                <div class="w-12 h-12 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center mb-6">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                </div>
-                <h3 class="text-xl font-bold mb-3">Lightning Fast</h3>
-                <p class="text-gray-600">Changes reflect instantly in the preview panel. No more waiting for builds.</p>
-            </div>
-            <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                <div class="w-12 h-12 bg-purple-100 text-purple-600 rounded-xl flex items-center justify-center mb-6">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                </div>
-                <h3 class="text-xl font-bold mb-3">Beautiful Design</h3>
-                <p class="text-gray-600">Tailwind CSS is pre-installed. You can build stunning UI components effortlessly.</p>
-            </div>
-            <div class="p-6 bg-gray-50 rounded-2xl border border-gray-100">
-                <div class="w-12 h-12 bg-green-100 text-green-600 rounded-xl flex items-center justify-center mb-6">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                </div>
-                <h3 class="text-xl font-bold mb-3">1-Click Publish</h3>
-                <p class="text-gray-600">When you are done, hit Publish and your site is live instantly on a global CDN.</p>
-            </div>
-        </div>
-    </section>
+<body>
+  <h1>Welcome to Dorvas Technologies!</h1>
+  <a href="https://www.sovira.com.ng" class="btn">click me</a>
+  <p>Start typing HTML here...</p>
 </body>
 </html>`;
 
@@ -702,28 +663,37 @@ export default function HtmlHostPage() {
         {/* Left Editor Pane */}
         <div className="w-full md:w-[60%] flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full">
           {/* Editor Tabs */}
-          <div className="flex items-center bg-[#252526] border-b border-[#1e1e1e]">
-            <div className="flex items-center px-4 py-3 text-xs text-[#858585] font-mono">
-              <span className="mr-2">{'</>'}</span>
+          <div className="flex items-center border-b border-slate-100 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111]">
+            <div className="flex items-center px-4 py-3 border-r border-slate-200 dark:border-[#2A2A2A] text-xs text-slate-400 font-mono">
+              <span className="text-slate-400 dark:text-slate-500 mr-2">{'</>'}</span>
             </div>
-            <div className="px-6 py-3 text-sm font-semibold font-mono text-[#569cd6] border-t-2 border-t-[#007acc] bg-[#1E1E1E]">
+            <div className="px-6 py-3 text-sm font-semibold font-mono text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-white dark:bg-[#0F0F0F]">
               index.html
             </div>
-            <div className="flex-1 bg-[#252526]" />
-            <div className="px-4 text-[11px] font-mono font-medium text-[#858585]">
+            <div className="px-4 py-3 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 cursor-pointer font-bold">
+              +
+            </div>
+            <div className="flex-1" />
+            <div className="px-4 text-xs font-mono font-medium text-slate-500 dark:text-slate-600">
               {lineCount} lines · utf-8 · html
             </div>
           </div>
           
           {/* Editor Body */}
-          <div className="flex-1 flex relative overflow-hidden bg-[#1E1E1E] p-4 border-t border-[#2d2d2d]">
-            <textarea
+          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F] pt-2">
+            <Editor
+              height="100%"
+              language="html"
+              theme={theme === 'dark' ? 'vs-dark' : 'light'}
               value={htmlContent}
-              onChange={(e) => setHtmlContent(e.target.value)}
-              className="flex-1 w-full h-full bg-transparent text-[#d4d4d4] font-mono text-[14px] leading-[1.6] resize-none focus:outline-none focus:ring-0 outline-none border-none custom-scrollbar block"
-              placeholder="<!-- Start typing HTML here... -->"
-              spellCheck={false}
-              autoComplete="off"
+              onChange={(value) => setHtmlContent(value || '')}
+              options={EDITOR_OPTIONS}
+              loading={
+                <div className="flex items-center justify-center w-full h-full text-slate-400">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Loading editor...
+                </div>
+              }
             />
           </div>
         </div>
