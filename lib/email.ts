@@ -161,8 +161,8 @@ export async function sendBeforeDeletionWarning(email: string, projectName: stri
     const { data, error } = await resend.emails.send({
       from: 'Sovira Support <onboarding@resend.dev>',
       to: [email],
-      subject: \`Important: Your project "\${projectName}" is scheduled for deletion\`,
-      html: \`
+      subject: `Important: Your project "${projectName}" is scheduled for deletion`,
+      html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
           <div style="background-color: #0F172A; padding: 40px 20px; text-align: center;">
             <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 4px; font-weight: 800;">SOVIRA</h1>
@@ -171,7 +171,7 @@ export async function sendBeforeDeletionWarning(email: string, projectName: stri
           <div style="padding: 40px 30px;">
             <h2 style="color: #0F172A; margin-top: 0; font-size: 22px;">Project Deletion Warning</h2>
             <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
-              Hi there, we noticed that your InstantSite project <strong>\${projectName}</strong> has been inactive for over 7 days.
+              Hi there, we noticed that your InstantSite project <strong>${projectName}</strong> has been inactive for over 7 days.
             </p>
             <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
               As a free user, inactive projects are routinely cleaned up to maintain server capacity. Your project is scheduled for deletion.
@@ -183,7 +183,7 @@ export async function sendBeforeDeletionWarning(email: string, projectName: stri
             </div>
           </div>
         </div>
-      \`,
+      `,
     })
 
     if (error) {
@@ -197,4 +197,5 @@ export async function sendBeforeDeletionWarning(email: string, projectName: stri
     return { success: false, error }
   }
 }
+
 

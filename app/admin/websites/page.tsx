@@ -126,7 +126,7 @@ export default async function AdminWebsitesPage() {
                       <span className="text-xs text-slate-500">
                         {Math.floor(Math.abs(new Date().getTime() - new Date(site.createdAt).getTime()) / (1000 * 60 * 60 * 24)) === 0 
                           ? 'Today' 
-                          : \`\${Math.floor(Math.abs(new Date().getTime() - new Date(site.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago\`}
+                          : `${Math.floor(Math.abs(new Date().getTime() - new Date(site.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago`}
                       </span>
                     </div>
                   </td>
@@ -157,3 +157,4 @@ export default async function AdminWebsitesPage() {
     </div>
   )
 }
+
