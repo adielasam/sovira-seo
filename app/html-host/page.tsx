@@ -647,37 +647,28 @@ export default function HtmlHostPage() {
         {/* Left Editor Pane */}
         <div className="w-full md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full">
           {/* Editor Tabs */}
-          <div className="flex items-center border-b border-slate-100 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111]">
-            <div className="flex items-center px-4 py-3 border-r border-slate-200 dark:border-[#2A2A2A] text-xs text-slate-400 font-mono">
-              <span className="text-slate-400 dark:text-slate-500 mr-2">{'</>'}</span>
+          <div className="flex items-center bg-[#252526] border-b border-[#1e1e1e]">
+            <div className="flex items-center px-4 py-3 text-xs text-[#858585] font-mono">
+              <span className="mr-2">{'</>'}</span>
             </div>
-            <div className="px-6 py-3 text-sm font-semibold font-mono text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-white dark:bg-[#0F0F0F]">
+            <div className="px-6 py-3 text-sm font-semibold font-mono text-[#569cd6] border-t-2 border-t-[#007acc] bg-[#1E1E1E]">
               index.html
             </div>
-            <div className="px-4 py-3 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 cursor-pointer font-bold">
-              +
-            </div>
-            <div className="flex-1" />
-            <div className="px-4 text-xs font-mono font-medium text-slate-500 dark:text-slate-600">
+            <div className="flex-1 bg-[#252526]" />
+            <div className="px-4 text-[11px] font-mono font-medium text-[#858585]">
               {lineCount} lines · utf-8 · html
             </div>
           </div>
           
           {/* Editor Body */}
-          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F] pt-2">
-            <Editor
-              height="100%"
-              language="html"
-              theme={theme === 'dark' ? 'vs-dark' : 'light'}
+          <div className="flex-1 flex relative overflow-hidden bg-[#1E1E1E] p-4 border-t border-[#2d2d2d]">
+            <textarea
               value={htmlContent}
-              onChange={(value) => setHtmlContent(value || '')}
-              options={EDITOR_OPTIONS}
-              loading={
-                <div className="flex items-center justify-center w-full h-full text-slate-400">
-                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
-                  Loading editor...
-                </div>
-              }
+              onChange={(e) => setHtmlContent(e.target.value)}
+              className="w-full h-full bg-transparent text-[#d4d4d4] font-mono text-[14px] leading-[1.6] resize-none focus:outline-none focus:ring-0 outline-none border-none custom-scrollbar"
+              placeholder="<!-- Start typing HTML here... -->"
+              spellCheck={false}
+              autoComplete="off"
             />
           </div>
         </div>
