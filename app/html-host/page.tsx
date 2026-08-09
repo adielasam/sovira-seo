@@ -304,11 +304,15 @@ export default function HtmlHostPage() {
   }
 
   const handlePublish = async () => {
-    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }])
+    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }], false)
   }
 
-  const uploadFiles = async (files: {path: string, content: string, type: string, isBinary: boolean}[]) => {
-    if (!user) {
+  const handleSaveToProject = async () => {
+    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }], true)
+  }
+
+  const uploadFiles = async (files: {path: string, content: string, type: string, isBinary: boolean}[], requireLogin = false) => {
+    if (requireLogin && !user) {
       setShowAuthModal(true)
       return
     }
@@ -325,7 +329,7 @@ export default function HtmlHostPage() {
         const res = await fetch('/api/html-host/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ files: [file], slug: currentSlug, projectTitle: getProjectTitle(), userId: user.id })
+          body: JSON.stringify({ files: [file], slug: currentSlug, projectTitle: getProjectTitle(), userId: user?.id })
         })
         
         const data = await res.json()
@@ -602,24 +606,27 @@ export default function HtmlHostPage() {
         </div>
         
         {/* Right: Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <button 
             onClick={handlePublish}
             disabled={isUploading}
-            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-md hover:-translate-y-0.5 ${
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border ${
               hostedUrl 
-                ? 'bg-emerald-50 dark:bg-[#1A1A1A] text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/10' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-600/20'
+                ? 'bg-emerald-50 dark:bg-[#1A1A1A] text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/10' 
+                : 'bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600'
             }`}
           >
-            {isUploading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : hostedUrl ? (
-              <Check className="w-4 h-4" />
-            ) : (
-              <Globe className="w-4 h-4" />
-            )}
-            {hostedUrl ? 'Save Updates' : 'Save & Publish'}
+            {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : hostedUrl ? <Check className="w-4 h-4" /> : <Globe className="w-4 h-4" />}
+            {hostedUrl ? 'Update Published' : 'Publish'}
+          </button>
+          
+          <button 
+            onClick={handleSaveToProject}
+            disabled={isUploading}
+            className="flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-md hover:-translate-y-0.5 bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-600/20"
+          >
+            <FolderArchive className="w-4 h-4" />
+            Save Project
           </button>
           
           {hostedUrl && (
