@@ -39,6 +39,32 @@ export async function GET(
         .single()
         
       if (fallbackError || !fallbackFile) {
+        // Ultimate Fallback: Fuzzy search in case the user's HTML references 'image.png' 
+        // but the ZIP actually contained 'images/image.png' or 'assets/image.png'
+        const fileName = filePath.split('/').pop() || filePath
+        if (fileName && fileName !== 'index.html') {
+          const { data: fuzzyMatch, error: fuzzyErr } = await supabase
+            .from('content_generations')
+            .select('generated_content, content_type, tone')
+            .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
+            .like('topic', `${slug}|%${fileName}`)
+            .limit(1)
+            .single()
+            
+          if (!fuzzyErr && fuzzyMatch) {
+            const content = fuzzyMatch.tone === 'INSTANT_SITE_BINARY' 
+              ? Buffer.from(fuzzyMatch.generated_content, 'base64') 
+              : fuzzyMatch.generated_content
+
+            return new NextResponse(content, {
+              headers: {
+                'Content-Type': fuzzyMatch.content_type,
+                'Content-Security-Policy': "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: http: data: blob:;"
+              }
+            })
+          }
+        }
+        
         return new NextResponse(`File not found: ${filePath}`, { status: 404 })
       }
       
