@@ -29,12 +29,25 @@ export default function HtmlHostPage() {
     if (mode === 'editor' && iframeRef.current) {
       const doc = iframeRef.current.contentDocument
       if (doc) {
+        let finalContent = htmlContent
+        if (hostedUrl) {
+           const baseUrl = hostedUrl.endsWith('/') ? hostedUrl : `${hostedUrl}/`
+           const baseTag = `<base href="${baseUrl}">`
+           if (finalContent.match(/<head[^>]*>/i)) {
+             finalContent = finalContent.replace(/(<head[^>]*>)/i, `$1\n  ${baseTag}`)
+           } else if (finalContent.match(/<html[^>]*>/i)) {
+             finalContent = finalContent.replace(/(<html[^>]*>)/i, `$1\n<head>\n  ${baseTag}\n</head>`)
+           } else {
+             finalContent = `${baseTag}\n${finalContent}`
+           }
+        }
+        
         doc.open()
-        doc.write(htmlContent)
+        doc.write(finalContent)
         doc.close()
       }
     }
-  }, [htmlContent, mode, devicePreview])
+  }, [htmlContent, mode, devicePreview, hostedUrl])
 
   // Handle global paste event when in landing mode
   useEffect(() => {
