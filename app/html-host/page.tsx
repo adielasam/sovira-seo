@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo } from 'react'
 import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X } from 'lucide-react'
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
+import Link from 'next/link'
 
 export default function HtmlHostPage() {
   const [mode, setMode] = useState<'landing' | 'editor'>('landing')
@@ -355,11 +356,16 @@ export default function HtmlHostPage() {
   if (mode === 'landing') {
     return (
       <div 
-        className="flex flex-col h-[calc(100vh-4rem)] bg-[#0B0F19] text-white font-sans relative overflow-hidden items-center justify-center"
+        className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={processDrop}
       >
+        <div className="absolute top-6 left-6 z-20">
+          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium">
+            <span>←</span> Back to Sovira
+          </Link>
+        </div>
         <input 
           type="file" 
           ref={fileInputRef} 

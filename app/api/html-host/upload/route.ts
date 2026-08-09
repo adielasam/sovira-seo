@@ -65,12 +65,16 @@ export async function POST(req: Request) {
     
     if (!user_id) {
       // Fallback: pick any valid user_id from the database to satisfy the foreign key constraint
-      const { data: randomUser } = await supabaseAdmin.from('user_profiles').select('id').limit(1).single()
-      if (randomUser) {
-        user_id = randomUser.id
+      const { data: adminUser } = await supabaseAdmin.from('user_profiles').select('id').eq('role', 'admin').limit(1).single()
+      if (adminUser) {
+        user_id = adminUser.id
       }
     }
     
+    if (!user_id) {
+      return NextResponse.json({ error: 'System configuration error. No admin found for anonymous upload.' }, { status: 500 })
+    }
+
     const filesToInsert = body.files.map((file: any) => ({
       user_id,
       topic: `${slug}|${file.path.startsWith('/') ? file.path.substring(1) : file.path}`,
@@ -80,7 +84,6 @@ export async function POST(req: Request) {
       word_count: file.content.length // Store byte/char length in word_count
     }))
 
-    // Insert into content_generations
     const { error: filesError } = await supabaseAdmin
       .from('content_generations')
       .insert(filesToInsert)
