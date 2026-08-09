@@ -21,7 +21,8 @@ export async function GET(
       .from('content_generations')
       .select('generated_content, content_type, tone')
       .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
-      .eq('topic', `${slug}|${searchPath}`)
+      .ilike('topic', `${slug}|${searchPath}`)
+      .limit(1)
       .single()
 
     if (fileError || !file) {
@@ -35,7 +36,8 @@ export async function GET(
         .from('content_generations')
         .select('generated_content, content_type, tone')
         .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
-        .eq('topic', `${slug}|${fallbackPath}`)
+        .ilike('topic', `${slug}|${fallbackPath}`)
+        .limit(1)
         .single()
         
       if (fallbackError || !fallbackFile) {
@@ -47,7 +49,7 @@ export async function GET(
             .from('content_generations')
             .select('generated_content, content_type, tone')
             .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
-            .like('topic', `${slug}|%${fileName}`)
+            .ilike('topic', `${slug}|%${fileName}`)
             .limit(1)
             .single()
             
