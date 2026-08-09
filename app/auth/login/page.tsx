@@ -11,14 +11,16 @@ import { AuthMessages } from '@/components/auth-messages'
 import { Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 
-function LoginForm() {
+function RedirectInput() {
+  const searchParams = useSearchParams()
+  return <input type="hidden" name="redirectTo" value={searchParams.get('redirect') || '/dashboard'} />
+}
+
+export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
-  const searchParams = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/dashboard'
 
   return (
-    <>
     <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#0F172A] p-4 transition-colors duration-300">
       <Suspense fallback={null}>
         <AuthMessages />
@@ -48,7 +50,9 @@ function LoginForm() {
         </div>
 
         <form action={loginAction} className="space-y-6">
-          <input type="hidden" name="redirectTo" value={redirectTo} />
+          <Suspense fallback={null}>
+            <RedirectInput />
+          </Suspense>
           <div className="flex gap-4 w-full">
             <button
               type="button"
@@ -170,131 +174,16 @@ function LoginForm() {
             Sign in
           </button>
         </form>
-        </div>
 
-        <div className="relative flex items-center justify-center my-6">
-          <hr className="w-full border-slate-200 dark:border-slate-700" />
-          <span className="absolute bg-white dark:bg-[#1E293B] px-4 text-xs font-medium uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            OR CONTINUE WITH EMAIL
-          </span>
-        </div>
-
-        <div className="space-y-5">
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1.5">
-              Email address
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
-              required
-              className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-4 py-3 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div>
-            <div className="flex items-center justify-between mb-1.5">
-              <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                Password
-              </label>
-              <Link href="/auth/forgot-password" className="text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors">
-                Forgot password?
-              </Link>
-            </div>
-            <div className="relative">
-              <input
-                id="password"
-                name="password"
-                type={showPassword ? 'text' : 'password'}
-                autoComplete="current-password"
-                required
-                className="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0F172A] px-4 py-3 pr-12 text-slate-900 dark:text-white placeholder-slate-400 dark:placeholder-slate-500 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 transition-all duration-200"
-                placeholder="••••••••"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors p-1"
-                aria-label={showPassword ? 'Hide password' : 'Show password'}
-              >
-                {showPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Terms & Conditions Checkbox */}
-        <div className="flex items-start gap-3">
-          <div className="flex items-center h-5">
-            <input
-              id="terms-login"
-              type="checkbox"
-              checked={acceptedTerms}
-              onChange={(e) => setAcceptedTerms(e.target.checked)}
-              className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500 dark:border-slate-600 dark:bg-[#0F172A] dark:ring-offset-slate-900 cursor-pointer"
-            />
-          </div>
-          <div className="text-sm">
-            <label htmlFor="terms-login" className="font-medium text-slate-700 dark:text-slate-300 cursor-pointer">
-              I agree to the{' '}
-              <Link href="/terms" target="_blank" className="text-blue-600 hover:text-blue-500 dark:text-blue-400 dark:hover:text-blue-300 underline underline-offset-2">
-                Terms and Conditions
-              </Link>
-            </label>
-          </div>
-        </div>
-
-        <div className="flex justify-center mb-6">
-          <Turnstile siteKey={process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || '0x4AAAAAAD3Ix3x1GjScvPLT'} />
-        </div>
-
-        <button
-          type="submit"
-          disabled={!acceptedTerms}
-          className={`w-full flex justify-center rounded-lg px-4 py-3 text-sm font-semibold shadow-sm transition-all duration-200 ${
-            !acceptedTerms
-              ? 'bg-slate-300 text-slate-500 cursor-not-allowed dark:bg-slate-800 dark:text-slate-500'
-              : 'bg-blue-600 hover:bg-blue-500 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600 active:scale-[0.98]'
-          }`}
-        >
-          Sign in
-        </button>
-      </form>
-
-      <p className="text-center text-sm text-slate-600 dark:text-slate-400">
-        Don't have an account?{' '}
-        <Link href="/auth/register" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors">
-          Sign up
-        </Link>
-      </p>
-    </>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#0F172A] p-4 transition-colors duration-300">
-      <Suspense fallback={null}>
-        <AuthMessages />
-        <div className="w-full max-w-md">
-          <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white transition-colors mb-6">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-            </svg>
-            Back to Home
+        <p className="text-center text-sm text-slate-600 dark:text-slate-400">
+          Don't have an account?{' '}
+          <Link href="/auth/register" className="font-semibold text-blue-600 dark:text-blue-400 hover:text-blue-500 transition-colors">
+            Sign up
           </Link>
-          <div className="p-8 space-y-8 bg-white dark:bg-[#1E293B] rounded-2xl shadow-lg border border-slate-200 dark:border-slate-800 transition-all duration-300">
-            <LoginForm />
-          </div>
-        </div>
-      </Suspense>
+        </p>
+      </div>
+      </div>
     </div>
   )
 }
+
