@@ -553,7 +553,7 @@ export default function HtmlHostPage() {
   // EDITOR MODE
   return (
     <div 
-      className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans relative overflow-hidden transition-colors duration-300"
+      className="flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans relative overflow-hidden transition-colors duration-300"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={processDrop}
@@ -658,10 +658,10 @@ export default function HtmlHostPage() {
       </div>
 
       {/* Main Split View */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
         
         {/* Left Editor Pane */}
-        <div className="w-full md:w-[60%] flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full">
+        <div className="w-full md:w-[60%] flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full min-h-0">
           {/* Editor Tabs */}
           <div className="flex items-center border-b border-slate-100 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111]">
             <div className="flex items-center px-4 py-3 border-r border-slate-200 dark:border-[#2A2A2A] text-xs text-slate-400 font-mono">
@@ -680,7 +680,7 @@ export default function HtmlHostPage() {
           </div>
           
           {/* Editor Body */}
-          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F] pt-2">
+          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F] pt-2 min-h-0">
             <Editor
               height="100%"
               language="html"
@@ -699,7 +699,7 @@ export default function HtmlHostPage() {
         </div>
 
         {/* Right Preview Pane */}
-        <div className="w-full md:w-[40%] flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full">
+        <div className="w-full md:w-[40%] flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full min-h-0">
           
           {/* Preview Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#111111] text-xs font-mono text-slate-500 shadow-sm z-10">
