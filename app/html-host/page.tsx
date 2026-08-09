@@ -5,8 +5,24 @@ import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, 
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'
+import Editor, { useMonaco } from '@monaco-editor/react'
+import { useTheme } from 'next-themes'
+import { createClient } from '@/lib/supabase/client'
+import { useRouter } from 'next/navigation'
 
 export default function HtmlHostPage() {
+  const { theme } = useTheme()
+  const router = useRouter()
+  const [user, setUser] = useState<any>(null)
+
+  useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) {
+        setUser(data.user)
+      }
+    })
+  }, [])
   const [mode, setMode] = useState<'landing' | 'editor'>('landing')
   const [htmlContent, setHtmlContent] = useState('')
   const [isUploading, setIsUploading] = useState(false)
@@ -17,6 +33,7 @@ export default function HtmlHostPage() {
   
   const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'phone'>('desktop')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [showAuthModal, setShowAuthModal] = useState(false)
   
   const [customSlug, setCustomSlug] = useState('')
   const [isRenaming, setIsRenaming] = useState(false)
@@ -89,6 +106,18 @@ export default function HtmlHostPage() {
       if (slug) setCustomSlug(slug)
     }
   }, [hostedUrl])
+
+  // Save hotkey (Ctrl+S / Cmd+S)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault()
+        handlePublish()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [htmlContent, user])
 
   const handleRename = async () => {
     if (!hostedUrl || !customSlug) return
@@ -265,6 +294,11 @@ export default function HtmlHostPage() {
   }
 
   const uploadFiles = async (files: {path: string, content: string, type: string, isBinary: boolean}[]) => {
+    if (!user) {
+      setShowAuthModal(true)
+      return
+    }
+
     setIsUploading(true)
     setHostedUrl('')
     try {
@@ -277,7 +311,7 @@ export default function HtmlHostPage() {
         const res = await fetch('/api/html-host/upload', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ files: [file], slug: currentSlug, projectTitle: getProjectTitle() })
+          body: JSON.stringify({ files: [file], slug: currentSlug, projectTitle: getProjectTitle(), userId: user.id })
         })
         
         const data = await res.json()
@@ -571,7 +605,7 @@ export default function HtmlHostPage() {
             ) : (
               <Globe className="w-4 h-4" />
             )}
-            {hostedUrl ? 'Updated successfully' : 'Publish to World'}
+            {hostedUrl ? 'Save Updates' : 'Save & Publish'}
           </button>
           
           {hostedUrl && (
@@ -587,10 +621,10 @@ export default function HtmlHostPage() {
       </div>
 
       {/* Main Split View */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         {/* Left Editor Pane */}
-        <div className="w-1/2 flex flex-col border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl">
+        <div className="w-full md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full">
           {/* Editor Tabs */}
           <div className="flex items-center border-b border-slate-100 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111]">
             <div className="flex items-center px-4 py-3 border-r border-slate-200 dark:border-[#2A2A2A] text-xs text-slate-400 font-mono">
@@ -608,30 +642,39 @@ export default function HtmlHostPage() {
             </div>
           </div>
           
-          {/* Editor Body with Line Numbers */}
-          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F]">
-            {/* Line Numbers Column */}
-            <div className="w-14 flex-shrink-0 bg-slate-50 dark:bg-[#0A0A0A] border-r border-slate-100 dark:border-[#1A1A1A] py-6 text-right pr-4 select-none overflow-hidden text-[14px] font-mono leading-relaxed text-slate-400 dark:text-slate-600">
-              {Array.from({ length: Math.max(lineCount, 50) }).map((_, i) => (
-                <div key={i} className={i < lineCount ? 'text-slate-400 dark:text-slate-500' : 'text-slate-200 dark:text-slate-800'}>
-                  {i + 1}
-                </div>
-              ))}
-            </div>
-            
-            {/* Textarea Code Editor */}
-            <textarea
+          {/* Editor Body */}
+          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F] pt-2">
+            <Editor
+              height="100%"
+              language="html"
+              theme={theme === 'dark' ? 'vs-dark' : 'light'}
               value={htmlContent}
-              onChange={(e) => setHtmlContent(e.target.value)}
-              spellCheck={false}
-              className="flex-1 w-full h-full p-6 bg-transparent text-slate-800 dark:text-[#D4D4D4] resize-none focus:outline-none focus:ring-0 text-[14px] font-mono leading-relaxed whitespace-pre"
-              placeholder="Paste HTML here..."
+              onChange={(value) => setHtmlContent(value || '')}
+              options={{
+                minimap: { enabled: false },
+                wordWrap: 'on',
+                formatOnPaste: true,
+                fontSize: 14,
+                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+                lineHeight: 1.6,
+                padding: { top: 16 },
+                scrollBeyondLastLine: false,
+                smoothScrolling: true,
+                cursorBlinking: 'smooth',
+                cursorSmoothCaretAnimation: 'on',
+              }}
+              loading={
+                <div className="flex items-center justify-center w-full h-full text-slate-400">
+                  <Loader2 className="w-5 h-5 animate-spin mr-2" />
+                  Loading editor...
+                </div>
+              }
             />
           </div>
         </div>
 
         {/* Right Preview Pane */}
-        <div className="w-1/2 flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative">
+        <div className="w-full md:w-1/2 flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full">
           
           {/* Preview Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#111111] text-xs font-mono text-slate-500 shadow-sm z-10">
@@ -734,10 +777,47 @@ export default function HtmlHostPage() {
                   </div>
                 </div>
               </div>
+            {/* Auth Modal */}
+            {showAuthModal && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                <div className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm transition-opacity" onClick={() => setShowAuthModal(false)} />
+                <div className="relative bg-white dark:bg-[#111111] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-md overflow-hidden transform transition-all scale-100 opacity-100">
+                  <div className="p-8 text-center relative">
+                    <button 
+                      onClick={() => setShowAuthModal(false)}
+                      className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors bg-slate-100 dark:bg-[#1A1A1A] p-2 rounded-full"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                    
+                    <div className="w-20 h-20 bg-blue-100 dark:bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                      <FolderArchive className="w-10 h-10 text-blue-600 dark:text-blue-400" />
+                    </div>
+                    
+                    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-3">Save Your Project</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-8 text-base">
+                      You must be logged in to save your codebase to the cloud. Create a free account to persist your progress!
+                    </p>
+                    
+                    <div className="flex flex-col gap-4">
+                      <button 
+                        onClick={() => router.push('/auth/login')}
+                        className="w-full px-6 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
+                      >
+                        Log In
+                      </button>
+                      <button 
+                        onClick={() => router.push('/auth/register')}
+                        className="w-full px-6 py-3 rounded-xl font-bold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
+                      >
+                        Create Free Account
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
           </div>
-
-        </div>
       </div>
     </div>
   )

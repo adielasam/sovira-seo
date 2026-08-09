@@ -155,3 +155,46 @@ export async function sendTrialExpiredEmail(email: string, name: string) {
     return { success: false, error }
   }
 }
+
+export async function sendBeforeDeletionWarning(email: string, projectName: string) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: 'Sovira Support <onboarding@resend.dev>',
+      to: [email],
+      subject: \`Important: Your project "\${projectName}" is scheduled for deletion\`,
+      html: \`
+        <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
+          <div style="background-color: #0F172A; padding: 40px 20px; text-align: center;">
+            <h1 style="color: #ffffff; margin: 0; font-size: 28px; letter-spacing: 4px; font-weight: 800;">SOVIRA</h1>
+            <p style="color: #94A3B8; margin: 8px 0 0; font-size: 11px; letter-spacing: 2px; text-transform: uppercase;">AI Search & Content Platform</p>
+          </div>
+          <div style="padding: 40px 30px;">
+            <h2 style="color: #0F172A; margin-top: 0; font-size: 22px;">Project Deletion Warning</h2>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+              Hi there, we noticed that your InstantSite project <strong>\${projectName}</strong> has been inactive for over 7 days.
+            </p>
+            <p style="color: #475569; font-size: 15px; line-height: 1.6; margin-bottom: 24px;">
+              As a free user, inactive projects are routinely cleaned up to maintain server capacity. Your project is scheduled for deletion.
+            </p>
+            <div style="text-align: center;">
+              <a href="https://sovira.com.ng/pricing" style="background-color: #2563EB; color: #ffffff; padding: 14px 28px; text-decoration: none; border-radius: 6px; font-weight: 600; display: inline-block; font-size: 15px;">
+                Upgrade Plan to Save Project
+              </a>
+            </div>
+          </div>
+        </div>
+      \`,
+    })
+
+    if (error) {
+      console.error('Failed to send deletion warning email:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error sending deletion warning email:', error)
+    return { success: false, error }
+  }
+}
+

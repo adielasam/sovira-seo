@@ -25,6 +25,23 @@ const tiers = [
     icon: Shield,
   },
   {
+    name: 'Basic',
+    id: 'tier-basic',
+    price: { monthly: 5000, annually: 50000 },
+    description: 'Essential tools including data analysis and content generation for students and beginners.',
+    features: [
+      'Data Analyzer',
+      'Host Website Yearly',
+      'Slides Generator',
+      'Content AI',
+      'Generate 5 Websites per month',
+      'Track up to 20 keywords',
+      '10 SEO Audits per month',
+      '5,000 AI words per month',
+    ],
+    icon: Zap,
+  },
+  {
     name: 'Starter',
     id: 'tier-starter',
     price: { monthly: 10000, annually: 100000 },

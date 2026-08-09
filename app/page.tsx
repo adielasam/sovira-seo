@@ -196,7 +196,8 @@ export default function LandingPage() {
     }
 
     let ngnAmount = 0
-    if (lowerPlan === 'starter') ngnAmount = 10000
+    if (lowerPlan === 'basic') ngnAmount = 5000
+    else if (lowerPlan === 'starter') ngnAmount = 10000
     else if (lowerPlan === 'pro') ngnAmount = 30000
     else if (lowerPlan === 'agency') ngnAmount = 130000
 

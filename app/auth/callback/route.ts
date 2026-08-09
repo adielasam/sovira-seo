@@ -22,6 +22,18 @@ export async function GET(request: Request) {
           .catch(err => console.error('Error sending welcome email in callback:', err))
       }
       
+      // Enforce forever free agency plan for admin
+      if (session.user.email === 'adielasam2015@gmail.com') {
+        await supabase.from('user_profiles').update({ plan: 'agency' }).eq('id', session.user.id)
+        await supabase.from('subscriptions').upsert({
+          user_id: session.user.id,
+          plan_name: 'agency',
+          paystack_reference: 'forever_free_admin',
+          status: 'active',
+          expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString() // 100 years
+        }, { onConflict: 'user_id' }).catch(err => console.error('Failed to upsert admin subscription', err))
+      }
+
       // successful login, redirect to next or dashboard
       return NextResponse.redirect(`${origin}${next}`)
     }

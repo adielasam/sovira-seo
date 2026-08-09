@@ -16,10 +16,18 @@ export default async function AdminWebsitesPage() {
     .like('topic', '%|index.html')
     .order('created_at', { ascending: false })
 
+  // Fetch users to display email and plan
+  const { data: users } = await supabase
+    .from('user_profiles')
+    .select('id, email, plan')
+
+  const userMap = new Map(users?.map(u => [u.id, u]) || [])
+
   const websites = (indexFiles || []).map(file => {
     const slug = file.topic.split('|')[0]
     const isPaused = slug.startsWith('_paused_')
     const actualSlug = isPaused ? slug.replace('_paused_', '') : slug
+    const user = userMap.get(file.user_id)
     return {
       id: file.id, // ID of the index.html record
       currentSlug: slug,
@@ -27,7 +35,9 @@ export default async function AdminWebsitesPage() {
       url: process.env.NEXT_PUBLIC_APP_URL?.includes('localhost') ? `/${actualSlug}/` : `https://${actualSlug}.sovira.com.ng/`,
       isPaused,
       createdAt: file.created_at,
-      userId: file.user_id
+      userId: file.user_id,
+      userEmail: user?.email || 'Unknown',
+      userPlan: user?.email === 'adielasam2015@gmail.com' ? 'agency' : (user?.plan || 'free')
     }
   })
 
@@ -84,8 +94,9 @@ export default async function AdminWebsitesPage() {
             <thead className="text-xs text-slate-700 uppercase bg-slate-50 dark:bg-slate-900/50 dark:text-slate-300">
               <tr>
                 <th className="px-6 py-3">Website Link</th>
+                <th className="px-6 py-3">User & Plan</th>
                 <th className="px-6 py-3">Status</th>
-                <th className="px-6 py-3">Created</th>
+                <th className="px-6 py-3">Published At</th>
                 <th className="px-6 py-3 text-right">Actions</th>
               </tr>
             </thead>
@@ -99,22 +110,42 @@ export default async function AdminWebsitesPage() {
                     </a>
                   </td>
                   <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span className="text-sm font-medium text-slate-900 dark:text-white">{site.userEmail}</span>
+                      <span className="text-xs text-slate-500 capitalize">{site.userPlan} Plan</span>
+                    </div>
+                  </td>
+                  <td className="px-6 py-4">
                     <span className={`px-2.5 py-1 rounded-full text-xs font-medium ${site.isPaused ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400' : 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'}`}>
                       {site.isPaused ? 'Paused' : 'Active'}
                     </span>
                   </td>
-                  <td className="px-6 py-4">{new Date(site.createdAt).toLocaleDateString()}</td>
+                  <td className="px-6 py-4">
+                    <div className="flex flex-col">
+                      <span>{new Date(site.createdAt).toLocaleDateString('en-GB')}</span>
+                      <span className="text-xs text-slate-500">
+                        {Math.floor(Math.abs(new Date().getTime() - new Date(site.createdAt).getTime()) / (1000 * 60 * 60 * 24)) === 0 
+                          ? 'Today' 
+                          : \`\${Math.floor(Math.abs(new Date().getTime() - new Date(site.createdAt).getTime()) / (1000 * 60 * 60 * 24))} days ago\`}
+                      </span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 text-right">
-                    <WebsiteActions 
-                      currentSlug={site.currentSlug} 
-                      isPaused={site.isPaused} 
-                    />
+                    <div className="flex items-center justify-end gap-2">
+                      <a href={`mailto:${site.userEmail}?subject=Regarding your Sovira project: ${site.actualSlug}`} className="px-3 py-1.5 text-xs font-medium text-slate-600 bg-slate-100 hover:bg-slate-200 dark:text-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-md transition-colors">
+                        Contact
+                      </a>
+                      <WebsiteActions 
+                        currentSlug={site.currentSlug} 
+                        isPaused={site.isPaused} 
+                      />
+                    </div>
                   </td>
                 </tr>
               ))}
               {websites.length === 0 && (
                 <tr>
-                  <td colSpan={4} className="px-6 py-8 text-center text-slate-500">
+                  <td colSpan={5} className="px-6 py-8 text-center text-slate-500">
                     No websites have been hosted yet.
                   </td>
                 </tr>

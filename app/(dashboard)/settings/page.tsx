@@ -223,7 +223,23 @@ export default function SettingsPage() {
               </div>
 
               {/* Upgrade Plans Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                
+                {/* Basic Plan */}
+                <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 hover:ring-blue-200 dark:hover:ring-blue-900 group cursor-pointer">
+                  <h4 className="text-lg font-bold text-slate-900 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">Basic</h4>
+                  <p className="text-2xl font-bold text-slate-900 dark:text-white mt-2">₦5,000<span className="text-sm font-normal text-slate-500">/mo</span></p>
+                  <div className="text-sm text-slate-600 dark:text-slate-400 mt-4 mb-6 space-y-2 text-left flex-1">
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> 20 Keywords Tracked</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> 10 SEO Audits/mo</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> 5,000 AI Words</p>
+                    <p className="flex items-center gap-2"><span className="text-blue-500">✓</span> 5 Websites/mo</p>
+                  </div>
+                  <button onClick={() => handleUpgrade('basic', 5000)} className="w-full px-4 py-2 bg-slate-100 text-slate-900 font-medium rounded-lg hover:bg-slate-200 dark:bg-slate-800 dark:text-white dark:hover:bg-slate-700 transition-all duration-300 group-hover:bg-blue-50 group-hover:text-blue-700 dark:group-hover:bg-blue-900/30 dark:group-hover:text-blue-400">
+                    {profile?.plan === 'basic' ? 'Current Plan' : 'Upgrade'}
+                  </button>
+                </div>
+
                 {/* Starter Plan */}
                 <div className="bg-white dark:bg-[#1E293B] rounded-xl p-6 ring-1 ring-slate-200 dark:ring-slate-800 text-center flex flex-col h-full transition-all duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/10 hover:ring-blue-200 dark:hover:ring-blue-900 group cursor-pointer">
                   <h4 className="text-lg font-bold text-slate-900 dark:text-white transition-colors group-hover:text-blue-600 dark:group-hover:text-blue-400">Starter</h4>
