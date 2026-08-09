@@ -356,13 +356,17 @@ export default function HtmlHostPage() {
   if (mode === 'landing') {
     return (
       <div 
-        className="min-h-screen bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden"
+        className="min-h-screen bg-slate-50 dark:bg-[#0A0A0A] flex flex-col items-center justify-center relative overflow-hidden transition-colors duration-300"
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={processDrop}
       >
+        {/* Abstract Background Effects */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-blue-500/20 dark:bg-blue-600/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 right-0 w-[600px] h-[400px] bg-indigo-500/10 dark:bg-indigo-600/10 blur-[100px] rounded-full pointer-events-none" />
+
         <div className="absolute top-6 left-6 z-20">
-          <Link href="/" className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-sm font-medium">
+          <Link href="/" className="flex items-center gap-2 text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white transition-colors text-sm font-medium bg-white/50 dark:bg-black/20 px-4 py-2 rounded-full backdrop-blur-md border border-slate-200 dark:border-slate-800">
             <span>←</span> Back to Sovira
           </Link>
         </div>
@@ -376,68 +380,74 @@ export default function HtmlHostPage() {
 
         {/* Drag Overlay */}
         {isDragging && (
-          <div className="absolute inset-0 z-50 bg-blue-600/10 backdrop-blur-sm border-4 border-dashed border-blue-600/50 m-4 rounded-xl flex flex-col items-center justify-center">
-            <FolderArchive className="w-20 h-20 text-blue-500 mb-4 animate-bounce" />
-            <h2 className="text-3xl font-bold text-white mb-2">Drop to Deploy</h2>
-            <p className="text-blue-200">ZIP folders or HTML files</p>
+          <div className="absolute inset-0 z-50 bg-blue-50/90 dark:bg-[#0A0A0A]/90 backdrop-blur-md border-4 border-dashed border-blue-500 m-4 rounded-3xl flex flex-col items-center justify-center transition-all">
+            <div className="w-24 h-24 bg-blue-100 dark:bg-blue-900/30 rounded-full flex items-center justify-center mb-6 animate-bounce shadow-xl shadow-blue-500/20">
+              <FolderArchive className="w-12 h-12 text-blue-600 dark:text-blue-400" />
+            </div>
+            <h2 className="text-4xl font-extrabold text-slate-900 dark:text-white mb-2 tracking-tight">Drop to Deploy</h2>
+            <p className="text-blue-600 dark:text-blue-400 text-lg font-medium">ZIP folders or HTML files</p>
           </div>
         )}
 
-        <div className="flex flex-col items-center max-w-2xl w-full px-6 text-center">
+        <div className="flex flex-col items-center max-w-2xl w-full px-6 text-center z-10">
           {/* Top Icon Box */}
           <div 
             onClick={() => fileInputRef.current?.click()}
-            className="w-16 h-16 rounded-2xl bg-[#131B2C] border border-slate-800 flex items-center justify-center mb-8 cursor-pointer hover:border-blue-500/50 hover:bg-[#1A2438] transition-all group"
+            className="w-20 h-20 rounded-3xl bg-white dark:bg-[#131B2C] shadow-2xl shadow-blue-500/10 border border-slate-200 dark:border-slate-800 flex items-center justify-center mb-10 cursor-pointer hover:border-blue-500 hover:shadow-blue-500/20 hover:-translate-y-1 transition-all duration-300 group"
           >
-            <Upload className="w-6 h-6 text-blue-500 group-hover:-translate-y-1 transition-transform" />
+            <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-500/10 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">
+              <Upload className="w-6 h-6 text-blue-600 dark:text-blue-400" />
+            </div>
           </div>
 
-          <h1 className="text-3xl sm:text-4xl font-bold tracking-tight mb-4">
-            Paste HTML, drop a file, or upload a ZIP
+          <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight mb-6 text-slate-900 dark:text-white">
+            Host your InstantSite
           </h1>
-          <p className="text-slate-400 text-lg mb-10 flex items-center justify-center gap-2">
-            Just press <kbd className="px-2 py-1 bg-slate-800 rounded-md border border-slate-700 text-sm font-mono flex items-center gap-1"><Command className="w-3 h-3"/>V</kbd> or click to upload HTML files, folders, or ZIP.
+          <p className="text-slate-600 dark:text-slate-400 text-lg sm:text-xl mb-12 flex items-center justify-center gap-2 max-w-lg leading-relaxed">
+            Paste HTML, drop a file, or upload a ZIP. <br className="hidden sm:block" /> Press <kbd className="px-2 py-1 bg-white dark:bg-slate-800 rounded-lg border border-slate-200 dark:border-slate-700 text-sm font-mono flex items-center gap-1 shadow-sm text-slate-700 dark:text-slate-300 mx-1 inline-flex"><Command className="w-3.5 h-3.5"/>V</kbd> anywhere to start.
           </p>
 
-          <div className="flex items-center w-full max-w-md mb-10">
-            <div className="flex-1 h-px bg-slate-800"></div>
-            <span className="px-4 text-slate-500 text-sm">or</span>
-            <div className="flex-1 h-px bg-slate-800"></div>
-          </div>
-
-          <div className="flex flex-wrap items-center justify-center gap-4 mb-12">
+          <div className="flex flex-wrap items-center justify-center gap-4 mb-12 w-full">
             <button 
               onClick={() => {
                 setHtmlContent(`<!DOCTYPE html>\n<html>\n<head>\n  <title>My Site</title>\n  <style>\n    body { font-family: system-ui, sans-serif; padding: 2rem; }\n    h1 { color: #2563eb; }\n  </style>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n  <p>Start typing HTML here...</p>\n</body>\n</html>`)
                 setMode('editor')
               }}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-transparent border border-slate-700 hover:border-slate-500 transition-colors"
+              className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-slate-600 hover:shadow-blue-500/10 transition-all duration-300 group"
             >
-              <Code className="w-4 h-4 text-slate-400" />
-              <span className="font-medium">Paste HTML</span>
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors">
+                <Code className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
+              </div>
+              <span className="font-semibold text-slate-700 dark:text-slate-300 pr-2">Paste HTML</span>
             </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-transparent hover:text-white text-slate-300 transition-colors"
+              className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white shadow-xl shadow-blue-600/20 border border-blue-500 hover:-translate-y-0.5 transition-all duration-300 group"
             >
-              <span className="font-medium">Upload folder</span>
+              <div className="p-2.5 bg-white/20 rounded-xl group-hover:scale-110 transition-transform">
+                <FolderArchive className="w-5 h-5 text-white" />
+              </div>
+              <span className="font-semibold pr-2">Upload folder</span>
             </button>
             <button 
-              className="flex items-center gap-2 px-6 py-3 rounded-full bg-transparent text-slate-400 opacity-70 cursor-not-allowed"
+              className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-slate-800 opacity-60 cursor-not-allowed"
             >
-              <Globe className="w-4 h-4" />
-              <span className="font-medium">Clone from URL</span>
-              <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/20 text-blue-400 rounded-sm ml-1">PRO</span>
+              <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl">
+                <Globe className="w-5 h-5 text-slate-400" />
+              </div>
+              <div className="flex flex-col items-start leading-tight pr-2">
+                <span className="font-semibold text-slate-500">Clone URL</span>
+                <span className="text-[10px] font-bold text-blue-500 tracking-wider">PRO FEATURE</span>
+              </div>
             </button>
           </div>
 
-          <p className="text-slate-500 hover:text-slate-300 cursor-pointer transition-colors text-sm mb-12">
-            or try a sample →
-          </p>
-
-          <p className="text-blue-500 font-mono text-sm tracking-tight">
-            no signup required
-          </p>
+          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700/50 shadow-sm">
+            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+            <p className="text-slate-600 dark:text-slate-400 text-sm font-medium tracking-wide">
+              No signup required
+            </p>
+          </div>
         </div>
       </div>
     )
@@ -446,7 +456,7 @@ export default function HtmlHostPage() {
   // EDITOR MODE
   return (
     <div 
-      className="flex flex-col h-[calc(100vh-4rem)] bg-[#0A0A0A] text-slate-300 font-sans relative overflow-hidden"
+      className="flex flex-col min-h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans relative overflow-hidden transition-colors duration-300"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={processDrop}
@@ -459,22 +469,22 @@ export default function HtmlHostPage() {
         accept=".html,.zip,application/zip,application/x-zip-compressed"
       />
 
-      {/* Header - Dark IDE Style */}
-      <div className="flex items-center justify-between px-4 py-3 border-b border-[#2A2A2A] bg-[#111111]">
+      {/* Header - Adaptive IDE Style */}
+      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md z-10">
         
         {/* Left: Back & Project Info */}
-        <div className="flex items-center gap-4 flex-1">
+        <div className="flex items-center gap-6 flex-1">
           <button 
             onClick={() => setMode('landing')}
-            className="flex items-center gap-1 text-slate-400 hover:text-white text-sm font-medium transition-colors"
+            className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-white text-sm font-semibold transition-colors bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg"
           >
             ← Back
           </button>
           
-          <div className="h-4 w-px bg-slate-800" />
+          <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
           
-          <div className="flex items-center gap-2">
-            <span className="text-[10px] font-bold tracking-widest text-slate-500 border border-slate-700/50 rounded px-1.5 py-0.5 font-mono">
+          <div className="flex items-center gap-3">
+            <span className="text-[10px] font-bold tracking-widest text-slate-400 border border-slate-200 dark:border-slate-700/50 rounded px-1.5 py-0.5 font-mono shadow-sm">
               PROJECT
             </span>
             <input 
@@ -482,30 +492,31 @@ export default function HtmlHostPage() {
               onChange={handleTitleChange}
               title="Edit project name"
               placeholder="Enter site name..."
-              className="text-sm font-medium text-slate-200 bg-[#1A1A1A] border border-slate-700/50 rounded-md px-2 py-1 hover:border-slate-500 focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500 max-w-[150px] truncate transition-all"
+              className="text-sm font-bold text-slate-800 dark:text-slate-200 bg-slate-100 dark:bg-[#1A1A1A] border border-transparent hover:border-slate-300 dark:hover:border-slate-700/50 rounded-lg px-3 py-1.5 focus:border-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 max-w-[200px] truncate transition-all shadow-sm"
             />
             {hostedUrl && (
-              <div className="flex items-center gap-2">
-                <span className="text-slate-600">|</span>
-                <span className="text-slate-500 text-xs hidden md:inline">sovira.com.ng/site/</span>
-                <div className="flex items-center gap-1 bg-[#1A1A1A] border border-slate-700/50 rounded-md px-2 py-0.5 focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500 transition-all">
+              <div className="flex items-center gap-3">
+                <span className="text-slate-300 dark:text-slate-600">|</span>
+                <span className="text-slate-500 text-xs hidden lg:inline font-mono">https://</span>
+                <div className="flex items-center gap-1 bg-slate-100 dark:bg-[#1A1A1A] border border-slate-200 dark:border-slate-700/50 rounded-lg px-3 py-1.5 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500/20 transition-all shadow-sm">
                   <input 
                     value={customSlug}
                     onChange={(e) => setCustomSlug(e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, ''))}
-                    className="text-xs font-mono text-blue-400 bg-transparent border-none focus:outline-none focus:ring-0 max-w-[120px] p-0"
+                    className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400 bg-transparent border-none focus:outline-none focus:ring-0 max-w-[140px] p-0"
                     placeholder="custom-url"
                   />
-                  {customSlug !== hostedUrl.split('/site/')[1]?.replace(/\//g, '') && (
+                  <span className="text-slate-500 text-xs font-mono">.sovira.com.ng</span>
+                  {customSlug !== hostedUrl.split('https://')[1]?.split('.')[0] && (
                     <button 
                       onClick={handleRename}
                       disabled={isRenaming || !customSlug}
-                      className="text-[10px] font-bold bg-blue-600 text-white px-1.5 py-0.5 rounded hover:bg-blue-500 transition-colors disabled:opacity-50 ml-1"
+                      className="text-[10px] font-bold bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 transition-colors disabled:opacity-50 ml-2 shadow-sm"
                     >
                       {isRenaming ? '...' : 'Save'}
                     </button>
                   )}
                 </div>
-                <a href={hostedUrl} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-white transition-colors ml-1" title="Open site in new tab">
+                <a href={hostedUrl} target="_blank" rel="noreferrer" className="text-slate-400 hover:text-blue-600 dark:hover:text-white transition-colors ml-1 p-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md" title="Open site in new tab">
                   <ExternalLink className="w-4 h-4" />
                 </a>
               </div>
@@ -514,14 +525,14 @@ export default function HtmlHostPage() {
         </div>
         
         {/* Right: Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-4">
           <button 
             onClick={handlePublish}
             disabled={isUploading}
-            className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold transition-colors ${
+            className={`flex items-center gap-2 px-6 py-2 rounded-xl text-sm font-bold transition-all shadow-md hover:-translate-y-0.5 ${
               hostedUrl 
-                ? 'bg-[#1A1A1A] text-green-400 border border-green-500/30 hover:bg-green-500/10' 
-                : 'bg-blue-600 text-white hover:bg-blue-500 border border-blue-500'
+                ? 'bg-emerald-50 dark:bg-[#1A1A1A] text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/30 hover:bg-emerald-100 dark:hover:bg-emerald-500/10' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 border border-blue-500 shadow-blue-600/20'
             }`}
           >
             {isUploading ? (
@@ -531,16 +542,16 @@ export default function HtmlHostPage() {
             ) : (
               <Globe className="w-4 h-4" />
             )}
-            {hostedUrl ? 'Updated' : 'Publish'}
+            {hostedUrl ? 'Updated successfully' : 'Publish to World'}
           </button>
           
           {hostedUrl && (
             <button 
               onClick={handleDelete}
-              className="p-1.5 text-slate-500 hover:text-red-400 hover:bg-red-500/10 rounded-md transition-colors ml-1"
+              className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:text-red-400 dark:hover:bg-red-500/10 rounded-xl transition-all ml-1 border border-transparent hover:border-red-200 dark:hover:border-red-500/20"
               title="Delete Site"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="w-5 h-5" />
             </button>
           )}
         </div>
@@ -550,30 +561,30 @@ export default function HtmlHostPage() {
       <div className="flex-1 flex overflow-hidden">
         
         {/* Left Editor Pane */}
-        <div className="w-1/2 flex flex-col border-r border-[#2A2A2A] bg-[#0F0F0F]">
+        <div className="w-1/2 flex flex-col border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl">
           {/* Editor Tabs */}
-          <div className="flex items-center border-b border-[#2A2A2A] bg-[#111111]">
-            <div className="flex items-center px-4 py-2 border-r border-[#2A2A2A] text-xs text-slate-500 font-mono">
-              <span className="text-slate-400 mr-2">{'</>'}</span>
+          <div className="flex items-center border-b border-slate-100 dark:border-[#2A2A2A] bg-slate-50 dark:bg-[#111111]">
+            <div className="flex items-center px-4 py-3 border-r border-slate-200 dark:border-[#2A2A2A] text-xs text-slate-400 font-mono">
+              <span className="text-slate-400 dark:text-slate-500 mr-2">{'</>'}</span>
             </div>
-            <div className="px-4 py-2 text-xs font-mono text-blue-400 border-b-2 border-blue-500 bg-[#0F0F0F]">
+            <div className="px-6 py-3 text-sm font-semibold font-mono text-blue-600 dark:text-blue-400 border-b-2 border-blue-600 dark:border-blue-500 bg-white dark:bg-[#0F0F0F]">
               index.html
             </div>
-            <div className="px-3 py-2 text-slate-500 hover:text-slate-300 cursor-pointer">
+            <div className="px-4 py-3 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 cursor-pointer font-bold">
               +
             </div>
             <div className="flex-1" />
-            <div className="px-4 text-xs font-mono text-slate-600">
+            <div className="px-4 text-xs font-mono font-medium text-slate-500 dark:text-slate-600">
               {lineCount} lines · utf-8 · html
             </div>
           </div>
           
           {/* Editor Body with Line Numbers */}
-          <div className="flex-1 flex relative overflow-hidden bg-[#0F0F0F]">
+          <div className="flex-1 flex relative overflow-hidden bg-white dark:bg-[#0F0F0F]">
             {/* Line Numbers Column */}
-            <div className="w-12 flex-shrink-0 bg-[#0A0A0A] border-r border-[#1A1A1A] py-4 text-right pr-3 select-none overflow-hidden text-[13px] font-mono leading-relaxed text-slate-600">
+            <div className="w-14 flex-shrink-0 bg-slate-50 dark:bg-[#0A0A0A] border-r border-slate-100 dark:border-[#1A1A1A] py-6 text-right pr-4 select-none overflow-hidden text-[14px] font-mono leading-relaxed text-slate-400 dark:text-slate-600">
               {Array.from({ length: Math.max(lineCount, 50) }).map((_, i) => (
-                <div key={i} className={i < lineCount ? 'text-slate-600' : 'text-slate-800'}>
+                <div key={i} className={i < lineCount ? 'text-slate-400 dark:text-slate-500' : 'text-slate-200 dark:text-slate-800'}>
                   {i + 1}
                 </div>
               ))}
@@ -584,110 +595,109 @@ export default function HtmlHostPage() {
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
               spellCheck={false}
-              className="flex-1 w-full h-full p-4 bg-transparent text-[#D4D4D4] resize-none focus:outline-none focus:ring-0 text-[13px] font-mono leading-relaxed whitespace-pre"
+              className="flex-1 w-full h-full p-6 bg-transparent text-slate-800 dark:text-[#D4D4D4] resize-none focus:outline-none focus:ring-0 text-[14px] font-mono leading-relaxed whitespace-pre"
               placeholder="Paste HTML here..."
             />
           </div>
         </div>
 
         {/* Right Preview Pane */}
-        <div className="w-1/2 flex flex-col bg-white transition-all relative">
+        <div className="w-1/2 flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative">
           
           {/* Preview Header */}
-          <div className="flex items-center justify-between px-4 py-2 border-b border-slate-200 bg-[#FAFAFA] text-xs font-mono text-slate-500">
-            <div className="flex items-center gap-2 text-slate-600">
-              <Eye className="w-4 h-4" />
-              <span>live preview</span>
+          <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#111111] text-xs font-mono text-slate-500 shadow-sm z-10">
+            <div className="flex items-center gap-2 text-slate-600 dark:text-slate-400 font-semibold tracking-wide uppercase">
+              <Eye className="w-4 h-4 text-blue-500" />
+              <span>Live Preview</span>
             </div>
             
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-4 bg-slate-100 dark:bg-[#1A1A1A] p-1 rounded-lg">
                 <button 
                   onClick={() => setDevicePreview('desktop')}
-                  className={`hover:text-slate-900 transition-colors ${devicePreview === 'desktop' ? 'text-blue-600' : ''}`}
+                  className={`px-3 py-1.5 rounded-md transition-all font-semibold ${devicePreview === 'desktop' ? 'bg-white dark:bg-[#2A2A2A] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                 >
-                  desktop
+                  Desktop
                 </button>
                 <button 
                   onClick={() => setDevicePreview('tablet')}
-                  className={`hover:text-slate-900 transition-colors ${devicePreview === 'tablet' ? 'text-blue-600' : ''}`}
+                  className={`px-3 py-1.5 rounded-md transition-all font-semibold ${devicePreview === 'tablet' ? 'bg-white dark:bg-[#2A2A2A] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                 >
-                  tablet
+                  Tablet
                 </button>
                 <button 
                   onClick={() => setDevicePreview('phone')}
-                  className={`hover:text-slate-900 transition-colors ${devicePreview === 'phone' ? 'text-blue-600' : ''}`}
+                  className={`px-3 py-1.5 rounded-md transition-all font-semibold ${devicePreview === 'phone' ? 'bg-white dark:bg-[#2A2A2A] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
                 >
-                  phone
+                  Phone
                 </button>
               </div>
-              <span className="text-slate-300">|</span>
-              <button className="hover:text-slate-900 transition-colors">fullscreen</button>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
               <button 
                 onClick={() => hostedUrl && window.open(hostedUrl, '_blank')}
-                className="hover:text-slate-900 transition-colors"
+                className="hover:text-blue-600 dark:hover:text-white transition-colors bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-slate-700 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
                 title="Open Live URL"
               >
-                ↗
+                <ExternalLink className="w-4 h-4" />
               </button>
             </div>
           </div>
           
           {/* Iframe Container */}
-          <div className="flex-1 flex items-center justify-center bg-slate-100 overflow-hidden relative">
+          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-[#0A0A0A] overflow-hidden relative p-8">
             <iframe 
               ref={iframeRef}
-              className={`bg-white border-none shadow-sm transition-all duration-300 ${
-                devicePreview === 'desktop' ? 'w-full h-full' :
-                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-md shadow-xl' :
-                'w-[375px] h-[812px] rounded-3xl shadow-2xl border-8 border-slate-900'
+              className={`bg-white border-none transition-all duration-500 ease-out ${
+                devicePreview === 'desktop' ? 'w-full h-full shadow-sm rounded-lg border border-slate-200 dark:border-slate-800' :
+                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-2xl shadow-2xl border-[12px] border-slate-800 dark:border-[#1A1A1A]' :
+                'w-[375px] h-[812px] rounded-[3rem] shadow-2xl border-[14px] border-slate-800 dark:border-[#1A1A1A]'
               }`}
               title="Live Preview"
             />
             
             {/* Success Modal */}
             {showSuccessModal && hostedUrl && (
-              <div className="absolute inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-                <div className="bg-[#111111] border border-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                  <div className="p-6 text-center relative">
+              <div className="absolute inset-0 z-50 bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200">
+                  <div className="p-8 text-center relative">
                     <button 
                       onClick={() => setShowSuccessModal(false)}
-                      className="absolute top-4 right-4 text-slate-500 hover:text-white transition-colors"
+                      className="absolute top-6 right-6 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors bg-slate-100 dark:bg-[#1A1A1A] p-2 rounded-full"
                     >
                       <X className="w-5 h-5" />
                     </button>
                     
-                    <div className="w-16 h-16 bg-blue-500/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <Check className="w-8 h-8 text-blue-500" />
+                    <div className="w-20 h-20 bg-emerald-100 dark:bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-6 shadow-inner">
+                      <Check className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
                     </div>
                     
-                    <h3 className="text-xl font-bold text-white mb-2">Congratulations!</h3>
-                    <p className="text-slate-400 mb-6 text-sm">
+                    <h3 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-3">Congratulations!</h3>
+                    <p className="text-slate-600 dark:text-slate-400 mb-8 text-base">
                       Your InstantSite is live and ready to share with the world.
                     </p>
                     
-                    <div className="flex items-center gap-2 bg-[#0a0a0a] border border-slate-800 rounded-lg p-1.5 mb-6">
-                      <div className="flex-1 px-3 py-2 text-sm text-slate-300 font-mono truncate text-left select-all bg-transparent">
+                    <div className="flex items-center gap-2 bg-slate-50 dark:bg-[#0a0a0a] border border-slate-200 dark:border-slate-800 rounded-xl p-2 mb-8 shadow-inner">
+                      <div className="flex-1 px-4 py-2 text-sm text-slate-700 dark:text-slate-300 font-mono font-bold truncate text-left select-all bg-transparent">
                         {hostedUrl}
                       </div>
                       <button 
                         onClick={copyLink}
-                        className="p-2 hover:bg-[#1A1A1A] rounded-md text-slate-400 hover:text-white transition-colors flex-shrink-0"
+                        className="p-3 bg-white dark:bg-[#1A1A1A] shadow-sm border border-slate-200 dark:border-slate-700 rounded-lg text-slate-600 dark:text-slate-400 hover:text-blue-600 dark:hover:text-white hover:border-blue-500 transition-all flex-shrink-0"
                       >
-                        {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                        {copied ? <Check className="w-5 h-5 text-emerald-500" /> : <Copy className="w-5 h-5" />}
                       </button>
                     </div>
                     
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-4">
                       <button 
                         onClick={() => setShowSuccessModal(false)}
-                        className="flex-1 px-4 py-2 rounded-lg font-semibold text-slate-300 hover:text-white hover:bg-slate-800 transition-colors"
+                        className="flex-1 px-6 py-3 rounded-xl font-bold text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 hover:bg-slate-200 dark:bg-[#1A1A1A] dark:hover:bg-slate-800 transition-colors"
                       >
                         Close
                       </button>
                       <button 
                         onClick={() => window.open(hostedUrl, '_blank')}
-                        className="flex-1 px-4 py-2 rounded-lg font-semibold bg-blue-600 text-white hover:bg-blue-500 transition-colors flex items-center justify-center gap-2"
+                        className="flex-1 px-6 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5 flex items-center justify-center gap-2"
                       >
                         Visit Site <ExternalLink className="w-4 h-4" />
                       </button>
