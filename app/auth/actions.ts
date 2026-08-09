@@ -50,7 +50,7 @@ export async function loginAction(formData: FormData) {
     redirect(`/auth/login?error=${encodeURIComponent(error.message)}`)
   }
 
-  let destination = '/dashboard'
+  let destination = (formData.get('redirectTo') as string) || '/dashboard'
   let userName = 'User'
   
   if (data?.user) {
@@ -168,11 +168,13 @@ export async function signupAction(formData: FormData) {
   }
 
   if (!data.session) {
-    redirect('/auth/login?message=Please check your email for a confirmation link to activate your account.')
+    const redirectTo = formData.get('redirectTo') as string
+    redirect(`/auth/login?message=Please check your email for a confirmation link to activate your account.&redirect=${encodeURIComponent(redirectTo || '/dashboard')}`)
   }
 
   revalidatePath('/', 'layout')
-  redirect('/dashboard')
+  const destination = (formData.get('redirectTo') as string) || '/dashboard'
+  redirect(destination)
 }
 
 export async function resetPasswordAction(formData: FormData) {

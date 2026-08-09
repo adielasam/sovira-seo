@@ -52,6 +52,16 @@ export default function HtmlHostPage() {
         setUser(data.user)
       }
     })
+
+    // Restore pending html from unauthenticated session
+    if (typeof window !== 'undefined') {
+      const pendingHtml = localStorage.getItem('sovira_pending_html')
+      if (pendingHtml) {
+        setHtmlContent(pendingHtml)
+        setMode('editor')
+        localStorage.removeItem('sovira_pending_html')
+      }
+    }
   }, [])
   const [mode, setMode] = useState<'landing' | 'editor'>('landing')
   const [htmlContent, setHtmlContent] = useState(DEFAULT_TEMPLATE)
@@ -828,13 +838,23 @@ export default function HtmlHostPage() {
                     
                     <div className="flex flex-col gap-4">
                       <button 
-                        onClick={() => router.push('/auth/login')}
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('sovira_pending_html', htmlContent)
+                          }
+                          router.push('/auth/login?redirect=/html-host')
+                        }}
                         className="w-full px-6 py-3 rounded-xl font-bold bg-blue-600 text-white hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all hover:-translate-y-0.5"
                       >
                         Log In
                       </button>
                       <button 
-                        onClick={() => router.push('/auth/register')}
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            localStorage.setItem('sovira_pending_html', htmlContent)
+                          }
+                          router.push('/auth/register?redirect=/html-host')
+                        }}
                         className="w-full px-6 py-3 rounded-xl font-bold text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-all"
                       >
                         Create Free Account
