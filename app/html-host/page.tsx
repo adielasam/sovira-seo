@@ -64,19 +64,37 @@ export default function HtmlHostPage() {
     return () => window.removeEventListener('paste', handleGlobalPaste)
   }, [mode])
 
+  const extractSlug = (url: string) => {
+    if (!url) return ''
+    try {
+      const u = new URL(url)
+      // If it's a subdomain (e.g. dorvas.sovira.com.ng)
+      if (u.hostname.endsWith('.sovira.com.ng') && !['www.sovira.com.ng', 'sovira.com.ng'].includes(u.hostname)) {
+        return u.hostname.replace('.sovira.com.ng', '')
+      }
+      // If it's localhost or an old /site/ path
+      if (u.pathname.startsWith('/site/')) {
+        return u.pathname.split('/site/')[1]?.replace(/\//g, '')
+      }
+      // If it's localhost (e.g. localhost:3000/dorvas/)
+      return u.pathname.split('/')[1]?.replace(/\//g, '')
+    } catch(e) {
+      if (url.includes('/site/')) return url.split('/site/')[1]?.replace(/\//g, '')
+    }
+    return ''
+  }
+
   // Update custom slug when hosted URL changes
   useEffect(() => {
     if (hostedUrl) {
-      const parts = hostedUrl.split('/site/')
-      if (parts[1]) {
-        setCustomSlug(parts[1].replace(/\//g, ''))
-      }
+      const slug = extractSlug(hostedUrl)
+      if (slug) setCustomSlug(slug)
     }
   }, [hostedUrl])
 
   const handleRename = async () => {
     if (!hostedUrl || !customSlug) return
-    const oldSlug = hostedUrl.split('/site/')[1]?.replace(/\//g, '')
+    const oldSlug = extractSlug(hostedUrl)
     if (oldSlug === customSlug) return
     
     setIsRenaming(true)

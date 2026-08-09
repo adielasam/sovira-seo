@@ -11,7 +11,8 @@ export async function GET(
 
     let filePath = ''
     if (path && path.length > 0) {
-      filePath = path.join('/')
+      // Decode URI component to handle spaces and special characters in filenames (e.g. "Teacher with grade 5.jpg")
+      filePath = decodeURIComponent(path.join('/'))
     }
 
     const searchPath = filePath || 'index.html'
