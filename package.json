@@ -16,8 +16,6 @@
     "@marsidev/react-turnstile": "^1.5.3",
     "@monaco-editor/react": "^4.7.0",
     "@paystack/inline-js": "^2.23.1",
-    "@react-email/components": "^1.0.12",
-    "@react-email/render": "^2.1.0",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
     "@tailwindcss/typography": "^0.5.20",
@@ -52,6 +50,8 @@
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.1.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/papaparse": "^5.5.2",
@@ -61,6 +61,7 @@
     "@types/react-pivottable": "^0.11.6",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "react-email": "^6.9.2",
     "tailwindcss": "^4",
     "typescript": "^5"
   }

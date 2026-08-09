@@ -1,44 +1,52 @@
-import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr, Img } from '@react-email/components';
+import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr } from '@react-email/components';
 import * as React from 'react';
 
-interface WelcomeEmailProps {
+interface TrialEndingEmailProps {
   name: string;
 }
 
-export const WelcomeEmail = ({ name = 'User' }: WelcomeEmailProps) => {
+export const TrialEndingEmail = ({ name = 'User' }: TrialEndingEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Welcome to Sovira SEO - Your premium InstantSite platform</Preview>
+      <Preview>Action Required: Your Sovira Free Trial is Ending Soon</Preview>
       <Body style={main}>
         <Container style={container}>
           
           {/* Header */}
           <Section style={header}>
             <Heading style={headerLogo}>S O V I R A</Heading>
-            <Text style={headerSubtext}>INSTANTSITE & SEO PLATFORM</Text>
+            <Text style={headerSubtext}>SUBSCRIPTION UPDATE</Text>
           </Section>
 
           {/* Body */}
           <Section style={bodySection}>
-            <Heading style={h1}>Welcome to Sovira, {name}!</Heading>
+            <Heading style={h1}>Your Trial is Ending Soon!</Heading>
+            
             <Text style={text}>
-              We're thrilled to have you on board. Sovira is your all-in-one platform for rapid InstantSite deployment, AI content generation, and advanced SEO analysis.
-            </Text>
-            <Text style={text}>
-              As a new user, you have automatically unlocked a <strong>3-month free trial</strong> of our premium features. You can start generating high-quality content and building your online presence right away.
+              Hi {name},
             </Text>
             
+            <Text style={text}>
+              We hope you've enjoyed using Sovira! Your free trial is coming to an end in a few days. To maintain uninterrupted access to your data, generated sites, and premium SEO tools, please upgrade your plan.
+            </Text>
+            
+            <Section style={alertBox}>
+              <Text style={alertText}>
+                <strong>New Basic Plan:</strong> We've recently introduced a new <strong>₦5,000/month Basic Plan</strong> specifically designed for students and beginners, which includes the Data Analyzer, Slides Generator, and 5 InstantSites per month!
+              </Text>
+            </Section>
+            
             <Section style={buttonContainer}>
-              <Button style={button} href="https://www.sovira.com.ng/dashboard">
-                Go to Dashboard
+              <Button style={button} href="https://www.sovira.com.ng/pricing">
+                View Pricing Plans
               </Button>
             </Section>
 
             <Hr style={hr} />
             
             <Text style={footer}>
-              If you have any questions, simply reply to this email. We're here to help!
+              If you have any questions about our plans, just reply to this email.
               <br />
               &copy; {new Date().getFullYear()} Sovira Technologies. All rights reserved.
             </Text>
@@ -50,7 +58,7 @@ export const WelcomeEmail = ({ name = 'User' }: WelcomeEmailProps) => {
   );
 };
 
-export default WelcomeEmail;
+export default TrialEndingEmail;
 
 const main = {
   backgroundColor: '#f6f9fc',
@@ -95,7 +103,7 @@ const bodySection = {
 };
 
 const h1 = {
-  color: '#1a1a1a',
+  color: '#d97706', // Amber-600
   fontSize: '24px',
   fontWeight: '600',
   lineHeight: '1.4',
@@ -109,13 +117,28 @@ const text = {
   margin: '0 0 20px 0',
 };
 
+const alertBox = {
+  backgroundColor: '#fffbeb', // Amber-50
+  borderLeft: '4px solid #d97706', // Amber-600
+  padding: '16px 20px',
+  margin: '24px 0',
+  borderRadius: '0 4px 4px 0',
+};
+
+const alertText = {
+  color: '#b45309', // Amber-700
+  fontSize: '14px',
+  lineHeight: '1.5',
+  margin: '0',
+};
+
 const buttonContainer = {
   textAlign: 'center' as const,
   margin: '30px 0',
 };
 
 const button = {
-  backgroundColor: '#0a5c70',
+  backgroundColor: '#d97706', // Amber button
   borderRadius: '4px',
   color: '#fff',
   fontSize: '16px',

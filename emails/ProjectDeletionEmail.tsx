@@ -1,44 +1,56 @@
-import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr, Img } from '@react-email/components';
+import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr } from '@react-email/components';
 import * as React from 'react';
 
-interface WelcomeEmailProps {
-  name: string;
+interface ProjectDeletionEmailProps {
+  projectName: string;
 }
 
-export const WelcomeEmail = ({ name = 'User' }: WelcomeEmailProps) => {
+export const ProjectDeletionEmail = ({ projectName = 'My Site' }: ProjectDeletionEmailProps) => {
   return (
     <Html>
       <Head />
-      <Preview>Welcome to Sovira SEO - Your premium InstantSite platform</Preview>
+      <Preview>Important: Your project "{projectName}" is scheduled for deletion due to inactivity</Preview>
       <Body style={main}>
         <Container style={container}>
           
           {/* Header */}
           <Section style={header}>
             <Heading style={headerLogo}>S O V I R A</Heading>
-            <Text style={headerSubtext}>INSTANTSITE & SEO PLATFORM</Text>
+            <Text style={headerSubtext}>ACCOUNT NOTIFICATION</Text>
           </Section>
 
           {/* Body */}
           <Section style={bodySection}>
-            <Heading style={h1}>Welcome to Sovira, {name}!</Heading>
+            <Heading style={h1}>Project Deletion Warning</Heading>
+            
             <Text style={text}>
-              We're thrilled to have you on board. Sovira is your all-in-one platform for rapid InstantSite deployment, AI content generation, and advanced SEO analysis.
-            </Text>
-            <Text style={text}>
-              As a new user, you have automatically unlocked a <strong>3-month free trial</strong> of our premium features. You can start generating high-quality content and building your online presence right away.
+              Hi there,
             </Text>
             
+            <Text style={text}>
+              We noticed that your InstantSite project <strong style={{ color: '#0a5c70' }}>{projectName}</strong> has been inactive for over 7 days.
+            </Text>
+            
+            <Text style={text}>
+              As a free user, inactive projects are routinely cleaned up to maintain server capacity and ensure optimal performance for active users. Because of this, your project is currently <strong>scheduled for deletion</strong>.
+            </Text>
+            
+            <Section style={alertBox}>
+              <Text style={alertText}>
+                <strong>Action Required:</strong> If you wish to keep this project online and secure your data permanently, please consider upgrading to one of our paid plans starting at just ₦5,000/month.
+              </Text>
+            </Section>
+            
             <Section style={buttonContainer}>
-              <Button style={button} href="https://www.sovira.com.ng/dashboard">
-                Go to Dashboard
+              <Button style={button} href="https://www.sovira.com.ng/pricing">
+                Upgrade Plan to Save Project
               </Button>
             </Section>
 
             <Hr style={hr} />
             
             <Text style={footer}>
-              If you have any questions, simply reply to this email. We're here to help!
+              If this was a mistake or you have questions, please reach out to support.
               <br />
               &copy; {new Date().getFullYear()} Sovira Technologies. All rights reserved.
             </Text>
@@ -50,7 +62,7 @@ export const WelcomeEmail = ({ name = 'User' }: WelcomeEmailProps) => {
   );
 };
 
-export default WelcomeEmail;
+export default ProjectDeletionEmail;
 
 const main = {
   backgroundColor: '#f6f9fc',
@@ -95,7 +107,7 @@ const bodySection = {
 };
 
 const h1 = {
-  color: '#1a1a1a',
+  color: '#e11d48', // Rose-600 for warning
   fontSize: '24px',
   fontWeight: '600',
   lineHeight: '1.4',
@@ -109,13 +121,28 @@ const text = {
   margin: '0 0 20px 0',
 };
 
+const alertBox = {
+  backgroundColor: '#fff1f2', // Rose-50
+  borderLeft: '4px solid #e11d48', // Rose-600
+  padding: '16px 20px',
+  margin: '24px 0',
+  borderRadius: '0 4px 4px 0',
+};
+
+const alertText = {
+  color: '#be123c', // Rose-700
+  fontSize: '14px',
+  lineHeight: '1.5',
+  margin: '0',
+};
+
 const buttonContainer = {
   textAlign: 'center' as const,
   margin: '30px 0',
 };
 
 const button = {
-  backgroundColor: '#0a5c70',
+  backgroundColor: '#e11d48', // Red/Rose button for urgent action
   borderRadius: '4px',
   color: '#fff',
   fontSize: '16px',
