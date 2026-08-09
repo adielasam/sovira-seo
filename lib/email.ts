@@ -9,7 +9,7 @@ import ReengagementEmail from '@/emails/ReengagementEmail'
 export async function sendWelcomeEmail(email: string, name: string, userId: string) {
   try {
     const unsubscribeUrl = `https://soviraseo.com/api/unsubscribe?userId=${encodeURIComponent(userId)}`
-    const html = await render(WelcomeEmail({ userEmail: email, unsubscribeUrl }))
+    const html = await render(WelcomeEmail({ name: name || 'User' }))
     
     const { data, error } = await resend.emails.send({
       from: 'Sovira SEO <onboarding@resend.dev>',
