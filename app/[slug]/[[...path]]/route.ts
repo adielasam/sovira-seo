@@ -59,7 +59,9 @@ export async function GET(
 
     // Inject base tag for HTML files to fix relative asset paths natively
     if (file.content_type === 'text/html' && typeof finalContent === 'string') {
-      const baseTag = `<base href="/${slug}/">`
+      const reqUrl = new URL(request.url)
+      const isSubdomain = reqUrl.hostname.endsWith('.sovira.com.ng') && !['www.sovira.com.ng', 'sovira.com.ng'].includes(reqUrl.hostname)
+      const baseTag = isSubdomain ? `<base href="/">` : `<base href="/${slug}/">`
       if (finalContent.match(/<head[^>]*>/i)) {
         finalContent = finalContent.replace(/(<head[^>]*>)/i, `$1\n  ${baseTag}`)
       } else if (finalContent.match(/<html[^>]*>/i)) {

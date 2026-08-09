@@ -49,7 +49,9 @@ export async function POST(req: Request) {
     }
 
     const hostUrl = process.env.NEXT_PUBLIC_APP_URL || (req.headers.get('origin') || 'http://localhost:3000')
-    const finalUrl = `${hostUrl}/${newSlug}/`
+    const finalUrl = hostUrl.includes('localhost') 
+      ? `${hostUrl}/${newSlug}/` 
+      : `https://${newSlug}.sovira.com.ng/`
 
     return NextResponse.json({ url: finalUrl, slug: newSlug })
   } catch (error) {

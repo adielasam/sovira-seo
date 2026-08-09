@@ -24,7 +24,7 @@ export default async function AdminWebsitesPage() {
       id: file.id, // ID of the index.html record
       currentSlug: slug,
       actualSlug,
-      url: `/${actualSlug}/`,
+      url: process.env.NEXT_PUBLIC_APP_URL?.includes('localhost') ? `/${actualSlug}/` : `https://${actualSlug}.sovira.com.ng/`,
       isPaused,
       createdAt: file.created_at,
       userId: file.user_id
