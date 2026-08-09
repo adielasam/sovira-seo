@@ -30,16 +30,14 @@ export default function HtmlHostPage() {
       const doc = iframeRef.current.contentDocument
       if (doc) {
         let finalContent = htmlContent
-        if (hostedUrl) {
-           const baseUrl = hostedUrl.endsWith('/') ? hostedUrl : `${hostedUrl}/`
-           const baseTag = `<base href="${baseUrl}">`
-           if (finalContent.match(/<head[^>]*>/i)) {
-             finalContent = finalContent.replace(/(<head[^>]*>)/i, `$1\n  ${baseTag}`)
-           } else if (finalContent.match(/<html[^>]*>/i)) {
-             finalContent = finalContent.replace(/(<html[^>]*>)/i, `$1\n<head>\n  ${baseTag}\n</head>`)
-           } else {
-             finalContent = `${baseTag}\n${finalContent}`
-           }
+        const activeSlug = extractSlug(hostedUrl) || customSlug || 'preview'
+        const baseTag = `<base href="/${activeSlug}/">`
+        if (finalContent.match(/<head[^>]*>/i)) {
+          finalContent = finalContent.replace(/(<head[^>]*>)/i, `$1\n  ${baseTag}`)
+        } else if (finalContent.match(/<html[^>]*>/i)) {
+          finalContent = finalContent.replace(/(<html[^>]*>)/i, `$1\n<head>\n  ${baseTag}\n</head>`)
+        } else {
+          finalContent = `${baseTag}\n${finalContent}`
         }
         
         doc.open()
@@ -47,7 +45,7 @@ export default function HtmlHostPage() {
         doc.close()
       }
     }
-  }, [htmlContent, mode, devicePreview, hostedUrl])
+  }, [htmlContent, mode, devicePreview, hostedUrl, customSlug])
 
   // Handle global paste event when in landing mode
   useEffect(() => {
