@@ -700,7 +700,7 @@ export default function HtmlHostPage() {
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
         
         {/* Left Editor Pane */}
-        <div className="w-full md:w-1/2 flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full">
+        <div className="w-full md:w-[60%] flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full">
           {/* Editor Tabs */}
           <div className="flex items-center bg-[#252526] border-b border-[#1e1e1e]">
             <div className="flex items-center px-4 py-3 text-xs text-[#858585] font-mono">
@@ -720,7 +720,7 @@ export default function HtmlHostPage() {
             <textarea
               value={htmlContent}
               onChange={(e) => setHtmlContent(e.target.value)}
-              className="w-full h-full bg-transparent text-[#d4d4d4] font-mono text-[14px] leading-[1.6] resize-none focus:outline-none focus:ring-0 outline-none border-none custom-scrollbar"
+              className="flex-1 w-full h-full bg-transparent text-[#d4d4d4] font-mono text-[14px] leading-[1.6] resize-none focus:outline-none focus:ring-0 outline-none border-none custom-scrollbar block"
               placeholder="<!-- Start typing HTML here... -->"
               spellCheck={false}
               autoComplete="off"
@@ -729,7 +729,7 @@ export default function HtmlHostPage() {
         </div>
 
         {/* Right Preview Pane */}
-        <div className="w-full md:w-1/2 flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full">
+        <div className="w-full md:w-[40%] flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full">
           
           {/* Preview Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#111111] text-xs font-mono text-slate-500 shadow-sm z-10">
