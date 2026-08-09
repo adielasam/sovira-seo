@@ -546,7 +546,7 @@ export default function HtmlHostPage() {
           <div className="flex flex-wrap items-center justify-center gap-4 mb-12 w-full">
             <button 
               onClick={() => {
-                setHtmlContent(`<!DOCTYPE html>\n<html>\n<head>\n  <title>My Site</title>\n  <style>\n    body { font-family: system-ui, sans-serif; padding: 2rem; }\n    h1 { color: #2563eb; }\n  </style>\n</head>\n<body>\n  <h1>Hello, World!</h1>\n  <p>Start typing HTML here...</p>\n</body>\n</html>`)
+                setHtmlContent(DEFAULT_TEMPLATE)
                 setMode('editor')
               }}
               className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] shadow-lg shadow-slate-200/50 dark:shadow-none border border-slate-200 dark:border-slate-800 hover:border-blue-500 dark:hover:border-slate-600 hover:shadow-blue-500/10 transition-all duration-300 group"
@@ -554,7 +554,7 @@ export default function HtmlHostPage() {
               <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30 transition-colors">
                 <Code className="w-5 h-5 text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400" />
               </div>
-              <span className="font-semibold text-slate-700 dark:text-slate-300 pr-2">Paste HTML</span>
+              <span className="font-semibold text-slate-700 dark:text-slate-300 pr-2">Start with Template</span>
             </button>
             <button 
               onClick={() => fileInputRef.current?.click()}
