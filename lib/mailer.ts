@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import { renderAsync } from '@react-email/render';
+import { render } from '@react-email/render';
 import * as React from 'react';
 import WelcomeEmail from '../emails/WelcomeEmail';
 import TrialEndingEmail from '../emails/TrialEndingEmail';
@@ -10,7 +10,7 @@ const fromEmail = 'Sovira <noreply@sovira.com.ng>';
 
 export async function sendWelcomeEmail(toEmail: string, name: string) {
   try {
-    const html = await renderAsync(React.createElement(WelcomeEmail, { name }));
+    const html = await render(React.createElement(WelcomeEmail, { name }));
     
     await resend.emails.send({
       from: fromEmail,
@@ -27,7 +27,7 @@ export async function sendWelcomeEmail(toEmail: string, name: string) {
 
 export async function sendTrialEndingWarning(toEmail: string, name: string) {
   try {
-    const html = await renderAsync(React.createElement(TrialEndingEmail, { name }));
+    const html = await render(React.createElement(TrialEndingEmail, { name }));
     
     await resend.emails.send({
       from: fromEmail,
@@ -44,7 +44,7 @@ export async function sendTrialEndingWarning(toEmail: string, name: string) {
 
 export async function sendBeforeDeletionWarning(toEmail: string, projectName: string) {
   try {
-    const html = await renderAsync(React.createElement(ProjectDeletionEmail, { projectName }));
+    const html = await render(React.createElement(ProjectDeletionEmail, { projectName }));
     
     await resend.emails.send({
       from: fromEmail,
