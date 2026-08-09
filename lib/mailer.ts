@@ -53,17 +53,17 @@ export async function sendBeforeDeletionWarning(toEmail: string, projectName: st
     await resend.emails.send({
       from: fromEmail,
       to: toEmail,
-      subject: \`Important: Your project "\${projectName}" is scheduled for deletion\`,
-      html: \`
+      subject: `Important: Your project "${projectName}" is scheduled for deletion`,
+      html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h1 style="color: #ef4444;">Project Deletion Warning</h1>
           <p>Hi there,</p>
-          <p>We noticed that your InstantSite project <strong>\${projectName}</strong> has been inactive for over 7 days.</p>
+          <p>We noticed that your InstantSite project <strong>${projectName}</strong> has been inactive for over 7 days.</p>
           <p>As a free user, inactive projects are routinely cleaned up to maintain server capacity. Your project is scheduled for deletion.</p>
           <p>If you wish to keep this project online and secure your data permanently, please consider upgrading to one of our paid plans starting at just ₦5,000/month.</p>
           <a href="https://www.sovira.com.ng/pricing" style="display: inline-block; background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin-top: 20px;">Upgrade Plan to Save Project</a>
         </div>
-      \`,
+      `,
     });
     return { success: true };
   } catch (error) {
