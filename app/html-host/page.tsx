@@ -10,6 +10,20 @@ import { useTheme } from 'next-themes'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 
+const EDITOR_OPTIONS = {
+  minimap: { enabled: false },
+  wordWrap: 'on' as const,
+  formatOnPaste: true,
+  fontSize: 14,
+  fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
+  lineHeight: 1.6,
+  padding: { top: 16 },
+  scrollBeyondLastLine: false,
+  smoothScrolling: true,
+  cursorBlinking: 'smooth' as const,
+  cursorSmoothCaretAnimation: 'on' as const,
+}
+
 export default function HtmlHostPage() {
   const { theme } = useTheme()
   const router = useRouter()
@@ -650,19 +664,7 @@ export default function HtmlHostPage() {
               theme={theme === 'dark' ? 'vs-dark' : 'light'}
               value={htmlContent}
               onChange={(value) => setHtmlContent(value || '')}
-              options={{
-                minimap: { enabled: false },
-                wordWrap: 'on',
-                formatOnPaste: true,
-                fontSize: 14,
-                fontFamily: "'JetBrains Mono', 'Fira Code', 'Cascadia Code', Consolas, monospace",
-                lineHeight: 1.6,
-                padding: { top: 16 },
-                scrollBeyondLastLine: false,
-                smoothScrolling: true,
-                cursorBlinking: 'smooth',
-                cursorSmoothCaretAnimation: 'on',
-              }}
+              options={EDITOR_OPTIONS}
               loading={
                 <div className="flex items-center justify-center w-full h-full text-slate-400">
                   <Loader2 className="w-5 h-5 animate-spin mr-2" />
