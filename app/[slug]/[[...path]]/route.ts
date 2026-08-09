@@ -59,7 +59,7 @@ export async function GET(
 
     // Inject base tag for HTML files to fix relative asset paths natively
     if (file.content_type === 'text/html' && typeof finalContent === 'string') {
-      const baseTag = `<base href="/site/${slug}/">`
+      const baseTag = `<base href="/${slug}/">`
       if (finalContent.match(/<head[^>]*>/i)) {
         finalContent = finalContent.replace(/(<head[^>]*>)/i, `$1\n  ${baseTag}`)
       } else if (finalContent.match(/<html[^>]*>/i)) {

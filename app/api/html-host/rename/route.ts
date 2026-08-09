@@ -49,7 +49,7 @@ export async function POST(req: Request) {
     }
 
     const hostUrl = process.env.NEXT_PUBLIC_APP_URL || (req.headers.get('origin') || 'http://localhost:3000')
-    const finalUrl = `${hostUrl}/site/${newSlug}/`
+    const finalUrl = `${hostUrl}/${newSlug}/`
 
     return NextResponse.json({ url: finalUrl, slug: newSlug })
   } catch (error) {

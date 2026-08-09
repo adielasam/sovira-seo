@@ -24,7 +24,7 @@ export default async function AdminWebsitesPage() {
       id: file.id, // ID of the index.html record
       currentSlug: slug,
       actualSlug,
-      url: `/site/${actualSlug}/`,
+      url: `/${actualSlug}/`,
       isPaused,
       createdAt: file.created_at,
       userId: file.user_id
