@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database } from 'lucide-react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database, Image as ImageIcon } from 'lucide-react'
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'
@@ -140,7 +140,7 @@ export default function HtmlHostPage() {
   const [isDragging, setIsDragging] = useState(false)
   const [filesPreview, setFilesPreview] = useState<{path: string, type: string}[]>([])
   
-  const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'phone'>('desktop')
+  const [devicePreview, setDevicePreview] = useState<'desktop' | 'tablet' | 'phone' | 'fullscreen'>('desktop')
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [showAuthModal, setShowAuthModal] = useState(false)
   
@@ -152,8 +152,14 @@ export default function HtmlHostPage() {
   const [aiPrompt, setAiPrompt] = useState('')
   const [isAiEditing, setIsAiEditing] = useState(false)
 
+  // Media Manager States
+  const [showMediaModal, setShowMediaModal] = useState(false)
+  const [mediaFiles, setMediaFiles] = useState<{url: string, name: string}[]>([])
+  const [isUploadingMedia, setIsUploadingMedia] = useState(false)
+
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const mediaInputRef = useRef<HTMLInputElement>(null)
   
   // Live preview update
   useEffect(() => {
@@ -583,6 +589,45 @@ export default function HtmlHostPage() {
     return (new Blob([htmlContent]).size / 1024).toFixed(1) + ' KB'
   }
 
+  const handleMediaUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    const file = e.target.files[0]
+    
+    setIsUploadingMedia(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('slug', customSlug)
+
+      const res = await fetch('/api/html-host/upload-media', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!res.ok) {
+        throw new Error('Media upload failed')
+      }
+
+      const data = await res.json()
+      if (data.url) {
+        setMediaFiles(prev => [{ url: data.url, name: file.name }, ...prev])
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to upload media.')
+    } finally {
+      setIsUploadingMedia(false)
+      if (mediaInputRef.current) mediaInputRef.current.value = ''
+    }
+  }
+
+  const copyImageTag = (url: string, name: string) => {
+    const tag = `<img src="${url}" alt="${name.split('.')[0]}" />`
+    navigator.clipboard.writeText(tag)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const lineCount = useMemo(() => htmlContent.split('\n').length, [htmlContent])
 
   if (mode === 'landing') {
@@ -700,6 +745,13 @@ export default function HtmlHostPage() {
         className="hidden" 
         accept=".html,.zip,application/zip,application/x-zip-compressed"
       />
+      <input 
+        type="file" 
+        ref={mediaInputRef} 
+        onChange={handleMediaUpload} 
+        className="hidden" 
+        accept="image/*"
+      />
 
       {/* Header - Adaptive IDE Style */}
       <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md z-10">
@@ -764,6 +816,15 @@ export default function HtmlHostPage() {
             {getProjectSize()}
           </div>
 
+          {/* Media Button */}
+          <button 
+            onClick={() => setShowMediaModal(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border bg-white dark:bg-[#1A1A1A] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600"
+          >
+            <ImageIcon className="w-4 h-4" />
+            Media
+          </button>
+
           {/* AI Edit Button */}
           <button 
             onClick={() => setShowAiPrompt(!showAiPrompt)}
@@ -806,6 +867,78 @@ export default function HtmlHostPage() {
           )}
         </div>
       </div>
+
+      {/* Media Manager Modal */}
+      {showMediaModal && (
+        <div className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-white dark:bg-[#111] w-full max-w-2xl rounded-3xl shadow-2xl overflow-hidden border border-slate-200 dark:border-slate-800 flex flex-col max-h-[85vh]">
+            <div className="flex items-center justify-between p-6 border-b border-slate-100 dark:border-slate-800">
+              <h2 className="text-2xl font-bold text-slate-900 dark:white flex items-center gap-3">
+                <ImageIcon className="w-6 h-6 text-blue-500" />
+                Media Manager
+              </h2>
+              <button 
+                onClick={() => setShowMediaModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            
+            <div className="p-6 overflow-y-auto">
+              {/* Upload Dropzone */}
+              <div 
+                onClick={() => mediaInputRef.current?.click()}
+                className="w-full h-32 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-2xl flex flex-col items-center justify-center cursor-pointer hover:border-blue-500 hover:bg-blue-50/50 dark:hover:bg-blue-500/5 transition-all group mb-8"
+              >
+                {isUploadingMedia ? (
+                  <div className="flex flex-col items-center gap-2">
+                    <Loader2 className="w-6 h-6 text-blue-500 animate-spin" />
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Uploading to cloud...</span>
+                  </div>
+                ) : (
+                  <>
+                    <Upload className="w-8 h-8 text-slate-400 group-hover:text-blue-500 mb-2 transition-colors" />
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                      Click to upload an image
+                    </p>
+                  </>
+                )}
+              </div>
+
+              {/* Uploaded Files Gallery */}
+              {mediaFiles.length > 0 ? (
+                <div className="space-y-4">
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-wider">Session Uploads</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {mediaFiles.map((file, idx) => (
+                      <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 dark:bg-[#1A1A1A] rounded-xl border border-slate-200 dark:border-slate-800">
+                        <div className="w-12 h-12 rounded-lg bg-slate-200 dark:bg-slate-800 overflow-hidden flex-shrink-0">
+                          <img src={file.url} alt={file.name} className="w-full h-full object-cover" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{file.name}</p>
+                          <button 
+                            onClick={() => copyImageTag(file.url, file.name)}
+                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-0.5"
+                          >
+                            <Copy className="w-3 h-3" />
+                            Copy HTML Tag
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-slate-500 dark:text-slate-400 text-sm">No media uploaded in this session.</p>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Split View */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0 relative">
@@ -905,7 +1038,7 @@ export default function HtmlHostPage() {
         </div>
 
         {/* Right Preview Pane */}
-        <div className="w-full md:w-[40%] flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full min-h-0">
+        <div className={`flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#0A0A0A] transition-all duration-300 ${devicePreview === 'fullscreen' ? 'hidden' : 'w-1/2'}`}>
           
           {/* Preview Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#111111] text-xs font-mono text-slate-500 shadow-sm z-10">

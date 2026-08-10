@@ -23,6 +23,22 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Failed to delete site' }, { status: 500 })
     }
 
+    // Also delete any associated media in the blog-images bucket
+    try {
+      const { data: mediaFiles, error: listError } = await supabaseAdmin.storage
+        .from('blog-images')
+        .list(`instantsite_media/${slug}`)
+      
+      if (!listError && mediaFiles && mediaFiles.length > 0) {
+        const filesToRemove = mediaFiles.map(file => `instantsite_media/${slug}/${file.name}`)
+        await supabaseAdmin.storage
+          .from('blog-images')
+          .remove(filesToRemove)
+      }
+    } catch (mediaError) {
+      console.error('Failed to clean up media files (non-fatal):', mediaError)
+    }
+
     return NextResponse.json({ success: true })
 
   } catch (error) {
