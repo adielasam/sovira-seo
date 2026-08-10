@@ -156,6 +156,7 @@ export default function HtmlHostPage() {
   const [showMediaModal, setShowMediaModal] = useState(false)
   const [mediaFiles, setMediaFiles] = useState<{url: string, name: string}[]>([])
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -419,14 +420,14 @@ export default function HtmlHostPage() {
   }
 
   const handlePublish = async () => {
-    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }], false)
+    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }], false, true)
   }
 
   const handleSaveToProject = async () => {
-    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }], true)
+    await uploadFiles([{ path: 'index.html', content: htmlContent, type: 'text/html', isBinary: false }], true, false)
   }
 
-  const uploadFiles = async (files: {path: string, content: string, type: string, isBinary: boolean}[], requireLogin = false) => {
+  const uploadFiles = async (files: {path: string, content: string, type: string, isBinary: boolean}[], requireLogin = false, isPublishing = true) => {
     if (requireLogin && !user) {
       setShowAuthModal(true)
       return
@@ -470,36 +471,44 @@ export default function HtmlHostPage() {
         }
       }
       
-      setHostedUrl(finalUrl)
-      setShowSuccessModal(true)
-      
-      // Trigger a beautiful confetti animation!
-      const duration = 3000
-      const end = Date.now() + duration
-      const frame = () => {
-        confetti({
-          particleCount: 5,
-          angle: 60,
-          spread: 55,
-          origin: { x: 0 },
-          colors: ['#2563eb', '#3b82f6', '#93c5fd'] // Sovira blues
-        })
-        confetti({
-          particleCount: 5,
-          angle: 120,
-          spread: 55,
-          origin: { x: 1 },
-          colors: ['#2563eb', '#3b82f6', '#93c5fd']
-        })
-        if (Date.now() < end) {
-          requestAnimationFrame(frame)
+      if (isPublishing) {
+        setHostedUrl(finalUrl)
+        setShowSuccessModal(true)
+        
+        // Trigger a beautiful confetti animation!
+        const duration = 3000
+        const end = Date.now() + duration
+        const frame = () => {
+          confetti({
+            particleCount: 5,
+            angle: 60,
+            spread: 55,
+            origin: { x: 0 },
+            colors: ['#2563eb', '#3b82f6', '#93c5fd'] // Sovira blues
+          })
+          confetti({
+            particleCount: 5,
+            angle: 120,
+            spread: 55,
+            origin: { x: 1 },
+            colors: ['#2563eb', '#3b82f6', '#93c5fd']
+          })
+          if (Date.now() < end) {
+            requestAnimationFrame(frame)
+          }
         }
+        frame()
+      } else {
+        alert('✅ Project saved successfully to your dashboard!')
       }
-      frame()
       
     } catch (err) {
       console.error(err)
-      alert(err instanceof Error ? err.message : 'Upload failed due to network error')
+      if (err instanceof Error && err.message === 'Failed to fetch') {
+        alert('Network Error (Failed to fetch): The server connection dropped. This usually happens if your internet disconnected, or if your project contains massive base64 images that exceeded the 4MB upload limit. Please use the Media Manager to upload large images instead of pasting them into the code.')
+      } else {
+        alert(err instanceof Error ? err.message : 'Upload failed due to network error')
+      }
     } finally {
       setIsUploading(false)
     }
@@ -624,8 +633,8 @@ export default function HtmlHostPage() {
   const copyImageTag = (url: string, name: string) => {
     const tag = `<img src="${url}" alt="${name.split('.')[0]}" />`
     navigator.clipboard.writeText(tag)
-    setCopied(true)
-    setTimeout(() => setCopied(false), 2000)
+    setCopiedUrl(url)
+    setTimeout(() => setCopiedUrl(null), 2000)
   }
 
   const lineCount = useMemo(() => htmlContent.split('\n').length, [htmlContent])
@@ -920,10 +929,19 @@ export default function HtmlHostPage() {
                           <p className="text-sm font-semibold text-slate-800 dark:text-slate-200 truncate">{file.name}</p>
                           <button 
                             onClick={() => copyImageTag(file.url, file.name)}
-                            className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline flex items-center gap-1 mt-0.5"
+                            className={`text-xs font-bold hover:underline flex items-center gap-1 mt-0.5 ${copiedUrl === file.url ? 'text-emerald-500' : 'text-blue-600 dark:text-blue-400'}`}
                           >
-                            <Copy className="w-3 h-3" />
-                            Copy HTML Tag
+                            {copiedUrl === file.url ? (
+                              <>
+                                <Check className="w-3 h-3" />
+                                Copied!
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="w-3 h-3" />
+                                Copy HTML Tag
+                              </>
+                            )}
                           </button>
                         </div>
                       </div>
