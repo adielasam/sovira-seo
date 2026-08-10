@@ -11,52 +11,63 @@ export async function POST(req: Request) {
 
     const supabaseAdmin = await createAdminClient()
 
-    // 1. Find the site owner
-    const { data: siteFiles } = await supabaseAdmin
-      .from('content_generations')
-      .select('user_id')
-      .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
-      .like('topic', `${slug}|%`)
-      .limit(1)
+    // If the user is testing in the Live Preview editor, bypass the site lookup
+    const isPreview = slug === 'sovira' || slug === 'html-host' || slug === 'www' || slug === 'preview'
+    
+    let ownerId = null
+    let isFree = false
+    let isAdmin = false
 
-    if (!siteFiles || siteFiles.length === 0) {
-      return NextResponse.json({ error: 'Site not found' }, { status: 404 })
+    if (!isPreview) {
+      // 1. Find the site owner
+      const { data: siteFiles } = await supabaseAdmin
+        .from('content_generations')
+        .select('user_id')
+        .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
+        .like('topic', `${slug}|%`)
+        .limit(1)
+
+      if (!siteFiles || siteFiles.length === 0) {
+        return NextResponse.json({ error: 'Site not found' }, { status: 404 })
+      }
+
+      ownerId = siteFiles[0].user_id
     }
 
-    const ownerId = siteFiles[0].user_id
+    if (!isPreview && ownerId) {
+      // 2. Check the owner's plan
+      const { data: profile } = await supabaseAdmin
+        .from('user_profiles')
+        .select('plan')
+        .eq('id', ownerId)
+        .single()
 
-    // 2. Check the owner's plan
-    const { data: profile } = await supabaseAdmin
-      .from('user_profiles')
-      .select('plan')
-      .eq('id', ownerId)
-      .single()
-
-    const plan = profile?.plan || 'free'
-    const isFree = plan === 'free' || plan === 'free trial'
-    
-    // Admins bypass
-    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(ownerId)
-    const isAdmin = userData?.user?.email === 'adielasam2015@gmail.com'
-
-    // 3. Enforce Rate Limit for Free Sites
-    if (isFree && !isAdmin) {
-      const startOfDay = new Date()
-      startOfDay.setUTCHours(0, 0, 0, 0)
+      const plan = profile?.plan || 'free'
+      isFree = plan === 'free' || plan === 'free trial'
       
-      const { count } = await supabaseAdmin
-        .from('activity_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', ownerId)
-        .eq('action', `Site Chat: ${slug}`)
-        .gte('created_at', startOfDay.toISOString())
+      // Admins bypass
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(ownerId)
+      isAdmin = userData?.user?.email === 'adielasam2015@gmail.com'
 
-      const usageCount = count || 0
-      
-      if (usageCount >= 10) { // Limit free sites to 10 chats per day
-        return NextResponse.json({ 
-          error: 'This site has reached its daily free chat limit. The owner must upgrade to a paid plan.' 
-        }, { status: 429 })
+      // 3. Enforce Rate Limit for Free Sites
+      if (isFree && !isAdmin) {
+        const startOfDay = new Date()
+        startOfDay.setUTCHours(0, 0, 0, 0)
+        
+        const { count } = await supabaseAdmin
+          .from('activity_logs')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', ownerId)
+          .eq('action', `Site Chat: ${slug}`)
+          .gte('created_at', startOfDay.toISOString())
+
+        const usageCount = count || 0
+        
+        if (usageCount >= 10) { // Limit free sites to 10 chats per day
+          return NextResponse.json({ 
+            error: 'This site has reached its daily free chat limit. The owner must upgrade to a paid plan.' 
+          }, { status: 429 })
+        }
       }
     }
 
@@ -94,14 +105,16 @@ export async function POST(req: Request) {
 
     const data = await res.json()
 
-    // 5. Log the usage
-    await supabaseAdmin
-      .from('activity_logs')
-      .insert([{
-        user_id: ownerId,
-        action: `Site Chat: ${slug}`,
-        details: { model: 'gpt-4o-mini', source: 'instantsite_widget' }
-      }])
+    // 5. Log the usage (only if it's a real published site)
+    if (!isPreview && ownerId) {
+      await supabaseAdmin
+        .from('activity_logs')
+        .insert([{
+          user_id: ownerId,
+          action: `Site Chat: ${slug}`,
+          details: { model: 'gpt-4o-mini', source: 'instantsite_widget' }
+        }])
+    }
 
     return NextResponse.json({ reply: data.choices[0].message.content })
     
