@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Radar, Loader2, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck, FileText, Info } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { Radar, Loader2, ShieldAlert, CheckCircle2, AlertTriangle, ShieldCheck, FileText, Info, Clock, Crown } from 'lucide-react'
 import { toast } from 'react-hot-toast'
 import Link from 'next/link'
 
@@ -9,6 +9,35 @@ export default function AIDetectorPage() {
   const [text, setText] = useState('')
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [result, setResult] = useState<{ score: number; reasoning: string } | null>(null)
+  
+  const [limits, setLimits] = useState<{ allowed: boolean, count: number, maxLimit: number, resetsAt: string, isPaid: boolean } | null>(null)
+  const [timeLeft, setTimeLeft] = useState<string>('')
+
+  useEffect(() => {
+    fetch('/api/tools/limits?tool=aidetector')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setLimits(data)
+      })
+      .catch(console.error)
+  }, [result]) // Refetch on result
+
+  useEffect(() => {
+    if (!limits || limits.isPaid || !limits.resetsAt) return
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const resetTime = new Date(limits.resetsAt).getTime()
+      const distance = resetTime - now
+      if (distance < 0) {
+        setTimeLeft('0h 0m')
+        return
+      }
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+      setTimeLeft(`${hours}h ${minutes}m`)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [limits])
 
   const handleAnalyze = async () => {
     if (text.trim().length < 50) {
@@ -121,30 +150,61 @@ export default function AIDetectorPage() {
             />
           </div>
           
-          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex justify-between items-center">
-            <button 
-              onClick={() => setText('')}
-              className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors"
-            >
-              Clear Text
-            </button>
-            <button
-              onClick={handleAnalyze}
-              disabled={isAnalyzing || text.length < 50}
-              className="flex items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 px-6 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {isAnalyzing ? (
-                <>
-                  <Loader2 className="w-5 h-5 animate-spin" />
-                  Scanning Text...
-                </>
-              ) : (
-                <>
-                  <Radar className="w-5 h-5" />
-                  Scan for AI
-                </>
-              )}
-            </button>
+          <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
+            
+            {/* Left: Usage info */}
+            {limits && !limits.isPaid ? (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {limits.count} / {limits.maxLimit} scans
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full font-medium">
+                  <Radar className="w-4 h-4 text-slate-400" />
+                  Limited daily scans
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <Clock className="w-4 h-4" />
+                  resets at 1:00 AM ({timeLeft || '...'})
+                </span>
+              </div>
+            ) : limits && limits.isPaid ? (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  <Crown className="w-4 h-4" />
+                  Pro Plan Active (Unlimited)
+                </span>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400">Loading limits...</div>
+            )}
+
+            {/* Right: Actions */}
+            <div className="flex items-center gap-3 w-full md:w-auto">
+              <button 
+                onClick={() => setText('')}
+                className="text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-colors hidden md:block px-4"
+              >
+                Clear
+              </button>
+              
+              <button
+                onClick={handleAnalyze}
+                disabled={isAnalyzing || text.length < 50 || !!(limits && !limits.isPaid && !limits.allowed)}
+                className="flex-1 md:flex-none flex justify-center items-center gap-2 bg-slate-900 hover:bg-slate-800 dark:bg-white dark:hover:bg-slate-200 text-white dark:text-slate-900 px-8 py-2.5 rounded-xl font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isAnalyzing ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    Scanning...
+                  </>
+                ) : (
+                  <>
+                    <Radar className="w-5 h-5" />
+                    Scan for AI
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
 

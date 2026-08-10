@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { Sparkles, Copy, CheckCircle2, Loader2, Shield, Crown, Lock, RefreshCw, Scan } from 'lucide-react'
+import { Sparkles, Copy, CheckCircle2, Loader2, Shield, Crown, Lock, RefreshCw, Scan, Clock, Radar } from 'lucide-react'
 import toast from 'react-hot-toast'
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
@@ -70,6 +70,35 @@ export default function DashboardHumanizerPage() {
   const [loadingPlan, setLoadingPlan] = useState(true)
   const [detection, setDetection] = useState<DetectionResult | null>(null)
   const [rewriteLevel, setRewriteLevel] = useState('Medium')
+  
+  const [limits, setLimits] = useState<{ allowed: boolean, count: number, maxLimit: number, resetsAt: string, isPaid: boolean } | null>(null)
+  const [timeLeft, setTimeLeft] = useState<string>('')
+
+  useEffect(() => {
+    fetch('/api/tools/limits?tool=humanizer')
+      .then(res => res.json())
+      .then(data => {
+        if (!data.error) setLimits(data)
+      })
+      .catch(console.error)
+  }, [output]) // Refetch when output changes (generation happened)
+
+  useEffect(() => {
+    if (!limits || limits.isPaid || !limits.resetsAt) return
+    const interval = setInterval(() => {
+      const now = new Date().getTime()
+      const resetTime = new Date(limits.resetsAt).getTime()
+      const distance = resetTime - now
+      if (distance < 0) {
+        setTimeLeft('0h 0m')
+        return
+      }
+      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60))
+      const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60))
+      setTimeLeft(`${hours}h ${minutes}m`)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [limits])
 
   const FREE_LIMIT = 700
   const isPaid = plan === 'starter' || plan === 'pro' || plan === 'agency'
@@ -308,6 +337,34 @@ export default function DashboardHumanizerPage() {
             </div>
           )}
 
+          {/* Daily Limits UI */}
+          <div className="mt-4 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50 dark:bg-slate-900/50 p-3 rounded-xl border border-slate-100 dark:border-slate-800">
+            {limits && !limits.isPaid ? (
+              <div className="flex items-center gap-3 text-sm">
+                <span className="font-semibold text-slate-700 dark:text-slate-300">
+                  {limits.count} / {limits.maxLimit} humanizations
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-500 bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-full font-medium">
+                  <Radar className="w-4 h-4 text-slate-400" />
+                  Limited daily uses
+                </span>
+                <span className="flex items-center gap-1.5 text-slate-400">
+                  <Clock className="w-4 h-4" />
+                  resets at 1:00 AM ({timeLeft || '...'})
+                </span>
+              </div>
+            ) : limits && limits.isPaid ? (
+              <div className="flex items-center gap-2 text-sm">
+                <span className="flex items-center gap-1.5 font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-3 py-1.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  <Crown className="w-4 h-4" />
+                  Pro Plan Active (Unlimited)
+                </span>
+              </div>
+            ) : (
+              <div className="text-sm text-slate-400">Loading limits...</div>
+            )}
+          </div>
+
           <div className="mt-4 flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
@@ -326,7 +383,7 @@ export default function DashboardHumanizerPage() {
             </button>
             <button
               onClick={handleGenerate}
-              disabled={isLoading || !input.trim()}
+              disabled={isLoading || !input.trim() || !!(limits && !limits.isPaid && !limits.allowed)}
               className="flex-1 flex items-center justify-center gap-2 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-700 hover:to-teal-700 text-white rounded-xl font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Shield className="w-5 h-5" />}

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { checkUsageLimit } from '@/lib/usage'
+import { checkFreeToolDailyUsage } from '@/lib/usage'
 
 export async function POST(req: Request) {
   try {
@@ -17,10 +17,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Checking usage (AI Words limit is a good proxy for general usage)
-    const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'words')
-    if (limitReached) {
-      return NextResponse.json({ error: `You have reached your AI usage limit (${maxLimit.toLocaleString()} words). Please upgrade your plan.` }, { status: 403 })
+    // Check daily limits for Free Tool
+    const { allowed, maxLimit, isPaid } = await checkFreeToolDailyUsage(user.id, 'aidetector')
+    if (!allowed) {
+      return NextResponse.json({ error: `You have reached your daily limit of ${maxLimit} AI Detection scans on the Free plan. Please upgrade to a paid plan.` }, { status: 403 })
     }
 
     // Calculate simple burstiness metadata to feed to the LLM for better accuracy
@@ -105,7 +105,7 @@ You MUST return ONLY a valid JSON object. Do not include markdown blocks like \`
     // Log the AI usage
     await supabase.from('activity_logs').insert([{
       user_id: user.id,
-      action: `AI Text Detection`, 
+      action: `AI Detection Scan`, 
       details: { score: parsed.score, words: wordCount }
     }])
 

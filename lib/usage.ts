@@ -176,3 +176,51 @@ export async function checkAndIncrementDashboardUsage(userId: string): Promise<{
 
   return { allowed: false, remaining: 0 }
 }
+
+export type FreeToolType = 'aidetector' | 'humanizer' | 'tutor' | 'grammar' | 'data_analyzer'
+
+export async function checkFreeToolDailyUsage(userId: string, tool: FreeToolType): Promise<{ allowed: boolean, count: number, maxLimit: number, resetsAt: string, isPaid: boolean }> {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  
+  if (user && (user.email === 'adielasam2015@gmail.com' || user.email === 'adielasam20153@gmail.com')) {
+    return { allowed: true, count: 0, maxLimit: Infinity, resetsAt: '', isPaid: true }
+  }
+
+  const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', userId).single()
+  const plan = profile?.plan || 'free'
+  
+  if (plan !== 'free' && plan !== 'free trial') {
+    return { allowed: true, count: 0, maxLimit: Infinity, resetsAt: '', isPaid: true }
+  }
+
+  const MAX_DAILY = 3 // 3 scans per day
+  const actionMatch = tool === 'aidetector' ? 'AI Detection Scan' 
+                    : tool === 'humanizer' ? 'Text Humanized' 
+                    : tool === 'tutor' ? 'AI Tutor Query' 
+                    : tool === 'data_analyzer' ? 'Data Analysis Run'
+                    : 'Grammar Check'
+
+  const startOfDay = new Date()
+  startOfDay.setUTCHours(0, 0, 0, 0)
+  
+  const nextReset = new Date(startOfDay)
+  nextReset.setUTCDate(nextReset.getUTCDate() + 1)
+  
+  const { count } = await supabase
+    .from('activity_logs')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', userId)
+    .eq('action', actionMatch)
+    .gte('created_at', startOfDay.toISOString())
+
+  const usageCount = count || 0
+
+  return {
+    allowed: usageCount < MAX_DAILY,
+    count: usageCount,
+    maxLimit: MAX_DAILY,
+    resetsAt: nextReset.toISOString(),
+    isPaid: false
+  }
+}

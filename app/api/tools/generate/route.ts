@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
-import { checkUsageLimit } from '@/lib/usage'
+import { checkUsageLimit, checkFreeToolDailyUsage, FreeToolType } from '@/lib/usage'
 
 export async function POST(req: Request) {
   try {
@@ -20,11 +20,24 @@ export async function POST(req: Request) {
     const { limitReached, maxLimit, trialExpired } = await checkUsageLimit(user.id, 'seo')
     
     if (trialExpired) {
-      return NextResponse.json({ error: 'Your 14-day free trial has expired. Please upgrade your plan to continue using SEO tools.' }, { status: 403 })
+      return NextResponse.json({ error: 'Your 14-day free trial has expired. Please upgrade your plan to continue.' }, { status: 403 })
     }
-    
-    if (limitReached) {
-      return NextResponse.json({ error: `You have reached your daily SEO limit (${maxLimit.toLocaleString()} generations). Please upgrade your plan.` }, { status: 403 })
+
+    // Special checks for Free Tools Daily Limits
+    if (action === 'humanize' || action.startsWith('tutor') || action === 'grammar') {
+      const toolMap: Record<string, FreeToolType> = {
+        'humanize': 'humanizer',
+        'grammar': 'grammar'
+      }
+      const toolKey = toolMap[action] || 'tutor'
+      const { allowed, maxLimit: dailyMax } = await checkFreeToolDailyUsage(user.id, toolKey)
+      if (!allowed) {
+        return NextResponse.json({ error: `You have reached your daily limit of ${dailyMax} uses on the Free plan. Please upgrade to a paid plan.` }, { status: 403 })
+      }
+    } else {
+      if (limitReached) {
+        return NextResponse.json({ error: `You have reached your daily limit (${maxLimit.toLocaleString()} generations). Please upgrade your plan.` }, { status: 403 })
+      }
     }
 
     let systemPrompt = ''
@@ -184,6 +197,18 @@ Rules:
 
     if (!generatedText) {
       throw new Error('No output was generated. Please try again.')
+    }
+
+    // Log the usage for Free Tools
+    if (action === 'humanize' || action.startsWith('tutor') || action === 'grammar') {
+      const actionMatch = action === 'humanize' ? 'Text Humanized' 
+                        : action.startsWith('tutor') ? 'AI Tutor Query' 
+                        : 'Grammar Check'
+      await supabase.from('activity_logs').insert([{
+        user_id: user.id,
+        action: actionMatch, 
+        details: { action, input_length: text.length }
+      }])
     }
 
     return NextResponse.json({ result: generatedText })
