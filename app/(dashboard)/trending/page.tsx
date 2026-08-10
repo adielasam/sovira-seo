@@ -45,16 +45,22 @@ const NICHES = [
   'Real Estate'
 ]
 
+const PLATFORMS = [
+  { id: 'web', name: 'Web (Google/HN)' },
+  { id: 'facebook', name: 'Facebook' }
+]
+
 export default function TrendingTopicsPage() {
   const [trends, setTrends] = useState<TrendingStory[]>([])
   const [loading, setLoading] = useState(true)
   const [geo, setGeo] = useState('US')
   const [niche, setNiche] = useState('All Niches')
+  const [platform, setPlatform] = useState('web')
 
   const fetchTrends = async () => {
     setLoading(true)
     try {
-      const res = await fetch(`/api/trending?geo=${geo}&niche=${encodeURIComponent(niche)}`)
+      const res = await fetch(`/api/trending?geo=${geo}&niche=${encodeURIComponent(niche)}&platform=${platform}`)
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'Failed to load trends')
       setTrends(data.trending || [])
@@ -67,7 +73,7 @@ export default function TrendingTopicsPage() {
 
   useEffect(() => {
     fetchTrends()
-  }, [geo, niche])
+  }, [geo, niche, platform])
 
   return (
     <div className="space-y-8">
@@ -91,6 +97,18 @@ export default function TrendingTopicsPage() {
             >
               {NICHES.map(n => (
                 <option key={n} value={n}>{n}</option>
+              ))}
+            </select>
+          </div>
+          <div className="flex items-center gap-2 bg-white dark:bg-[#1E293B] border border-slate-200 dark:border-slate-800 rounded-xl px-4 py-2">
+            <Globe className="w-4 h-4 text-slate-400" />
+            <select
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+              className="bg-transparent text-sm font-medium outline-none text-slate-700 dark:text-slate-300"
+            >
+              {PLATFORMS.map(p => (
+                <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
           </div>

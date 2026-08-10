@@ -14,8 +14,63 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const geo = searchParams.get('geo') || 'US'
     const niche = searchParams.get('niche') || 'All Niches'
+    const platform = searchParams.get('platform') || 'web'
 
     let trendingList: any[] = []
+
+    if (platform === 'facebook') {
+      try {
+        const promptContext = niche === 'All Niches' ? 'all niches and general topics' : `the "${niche}" niche`
+        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model: 'llama-3.3-70b-versatile',
+            messages: [
+              { role: 'system', content: 'You are a social media trend analyzer expert at identifying viral content on Facebook.' },
+              { role: 'user', content: `Analyze real-time data and generate the top 6 most viral, trending topics and discussions currently dominating Facebook feeds in the country code "${geo}" for ${promptContext}.
+Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
+Format strictly like this:
+[
+  {
+    "title": "Topic or Viral Meme Name",
+    "snippet": "A one sentence summary of why this is going viral on Facebook right now."
+  }
+]` }
+            ],
+            temperature: 0.8,
+            max_tokens: 1000,
+          })
+        })
+
+        const groqData = await groqRes.json()
+        const rawText = (groqData.choices?.[0]?.message?.content || '').trim().replace(/```json/gi, '').replace(/```/g, '')
+        const topics = JSON.parse(rawText)
+
+        trendingList = topics.map((t: any, i: number) => ({
+          id: `fb-${i}`,
+          title: t.title,
+          entityNames: ['Facebook Trend', niche],
+          articles: [{
+            title: t.title,
+            url: `https://www.facebook.com/search/top/?q=${encodeURIComponent(t.title)}`,
+            source: 'Facebook Viral Trends',
+            time: new Date().toISOString(),
+            snippet: t.snippet
+          }],
+          image: null,
+          shareUrl: `https://www.facebook.com/search/top/?q=${encodeURIComponent(t.title)}`
+        }))
+        
+        return NextResponse.json({ trending: trendingList })
+      } catch (aiError) {
+        console.error('Facebook Groq Trending error:', aiError)
+        return NextResponse.json({ error: 'Failed to fetch Facebook trends' }, { status: 500 })
+      }
+    }
 
     if (niche !== 'All Niches') {
       try {
