@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X } from 'lucide-react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database } from 'lucide-react'
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'
@@ -146,6 +146,11 @@ export default function HtmlHostPage() {
   
   const [customSlug, setCustomSlug] = useState('')
   const [isRenaming, setIsRenaming] = useState(false)
+
+  // AI Edit States
+  const [showAiPrompt, setShowAiPrompt] = useState(false)
+  const [aiPrompt, setAiPrompt] = useState('')
+  const [isAiEditing, setIsAiEditing] = useState(false)
 
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -546,6 +551,34 @@ export default function HtmlHostPage() {
     setHtmlContent(newHtml)
   }
 
+  const handleAiEdit = async () => {
+    if (!aiPrompt.trim()) return
+    setIsAiEditing(true)
+    try {
+      const res = await fetch('/api/html-host/ai-edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ currentHtml: htmlContent, prompt: aiPrompt, slug: customSlug })
+      })
+
+      if (!res.ok) {
+        throw new Error('AI Edit failed')
+      }
+
+      const data = await res.json()
+      if (data.updatedHtml) {
+        setHtmlContent(data.updatedHtml)
+        setShowAiPrompt(false)
+        setAiPrompt('')
+      }
+    } catch (err) {
+      console.error(err)
+      alert('Failed to apply AI edit. Please try again.')
+    } finally {
+      setIsAiEditing(false)
+    }
+  }
+
   const getProjectSize = () => {
     return (new Blob([htmlContent]).size / 1024).toFixed(1) + ' KB'
   }
@@ -725,6 +758,21 @@ export default function HtmlHostPage() {
         
         {/* Right: Actions */}
         <div className="flex items-center gap-3">
+          {/* File Size Badge */}
+          <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-[#1A1A1A] rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-mono font-medium shadow-sm">
+            <Database className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
+            {getProjectSize()}
+          </div>
+
+          {/* AI Edit Button */}
+          <button 
+            onClick={() => setShowAiPrompt(!showAiPrompt)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-200 dark:border-indigo-500/30 hover:bg-indigo-100 dark:hover:bg-indigo-500/20"
+          >
+            <Sparkles className="w-4 h-4" />
+            AI Edit
+          </button>
+          
           <button 
             onClick={handlePublish}
             disabled={isUploading}
@@ -760,8 +808,64 @@ export default function HtmlHostPage() {
       </div>
 
       {/* Main Split View */}
-      <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
+      <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0 relative">
         
+        {/* Floating AI Prompt Bar */}
+        {showAiPrompt && (
+          <div className="absolute top-4 left-1/2 -translate-x-1/2 z-50 w-full max-w-2xl px-4 animate-in fade-in slide-in-from-top-4 duration-200">
+            <div className="bg-white dark:bg-[#1A1A1A] rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 flex flex-col overflow-hidden">
+              <div className="flex items-center px-4 py-3 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-[#111]">
+                <Sparkles className="w-5 h-5 text-indigo-500 mr-3 flex-shrink-0" />
+                <input
+                  type="text"
+                  autoFocus
+                  placeholder="E.g., Make the buttons rounded and blue, or fix my typos..."
+                  className="flex-1 bg-transparent border-none outline-none text-slate-800 dark:text-slate-200 text-sm font-medium placeholder-slate-400 dark:placeholder-slate-600"
+                  value={aiPrompt}
+                  onChange={(e) => setAiPrompt(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleAiEdit()
+                    if (e.key === 'Escape') setShowAiPrompt(false)
+                  }}
+                  disabled={isAiEditing}
+                />
+                <button 
+                  onClick={() => setShowAiPrompt(false)}
+                  className="p-1 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 ml-2 rounded-lg hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+              <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-[#1A1A1A]">
+                <span className="text-[10px] text-slate-500 font-medium tracking-wide">POWERED BY NARA AI</span>
+                <button
+                  onClick={handleAiEdit}
+                  disabled={isAiEditing || !aiPrompt.trim()}
+                  className="px-4 py-1.5 bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-300 dark:disabled:bg-slate-700 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-2"
+                >
+                  {isAiEditing ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Generating Code...
+                    </>
+                  ) : (
+                    'Apply Changes'
+                  )}
+                </button>
+              </div>
+              {/* AI Processing Overlay */}
+              {isAiEditing && (
+                <div className="absolute inset-0 bg-white/50 dark:bg-black/50 backdrop-blur-[2px] flex items-center justify-center z-10">
+                  <div className="bg-indigo-600 text-white px-4 py-2 rounded-full shadow-lg flex items-center gap-3 text-sm font-bold animate-pulse">
+                    <Sparkles className="w-4 h-4" />
+                    Writing Code...
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Left Editor Pane */}
         <div className="w-full md:w-[60%] flex flex-col border-b md:border-b-0 md:border-r border-slate-200 dark:border-[#2A2A2A] bg-white dark:bg-[#0F0F0F] z-10 shadow-xl h-1/2 md:h-full min-h-0">
           {/* Editor Tabs */}
