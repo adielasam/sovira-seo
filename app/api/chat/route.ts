@@ -90,7 +90,7 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'openai/gpt-4o-mini', // Default fast model via NaraRouter
+        model: 'mistral-large', // Standard Nara model
         messages: [systemPrompt, ...messages],
         max_tokens: 800,
         temperature: 0.7
