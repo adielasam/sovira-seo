@@ -1,14 +1,39 @@
 import { NextResponse } from 'next/server'
-import { createAdminClient } from '@/lib/supabase/server'
+import { createAdminClient, createClient } from '@/lib/supabase/server'
 
 export async function DELETE(req: Request) {
   try {
     const supabaseAdmin = createAdminClient()
+    const supabase = await createClient() // For auth context
     const { searchParams } = new URL(req.url)
     const slug = searchParams.get('slug')
     
     if (!slug) {
       return NextResponse.json({ error: 'No slug provided' }, { status: 400 })
+    }
+
+    // 1. Authenticate the request
+    const { data: authData } = await supabase.auth.getUser()
+    const currentUser = authData?.user
+
+    // 2. Fetch the site to check ownership
+    const { data: siteFiles } = await supabaseAdmin
+      .from('content_generations')
+      .select('user_id')
+      .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
+      .like('topic', `${slug}|%`)
+      .limit(1)
+
+    if (!siteFiles || siteFiles.length === 0) {
+      return NextResponse.json({ error: 'Site not found' }, { status: 404 })
+    }
+
+    const ownerId = siteFiles[0].user_id
+    const isAdmin = currentUser?.email === 'adielasam2015@gmail.com'
+
+    // Prevent unauthorized deletion (Maximum Security)
+    if (ownerId !== currentUser?.id && !isAdmin) {
+      return NextResponse.json({ error: 'Unauthorized. You do not have permission to delete this site.' }, { status: 403 })
     }
 
     // Delete all records in content_generations where tone is INSTANT_SITE or INSTANT_SITE_BINARY and topic starts with slug|
