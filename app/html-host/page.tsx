@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database, Image as ImageIcon } from 'lucide-react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database, Image as ImageIcon, LayoutDashboard } from 'lucide-react'
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'
@@ -774,6 +774,17 @@ export default function HtmlHostPage() {
           >
             ← Back
           </button>
+          
+          {user && (
+            <a 
+              href="/dashboard"
+              className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-white text-sm font-semibold transition-colors bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg"
+              title="Go to Dashboard"
+            >
+              <LayoutDashboard className="w-4 h-4" />
+              Dashboard
+            </a>
+          )}
           
           <div className="h-6 w-px bg-slate-200 dark:bg-slate-800" />
           
