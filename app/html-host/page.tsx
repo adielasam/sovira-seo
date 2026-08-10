@@ -577,7 +577,8 @@ export default function HtmlHostPage() {
       })
 
       if (!res.ok) {
-        throw new Error('AI Edit failed')
+        const errData = await res.json().catch(() => null)
+        throw new Error(errData?.error || 'AI Edit failed')
       }
 
       const data = await res.json()
@@ -588,7 +589,7 @@ export default function HtmlHostPage() {
       }
     } catch (err) {
       console.error(err)
-      alert('Failed to apply AI edit. Please try again.')
+      alert(err instanceof Error ? err.message : 'Failed to apply AI edit. Please try again.')
     } finally {
       setIsAiEditing(false)
     }
