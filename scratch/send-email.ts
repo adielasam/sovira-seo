@@ -1,11 +1,13 @@
 import { Resend } from 'resend'
 import { render } from '@react-email/render'
-import AdvantagesEmail from '../../emails/AdvantagesEmail'
-import * as dotenv from 'dotenv'
+import AdvantagesEmail from '../emails/AdvantagesEmail'
+import * as fs from 'fs'
 
-dotenv.config({ path: '.env.local' })
+const envFile = fs.readFileSync('.env.local', 'utf8')
+const resendKeyMatch = envFile.match(/RESEND_API_KEY=(.*)/)
+const resendKey = resendKeyMatch ? resendKeyMatch[1].trim() : ''
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const resend = new Resend(resendKey)
 
 async function testEmail() {
   try {

@@ -48,12 +48,13 @@ export async function updateUserPlan(reference: string, planName: string) {
       return { error: 'Verification error' }
     }
 
-    // Verify the amount paid roughly matches the plan (in kobo)
-    // 29000 for starter, 79000 for pro, 199000 for agency
+    // Verify the exact amount paid (in NGN) matches the plan
+    // basic = 5000, starter = 10000, pro = 30000, agency = 130000
     const amountPaid = verifyData.data.amount / 100
-    if (planName === 'starter' && amountPaid < 29000) return { error: 'Invalid payment amount' }
-    if (planName === 'pro' && amountPaid < 79000) return { error: 'Invalid payment amount' }
-    if (planName === 'agency' && amountPaid < 199000) return { error: 'Invalid payment amount' }
+    if (planName === 'basic' && amountPaid < 5000) return { error: 'Invalid payment amount detected (Possible Security Breach)' }
+    if (planName === 'starter' && amountPaid < 10000) return { error: 'Invalid payment amount detected (Possible Security Breach)' }
+    if (planName === 'pro' && amountPaid < 30000) return { error: 'Invalid payment amount detected (Possible Security Breach)' }
+    if (planName === 'agency' && amountPaid < 130000) return { error: 'Invalid payment amount detected (Possible Security Breach)' }
 
     // 2. Insert or Update subscriptions table
     // We use upsert to handle upgrading an existing subscription
