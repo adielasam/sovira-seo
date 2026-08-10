@@ -122,6 +122,30 @@ export default function HtmlHostPage() {
       }
     })
 
+    // Handle Edit Mode from URL
+    const params = new URLSearchParams(window.location.search)
+    const editSlug = params.get('edit')
+    if (editSlug) {
+      setCustomSlug(editSlug)
+      setIsUploading(true) // Reuse upload spinner state for loading
+      fetch(`/api/html-host/source?slug=${editSlug}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.html) {
+            setHtmlContent(data.html)
+            setMode('editor')
+            setHostedUrl(window.location.hostname.includes('localhost') ? `http://localhost:3000/${editSlug}/` : `https://${editSlug}.sovira.com.ng/`)
+          } else {
+            alert('Failed to load site source: ' + (data.error || 'Unknown error'))
+          }
+        })
+        .catch(err => {
+          console.error(err)
+          alert('Error fetching site source')
+        })
+        .finally(() => setIsUploading(false))
+    }
+
     // Restore pending html from unauthenticated session
     if (typeof window !== 'undefined') {
       const pendingHtml = localStorage.getItem('sovira_pending_html')

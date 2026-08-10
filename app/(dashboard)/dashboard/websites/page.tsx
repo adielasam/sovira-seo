@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { redirect } from 'next/navigation'
 import Link from 'next/link'
 import { ExternalLink, Globe, Trash2, Calendar, ShieldAlert } from 'lucide-react'
+import { SiteActions } from './SiteActions'
 
 export const metadata = {
   title: 'My Hosted Websites | Sovira SEO',
@@ -104,6 +105,8 @@ export default async function SavedWebsitesPage() {
                 <a href={url} target="_blank" rel="noreferrer" className="text-sm text-blue-500 hover:underline truncate block mb-4">
                   {url}
                 </a>
+
+                <SiteActions slug={slug} />
 
                 <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400 mt-auto pt-4 border-t border-slate-100 dark:border-slate-800">
                   <Calendar className="w-3.5 h-3.5" />
