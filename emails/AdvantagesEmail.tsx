@@ -32,34 +32,40 @@ export const AdvantagesEmail = ({
           </Section>
           
           <Section style={content}>
-            <Heading style={heading}>Supercharge Your Growth, {name} 🚀</Heading>
+            <Heading style={heading}>Supercharge Your Growth, {name}</Heading>
             <Text style={paragraph}>
-              You've been using Sovira SEO for a few days now, but are you taking advantage of everything the platform has to offer? Our most successful users leverage these three core features:
+              You have been exploring Sovira SEO, but are you truly unlocking its full potential? Our most successful users rely on three core features to scale their businesses and dominate search rankings. Here is how you can use them today:
             </Text>
 
             <div style={featureBox}>
-              <Text style={featureHeading}>⚡ 1-Click InstantSites</Text>
+              <Text style={featureHeading}>1-Click InstantSites</Text>
               <Text style={featureText}>
-                Stop fighting with complex builders. Generate fully SEO-optimized, lightning-fast landing pages in seconds using AI. We handle the code, hosting, and performance.
+                <strong>Why you need it:</strong> Building websites is usually expensive and time-consuming. 
+                <br /><br />
+                <strong>How to use it:</strong> Simply enter your business name and a brief description. Our AI will instantly generate a fully coded, hosted, and SEO-optimized landing page designed to convert visitors into customers immediately.
               </Text>
             </div>
 
             <div style={featureBox}>
-              <Text style={featureHeading}>📈 Rank Tracker & Analytics</Text>
+              <Text style={featureHeading}>Rank Tracker & Analytics</Text>
               <Text style={featureText}>
-                Monitor your most valuable keywords in real-time. Uncover competitor gaps, track daily movements, and find low-hanging fruit to skyrocket your organic traffic.
+                <strong>Why you need it:</strong> You cannot improve what you do not measure.
+                <br /><br />
+                <strong>How to use it:</strong> Add your most valuable keywords to the dashboard. The system will monitor your position on Google daily, uncover competitor gaps, and show you exactly what to optimize to reach the first page.
               </Text>
             </div>
 
             <div style={featureBox}>
-              <Text style={featureHeading}>🤖 AI Content & SEO Audits</Text>
+              <Text style={featureHeading}>AI Content & SEO Audits</Text>
               <Text style={featureText}>
-                Generate undetectable, human-like content that ranks. Run technical SEO audits to identify and fix critical errors holding your site back from the first page.
+                <strong>Why you need it:</strong> Search engines penalize slow sites and reward high-quality, human-like content.
+                <br /><br />
+                <strong>How to use it:</strong> Run a technical SEO audit to instantly identify and fix critical errors holding your site back. Then, use our AI tools to generate undetectable, high-ranking content that establishes your authority in your niche.
               </Text>
             </div>
 
             <Text style={paragraph}>
-              Your 14-day free trial gives you access to explore these tools. Jump back in and generate your next high-converting asset today!
+              Your 14-day free trial gives you full access to explore these powerful tools. Log back in and generate your next high-converting asset today.
             </Text>
 
             <Section style={buttonContainer}>
@@ -72,6 +78,11 @@ export const AdvantagesEmail = ({
           <Section style={footer}>
             <Text style={footerText}>
               &copy; {new Date().getFullYear()} Sovira SEO. All rights reserved.
+            </Text>
+            <Text style={footerText}>
+              <Link href="https://sovira.com.ng/settings" style={unsubscribeLink}>
+                Unsubscribe from these emails
+              </Link>
             </Text>
           </Section>
         </Container>
@@ -184,7 +195,12 @@ const footer = {
 const footerText = {
   fontSize: '12px',
   color: '#64748B',
-  margin: '0',
+  margin: '0 0 8px 0',
+}
+
+const unsubscribeLink = {
+  color: '#94A3B8',
+  textDecoration: 'underline',
 }
 
 export default AdvantagesEmail
