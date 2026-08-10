@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/lib/supabase/server'
 import { headers } from 'next/headers'
-import { sendWelcomeEmail, sendLoginAlertEmail } from '@/lib/email'
+import { sendWelcomeEmail, sendLoginAlertEmail } from '@/lib/mailer'
 
 async function verifyTurnstile(token: string | null, ip: string) {
   if (!token) return false

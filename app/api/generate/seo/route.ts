@@ -18,9 +18,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'words')
+    const { limitReached, maxLimit, trialExpired } = await checkUsageLimit(user.id, 'instantsite')
+    
+    if (trialExpired) {
+      return NextResponse.json({ error: 'Your 14-day free trial has expired. Please upgrade your plan to continue generating InstantSites.' }, { status: 403 })
+    }
+    
     if (limitReached) {
-      return NextResponse.json({ error: `You have reached your AI Words limit (${maxLimit.toLocaleString()} words). Please upgrade your plan.` }, { status: 403 })
+      return NextResponse.json({ error: `You have reached your InstantSite limit (${maxLimit.toLocaleString()} per day). Please upgrade your plan.` }, { status: 403 })
     }
 
     if (type === 'og-image') {

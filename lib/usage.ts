@@ -1,6 +1,8 @@
 import { createClient } from './supabase/server'
 
-export async function checkUsageLimit(userId: string, actionType: 'audit' | 'keyword' | 'words' | 'image' | 'video' | 'insight' | 'slides'): Promise<{ allowed: boolean, limitReached: boolean, maxLimit: number }> {
+export type UsageActionType = 'audit' | 'keyword' | 'words' | 'image' | 'video' | 'insight' | 'slides' | 'instantsite' | 'seo'
+
+export async function checkUsageLimit(userId: string, actionType: UsageActionType): Promise<{ allowed: boolean, limitReached: boolean, maxLimit: number, trialExpired?: boolean }> {
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
@@ -18,12 +20,23 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
   let plan = profile?.plan || 'free'
   if (plan === 'free trial') plan = 'free'
 
+  // If user is on the free plan, we must enforce the 14-day trial rule.
+  if (plan === 'free' && user) {
+    const createdDate = new Date(user.created_at)
+    const now = new Date()
+    const ageInDays = (now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24)
+    if (ageInDays > 14) {
+      return { allowed: false, limitReached: true, maxLimit: 0, trialExpired: true }
+    }
+  }
+
   // Define limits for all plans
+  // Free plan uses DAILY limits. Paid plans use 30-day limits.
   const limits: Record<string, Record<string, number>> = {
-    free: { keyword: 10, audit: 5, words: 1000, image: 1, video: 0, insight: 0, slides: 5 },
-    starter: { keyword: 50, audit: 50, words: 10000, image: 15, video: 1, insight: 0, slides: 15 },
-    pro: { keyword: 500, audit: Infinity, words: 100000, image: 100, video: 3, insight: Infinity, slides: 100 },
-    agency: { keyword: 5000, audit: Infinity, words: Infinity, image: 500, video: 15, insight: Infinity, slides: 500 },
+    free: { keyword: 10, audit: 5, words: 1000, image: 0, video: 0, insight: 0, slides: 2, instantsite: 3, seo: 5 },
+    starter: { keyword: 50, audit: 50, words: 10000, image: 15, video: 1, insight: 0, slides: 15, instantsite: 15, seo: 50 },
+    pro: { keyword: 500, audit: Infinity, words: 100000, image: 100, video: 3, insight: Infinity, slides: 100, instantsite: 100, seo: 500 },
+    agency: { keyword: 5000, audit: Infinity, words: Infinity, image: 500, video: 15, insight: Infinity, slides: 500, instantsite: Infinity, seo: Infinity },
   }
 
   const userLimits = limits[plan] || limits['free']
@@ -36,9 +49,13 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
     return { allowed: true, limitReached: false, maxLimit }
   }
   
-  // Count usage in the current billing cycle (last 30 days for now)
-  const thirtyDaysAgo = new Date()
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+  // Count usage in the current billing cycle (Free = 1 day, Paid = 30 days)
+  const windowStart = new Date()
+  if (plan === 'free') {
+    windowStart.setDate(windowStart.getDate() - 1)
+  } else {
+    windowStart.setDate(windowStart.getDate() - 30)
+  }
 
   // Track keywords using actual tracked_keywords table instead of logs if actionType is 'keyword'
   if (actionType === 'keyword') {
@@ -60,7 +77,7 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
       .select('details')
       .eq('user_id', userId)
       .eq('action', 'SEO Content Generated')
-      .gte('created_at', thirtyDaysAgo.toISOString())
+      .gte('created_at', windowStart.toISOString())
 
     let totalWords = 0
     data?.forEach(log => {
@@ -80,13 +97,15 @@ export async function checkUsageLimit(userId: string, actionType: 'audit' | 'key
   if (actionType === 'image') actionMatch = 'Image Generated'
   if (actionType === 'video') actionMatch = 'Video Generated'
   if (actionType === 'slides') actionMatch = 'Slide Generated'
+  if (actionType === 'instantsite') actionMatch = 'InstantSite Generated'
+  if (actionType === 'seo') actionMatch = 'SEO Content Generated'
   
   const { count } = await supabase
     .from('activity_logs')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', userId)
     .eq('action', actionMatch)
-    .gte('created_at', thirtyDaysAgo.toISOString())
+    .gte('created_at', windowStart.toISOString())
     
   if (count !== null && count >= maxLimit) {
     return { allowed: false, limitReached: true, maxLimit }

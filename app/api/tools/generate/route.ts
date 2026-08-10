@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { checkUsageLimit } from '@/lib/usage'
 
 export async function POST(req: Request) {
   try {
@@ -7,6 +8,23 @@ export async function POST(req: Request) {
     
     if (!action || !text) {
       return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 })
+    }
+
+    const supabase = await createClient()
+    const { data: { user } } = await supabase.auth.getUser()
+    
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized. Please sign in.' }, { status: 401 })
+    }
+
+    const { limitReached, maxLimit, trialExpired } = await checkUsageLimit(user.id, 'seo')
+    
+    if (trialExpired) {
+      return NextResponse.json({ error: 'Your 14-day free trial has expired. Please upgrade your plan to continue using SEO tools.' }, { status: 403 })
+    }
+    
+    if (limitReached) {
+      return NextResponse.json({ error: `You have reached your daily SEO limit (${maxLimit.toLocaleString()} generations). Please upgrade your plan.` }, { status: 403 })
     }
 
     let systemPrompt = ''

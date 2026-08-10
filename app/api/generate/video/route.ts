@@ -62,9 +62,15 @@ export async function POST(req: Request) {
       }
 
       // Limit Check
-      const { limitReached, maxLimit } = await checkUsageLimit(user.id, 'video')
+      const actionType = mode === 'text-to-image' ? 'image' : 'video'
+      const { limitReached, maxLimit, trialExpired } = await checkUsageLimit(user.id, actionType)
+      
+      if (trialExpired || maxLimit === 0) {
+        return NextResponse.json({ error: `Premium Feature: Please upgrade your plan to unlock AI ${mode === 'text-to-image' ? 'Image' : 'Video'} generation.` }, { status: 403 })
+      }
+      
       if (limitReached) {
-        return NextResponse.json({ error: `You have reached your AI Video limit (${maxLimit} per month). Please upgrade your plan.` }, { status: 403 })
+        return NextResponse.json({ error: `You have reached your AI ${mode === 'text-to-image' ? 'Image' : 'Video'} limit (${maxLimit} per month). Please upgrade your plan.` }, { status: 403 })
       }
 
       // Boost user prompt with cinematic quality keywords for best output
