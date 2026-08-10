@@ -763,10 +763,10 @@ export default function HtmlHostPage() {
       />
 
       {/* Header - Adaptive IDE Style */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md z-10">
+      <div className="flex flex-col lg:flex-row items-center justify-between px-2 sm:px-6 py-4 gap-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md z-10">
         
         {/* Left: Back & Project Info */}
-        <div className="flex items-center gap-6 flex-1">
+        <div className="flex items-center gap-3 sm:gap-6 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           <button 
             onClick={() => setMode('landing')}
             className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-white text-sm font-semibold transition-colors bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg"
@@ -818,7 +818,7 @@ export default function HtmlHostPage() {
         </div>
         
         {/* Right: Actions */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
           {/* File Size Badge */}
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-[#1A1A1A] rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-mono font-medium shadow-sm">
             <Database className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
@@ -1056,7 +1056,7 @@ export default function HtmlHostPage() {
         </div>
 
         {/* Right Preview Pane */}
-        <div className={`flex flex-col border-r border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#0A0A0A] transition-all duration-300 ${devicePreview === 'fullscreen' ? 'hidden' : 'w-1/2'}`}>
+        <div className={`flex flex-col bg-slate-100 dark:bg-[#0A0A0A] transition-all relative h-1/2 md:h-full min-h-0 border-l border-slate-200 dark:border-[#2A2A2A] ${devicePreview === 'fullscreen' ? 'hidden' : 'w-full md:w-[40%]'}`}>
           
           {/* Preview Header */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-800/60 bg-white dark:bg-[#111111] text-xs font-mono text-slate-500 shadow-sm z-10">
@@ -1065,8 +1065,8 @@ export default function HtmlHostPage() {
               <span>Live Preview</span>
             </div>
             
-            <div className="flex items-center gap-6">
-              <div className="flex items-center gap-4 bg-slate-100 dark:bg-[#1A1A1A] p-1 rounded-lg">
+            <div className="flex items-center gap-2 sm:gap-6 overflow-x-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              <div className="flex items-center gap-2 sm:gap-4 bg-slate-100 dark:bg-[#1A1A1A] p-1 rounded-lg shrink-0">
                 <button 
                   onClick={() => setDevicePreview('desktop')}
                   className={`px-3 py-1.5 rounded-md transition-all font-semibold ${devicePreview === 'desktop' ? 'bg-white dark:bg-[#2A2A2A] text-blue-600 dark:text-blue-400 shadow-sm' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
@@ -1098,13 +1098,13 @@ export default function HtmlHostPage() {
           </div>
           
           {/* Iframe Container */}
-          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-[#0A0A0A] overflow-hidden relative p-8">
+          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-[#0A0A0A] overflow-hidden relative p-4 sm:p-8">
             <iframe 
               ref={iframeRef}
-              className={`bg-white border-none transition-all duration-500 ease-out ${
+              className={`bg-white border-none transition-all duration-500 ease-out max-w-full max-h-full ${
                 devicePreview === 'desktop' ? 'w-full h-full shadow-sm rounded-lg border border-slate-200 dark:border-slate-800' :
-                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-2xl shadow-2xl border-[12px] border-slate-800 dark:border-[#1A1A1A]' :
-                'w-[375px] h-[812px] rounded-[3rem] shadow-2xl border-[14px] border-slate-800 dark:border-[#1A1A1A]'
+                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-xl shadow-2xl border-[8px] sm:border-[12px] border-slate-800 dark:border-[#1A1A1A] object-contain' :
+                'w-[375px] h-[812px] rounded-[2rem] sm:rounded-[3rem] shadow-2xl border-[10px] sm:border-[14px] border-slate-800 dark:border-[#1A1A1A] object-contain'
               }`}
               title="Live Preview"
             />
