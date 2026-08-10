@@ -837,7 +837,7 @@ export default function HtmlHostPage() {
                 </button>
               </div>
               <div className="flex items-center justify-between px-4 py-2 bg-white dark:bg-[#1A1A1A]">
-                <span className="text-[10px] text-slate-500 font-medium tracking-wide">POWERED BY NARA AI</span>
+                <span className="text-[10px] text-slate-500 font-medium tracking-wide">POWERED BY SOVIRA AI</span>
                 <button
                   onClick={handleAiEdit}
                   disabled={isAiEditing || !aiPrompt.trim()}
