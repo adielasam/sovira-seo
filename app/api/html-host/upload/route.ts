@@ -75,6 +75,38 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'System configuration error. No admin found for anonymous upload.' }, { status: 500 })
     }
 
+    // NEW LIMIT CHECK: Free users can only save 1 project
+    // Only apply limits if not overwriting an existing slug (since updating is allowed)
+    if (!providedSlug) {
+      // 1. Check user plan
+      const { data: profile } = await supabaseAdmin.from('user_profiles').select('plan').eq('id', user_id).single()
+      const plan = profile?.plan || 'free'
+      
+      const isFree = plan === 'free' || plan === 'free trial'
+      
+      // Admins bypass
+      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user_id)
+      const isAdmin = userData?.user?.email === 'adielasam2015@gmail.com'
+      
+      if (isFree && !isAdmin) {
+        // Count unique slugs for this user
+        const { data: userSites } = await supabaseAdmin
+          .from('content_generations')
+          .select('topic')
+          .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
+          .eq('user_id', user_id)
+          
+        if (userSites) {
+          const uniqueSlugs = new Set(userSites.map(s => s.topic.split('|')[0]))
+          if (uniqueSlugs.size >= 1) {
+            return NextResponse.json({ 
+              error: 'Free tier limit reached. You can only host 1 InstantSite at a time on the Free Plan. Please upgrade to Pro to host unlimited websites.' 
+            }, { status: 403 })
+          }
+        }
+      }
+    }
+
     const filesToInsert = body.files.map((file: any) => ({
       user_id,
       topic: `${slug}|${file.path.startsWith('/') ? file.path.substring(1) : file.path}`,
