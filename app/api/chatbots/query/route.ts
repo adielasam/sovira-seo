@@ -4,7 +4,10 @@ import { streamText, embed } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY || '' })
+const google = createGoogleGenerativeAI({ 
+  apiKey: GEMINI_API_KEY || '',
+  baseURL: 'https://generativelanguage.googleapis.com/v1'
+})
 
 export async function POST(request: Request) {
   try {
@@ -81,7 +84,7 @@ IMPORTANT INSTRUCTIONS:
 
     // 7. Stream response using Gemini
     const result = await streamText({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-3.6-flash'),
       system: systemPrompt,
       messages: messages,
       onFinish: async ({ text }) => {

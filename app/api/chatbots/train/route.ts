@@ -6,7 +6,10 @@ import { createGoogleGenerativeAI } from '@ai-sdk/google'
 export const maxDuration = 60; // Allow maximum Vercel duration
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY || '' })
+const google = createGoogleGenerativeAI({ 
+  apiKey: GEMINI_API_KEY || '',
+  baseURL: 'https://generativelanguage.googleapis.com/v1'
+})
 
 function chunkText(text: string, chunkSize: number = 1000, overlap: number = 200) {
   const chunks = []
