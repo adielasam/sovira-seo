@@ -41,74 +41,7 @@ const DEFAULT_TEMPLATE = `<!DOCTYPE html>
 </body>
 </html>`;
 
-const CHAT_WIDGET_SCRIPT = `
-<!-- Sovira AI Edu Chat Widget -->
-<div id="sovira-edu-chat-widget" style="position:fixed;bottom:20px;right:20px;z-index:999999;font-family:sans-serif;">
-  <div id="sovira-chat-window" style="display:none;width:350px;height:500px;background:#fff;border-radius:12px;box-shadow:0 10px 40px rgba(0,0,0,0.2);overflow:hidden;flex-direction:column;margin-bottom:15px;border:1px solid #e5e7eb;">
-    <div style="background:#2563eb;color:#fff;padding:15px;font-weight:bold;display:flex;justify-content:space-between;align-items:center;">
-      <span>AI Study Assistant</span>
-      <button onclick="document.getElementById('sovira-chat-window').style.display='none'" style="background:none;border:none;color:#fff;cursor:pointer;font-size:20px;line-height:1;">&times;</button>
-    </div>
-    <div id="sovira-chat-messages" style="flex:1;padding:15px;overflow-y:auto;background:#f9fafb;display:flex;flex-direction:column;gap:10px;font-size:14px;">
-      <div style="background:#e0e7ff;color:#3730a3;padding:10px;border-radius:8px;align-self:flex-start;max-width:85%;">Hello! I'm your AI tutor. Ask me any educational questions!</div>
-    </div>
-    <div style="padding:15px;background:#fff;border-top:1px solid #e5e7eb;display:flex;gap:10px;">
-      <input type="text" id="sovira-chat-input" placeholder="Type a question..." style="flex:1;padding:10px;border:1px solid #e5e7eb;border-radius:6px;outline:none;" onkeypress="if(event.key==='Enter') window.sendSoviraChat()"/>
-      <button onclick="window.sendSoviraChat()" style="background:#2563eb;color:#fff;border:none;padding:10px 15px;border-radius:6px;cursor:pointer;font-weight:bold;">Send</button>
-    </div>
-  </div>
-  <button onclick="document.getElementById('sovira-chat-window').style.display='flex'" style="background:#2563eb;color:#fff;border:none;width:60px;height:60px;border-radius:30px;cursor:pointer;box-shadow:0 4px 12px rgba(37,99,235,0.4);font-size:24px;display:flex;align-items:center;justify-content:center;margin-left:auto;">
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
-  </button>
-</div>
-<script>
-  window.soviraChatHistory = [];
-  window.sendSoviraChat = async function() {
-    const input = document.getElementById('sovira-chat-input');
-    const msgText = input.value.trim();
-    if (!msgText) return;
-    
-    input.value = '';
-    const container = document.getElementById('sovira-chat-messages');
-    
-    container.innerHTML += '<div style="background:#2563eb;color:#fff;padding:10px;border-radius:8px;align-self:flex-end;max-width:85%;">' + msgText + '</div>';
-    container.scrollTop = container.scrollHeight;
-    window.soviraChatHistory.push({ role: "user", content: msgText });
-    
-    const loaderId = 'loader-' + Date.now();
-    container.innerHTML += '<div id="'+loaderId+'" style="background:#e0e7ff;color:#3730a3;padding:10px;border-radius:8px;align-self:flex-start;max-width:85%;">Thinking...</div>';
-    container.scrollTop = container.scrollHeight;
-    
-    try {
-      let slug = window.location.hostname.split('.')[0];
-      if (window.location.hostname.includes('localhost')) {
-         slug = window.location.pathname.split('/')[1];
-      }
-      
-      const res = await fetch('/api/chat', { 
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: window.soviraChatHistory, slug: slug })
-      });
-      
-      const data = await res.json();
-      document.getElementById(loaderId).remove();
-      
-      if (!res.ok) {
-        container.innerHTML += '<div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;align-self:flex-start;max-width:85%;">' + (data.error || 'Error occurred') + '</div>';
-      } else {
-        window.soviraChatHistory.push({ role: "assistant", content: data.reply });
-        let replyHtml = data.reply.replace(/\\*\\*(.*?)\\*\\*/g, '<strong>$1</strong>').replace(/\\n/g, '<br/>');
-        container.innerHTML += '<div style="background:#e0e7ff;color:#3730a3;padding:10px;border-radius:8px;align-self:flex-start;max-width:85%;line-height:1.4;">' + replyHtml + '</div>';
-      }
-    } catch (e) {
-      document.getElementById(loaderId).remove();
-      container.innerHTML += '<div style="background:#fee2e2;color:#991b1b;padding:10px;border-radius:8px;align-self:flex-start;max-width:85%;">Network error</div>';
-    }
-    container.scrollTop = container.scrollHeight;
-  }
-</script>
-`;
+
 
 export default function HtmlHostPage() {
   const { theme } = useTheme()
@@ -206,14 +139,7 @@ export default function HtmlHostPage() {
           finalContent = `${baseTag}\n${finalContent}`
         }
         
-        // Inject chat widget into the preview
-        if (!finalContent.includes('sovira-edu-chat-widget')) {
-          if (finalContent.includes('</body>')) {
-            finalContent = finalContent.replace('</body>', `${CHAT_WIDGET_SCRIPT}\n</body>`)
-          } else {
-            finalContent += CHAT_WIDGET_SCRIPT
-          }
-        }
+
         
         doc.open()
         doc.write(finalContent)
@@ -466,18 +392,9 @@ export default function HtmlHostPage() {
     try {
       let currentSlug = ''
       let finalUrl = ''
-      
-      // Inject Educational Chatbot Widget into index.html if it's not already there
       for (let i = 0; i < files.length; i++) {
         const file = files[i]
         if (file.path.toLowerCase() === 'index.html' || file.path.toLowerCase().endsWith('.html')) {
-          if (!file.content.includes('sovira-edu-chat-widget')) {
-            if (file.content.includes('</body>')) {
-              file.content = file.content.replace('</body>', `${CHAT_WIDGET_SCRIPT}\n</body>`)
-            } else {
-              file.content += CHAT_WIDGET_SCRIPT;
-            }
-          }
           
           // Inject Viral Watermark (if not already removed by the user)
           if (!file.content.includes('sovira-watermark') && !file.content.includes('sovira-watermark-removed')) {
