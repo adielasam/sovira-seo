@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { sendAdvantagesEmail, sendTrialEndingWarning, sendTrialExpiredEmail } from '@/lib/mailer'
+import { sendAdvantagesEmail, sendTrialEndingWarning, sendTrialExpiredEmail, sendRecurringPromoEmail } from '@/lib/mailer'
 
 export const maxDuration = 60 // Max duration for Vercel Hobby
 
@@ -88,15 +88,60 @@ export async function GET(request: Request) {
       return emailsSent
     }
 
-    const [featuresSent, warningSent, expiredSent] = await Promise.all([
+    const processRecurringPromo = async () => {
+      const { data: profiles, error } = await supabaseAdmin
+        .from('user_profiles')
+        .select('id, email, full_name')
+        .is('marketing_emails_opt_out', false)
+
+      if (error || !profiles) return 0
+
+      let emailsSent = 0;
+
+      for (const profile of profiles) {
+        const { data: userResponse, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id)
+        if (userError || !userResponse?.user) continue
+
+        const createdDate = new Date(userResponse.user.created_at)
+        const daysOld = Math.floor((now.getTime() - createdDate.getTime()) / (1000 * 60 * 60 * 24))
+
+        // Must be older than 3 days, and exactly on a multiple of 3 (e.g. 6, 9, 12, 15, 30, 33...)
+        if (daysOld >= 3 && daysOld % 3 === 0) {
+          const emailType = `recurring_promo_day_${daysOld}`
+
+          const { data: existingEmail } = await supabaseAdmin
+            .from('emails_sent')
+            .select('id')
+            .eq('user_id', profile.id)
+            .eq('email_type', emailType)
+            .single()
+
+          if (existingEmail) continue
+
+          const result = await sendRecurringPromoEmail(profile.email || '', profile.full_name || 'Creator', profile.id)
+
+          if (result.success) {
+            emailsSent++;
+            await supabaseAdmin.from('emails_sent').insert({
+              user_id: profile.id,
+              email_type: emailType
+            })
+          }
+        }
+      }
+      return emailsSent
+    }
+
+    const [featuresSent, warningSent, expiredSent, recurringSent] = await Promise.all([
       processTier(3, 'features'),
       processTier(11, 'trial_warning'),
-      processTier(14, 'trial_expired')
+      processTier(14, 'trial_expired'),
+      processRecurringPromo()
     ])
 
     return NextResponse.json({ 
       success: true, 
-      message: `Lifecycle emails sent. Features: ${featuresSent}, Warnings: ${warningSent}, Expired: ${expiredSent}` 
+      message: `Lifecycle emails sent. Features: ${featuresSent}, Warnings: ${warningSent}, Expired: ${expiredSent}, Recurring: ${recurringSent}` 
     })
 
   } catch (error) {

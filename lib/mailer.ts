@@ -6,6 +6,7 @@ import ReengagementEmail from '@/emails/ReengagementEmail'
 import TrialEndingEmail from '@/emails/TrialEndingEmail'
 import ProjectDeletionEmail from '@/emails/ProjectDeletionEmail'
 import AdvantagesEmail from '@/emails/AdvantagesEmail'
+import RecurringPromoEmail from '@/emails/RecurringPromoEmail'
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy')
 const fromEmail = 'Sovira SEO <onboarding@resend.dev>'
@@ -213,9 +214,33 @@ export async function sendAdvantagesEmail(email: string, name: string) {
       return { success: false, error };
     }
 
-    return { success: true, data };
+    return { success: true, data }
   } catch (error) {
-    console.error('Error sending advantages email', error);
-    return { success: false, error };
+    console.error('Error sending advantages email:', error)
+    return { success: false, error }
+  }
+}
+
+export async function sendRecurringPromoEmail(email: string, name: string, userId: string) {
+  try {
+    const unsubscribeUrl = `https://sovira.com.ng/api/unsubscribe?userId=${encodeURIComponent(userId)}`
+    const html = await render(React.createElement(RecurringPromoEmail, { name, unsubscribeUrl }))
+    
+    const { data, error } = await resend.emails.send({
+      from: fromEmail,
+      to: [email],
+      subject: 'Boost your growth this week with Sovira SEO! 🚀',
+      html: html,
+    })
+
+    if (error) {
+      console.error('Failed to send recurring promo email:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error sending recurring promo email:', error)
+    return { success: false, error }
   }
 }
