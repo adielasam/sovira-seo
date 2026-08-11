@@ -62,9 +62,16 @@ export function UpgradeModal() {
               setIsOpen(false)
               window.location.href = '/settings?tab=billing' // redirect to billing tab
             }}
-            className="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 hover:bg-blue-500 text-white px-6 py-3 rounded-xl font-bold transition-all shadow-lg shadow-blue-500/25 flex items-center justify-center gap-2 mb-3"
           >
             Upgrade Now - $29/mo
+          </button>
+          
+          <button 
+            onClick={() => setIsOpen(false)}
+            className="w-full bg-transparent hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 px-6 py-2.5 rounded-xl font-semibold transition-all flex items-center justify-center"
+          >
+            Maybe Later
           </button>
         </div>
       </div>

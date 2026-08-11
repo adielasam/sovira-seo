@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useMemo } from 'react'
 import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database, Image as ImageIcon, LayoutDashboard } from 'lucide-react'
+import toast from 'react-hot-toast'
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
 import Link from 'next/link'

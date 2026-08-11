@@ -19,12 +19,17 @@ export function WebsiteActions({ currentSlug, isPaused }: { currentSlug: string,
       if (res.ok) {
         router.refresh()
       } else {
-        const data = await res.json()
-        alert(data.error || 'Failed to toggle status')
+        const text = await res.text()
+        try {
+          const data = JSON.parse(text)
+          alert(data.error || 'Failed to toggle status')
+        } catch {
+          alert(`Server Error (${res.status}): The toggle operation failed or timed out.`)
+        }
       }
     } catch (err) {
       console.error(err)
-      alert('Network error')
+      alert('Network error - Please check your connection or try again.')
     } finally {
       setIsLoading(false)
     }
@@ -43,12 +48,17 @@ export function WebsiteActions({ currentSlug, isPaused }: { currentSlug: string,
       if (res.ok) {
         router.refresh()
       } else {
-        const data = await res.json()
-        alert(data.error || 'Failed to delete website')
+        const text = await res.text()
+        try {
+          const data = JSON.parse(text)
+          alert(data.error || 'Failed to delete website')
+        } catch {
+          alert(`Server Error (${res.status}): The delete operation failed or timed out.`)
+        }
       }
     } catch (err) {
       console.error(err)
-      alert('Network error')
+      alert('Network error - Please check your connection or try again.')
     } finally {
       setIsLoading(false)
     }
