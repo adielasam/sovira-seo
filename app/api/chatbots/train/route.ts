@@ -6,7 +6,7 @@ import OpenAI from 'openai'
 const pdfParse = require('pdf-parse')
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
 })
 
 function chunkText(text: string, chunkSize: number = 1000, overlap: number = 200) {
