@@ -624,9 +624,14 @@ export default function HtmlHostPage() {
         setShowAiPrompt(false)
         setAiPrompt('')
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error(err)
-      alert(err instanceof Error ? err.message : 'Failed to apply AI edit. Please try again.')
+      const msg = err instanceof Error ? err.message : 'Failed to apply AI edit. Please try again.'
+      if (msg.toLowerCase().includes('limit') || msg.toLowerCase().includes('upgrade')) {
+        window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: msg } }))
+      } else {
+        toast.error(msg)
+      }
     } finally {
       setIsAiEditing(false)
     }

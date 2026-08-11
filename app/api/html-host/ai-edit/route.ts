@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient, createClient } from '@/lib/supabase/server'
+import { checkFreeToolDailyUsage } from '@/lib/usage'
 
 export const maxDuration = 60 // Allow longer execution for AI code generation
 
@@ -16,52 +17,27 @@ export async function POST(req: Request) {
     const { data: authData } = await supabase.auth.getUser()
     const currentUser = authData?.user
 
-    // 1. Check AI Edit Rate Limits (5 per day free, unlimited for premium)
+    if (!currentUser) {
+      return NextResponse.json({ error: 'Please create a free account or log in to use the AI Edit tool.' }, { status: 401 })
+    }
+
+    const { allowed, maxLimit, isPaid } = await checkFreeToolDailyUsage(currentUser.id, 'ai_edit')
+
+    if (!allowed) {
+      const msg = isPaid
+        ? `You have reached your daily limit of ${maxLimit} AI edits.`
+        : `You have reached your daily limit of ${maxLimit} uses on the Free plan. Please upgrade to a paid plan.`
+      return NextResponse.json({ error: msg }, { status: 429 })
+    }
+
+    // 2. Log this AI Edit execution to track limits (done by checkFreeToolDailyUsage? No, checkFreeToolDailyUsage only checks. We must log it here.)
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous'
-    let isPremium = false
-    let currentUserId = currentUser?.id
-
-    if (currentUser) {
-      const { data: profile } = await supabaseAdmin.from('user_profiles').select('plan').eq('id', currentUser.id).single()
-      isPremium = profile?.plan !== 'free' && profile?.plan !== 'free trial'
-      
-      const isAdmin = currentUser.email === 'adielasam2015@gmail.com'
-      if (isAdmin) isPremium = true
-    } else {
-      // Get a fallback admin user ID for logging anonymous requests
-      const { data: adminUser } = await supabaseAdmin.from('user_profiles').select('id').eq('role', 'admin').limit(1).single()
-      if (adminUser) currentUserId = adminUser.id
-    }
-
-    if (!isPremium) {
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
-      
-      let query = supabaseAdmin
-        .from('activity_logs')
-        .select('*', { count: 'exact', head: true })
-        .eq('action', 'AI Edit: HTML Host')
-        .gte('created_at', today.toISOString())
-        
-      if (currentUser) {
-        query = query.eq('user_id', currentUser.id)
-      } else {
-        // Fallback for anonymous users based on IP
-        query = query.eq('details->>ip', ip)
-      }
-
-      const { count } = await query
-      if (count !== null && count >= 5) {
-        return NextResponse.json({ error: 'You have reached your 5 free AI edits for today. Please upgrade your plan to continue.' }, { status: 429 })
-      }
-    }
-
-    // 2. Log this AI Edit execution to track limits
+    
     await supabaseAdmin
       .from('activity_logs')
       .insert([{
-        user_id: currentUserId,
-        action: 'AI Edit: HTML Host',
+        user_id: currentUser.id,
+        action: 'HTML AI Edit',
         details: { prompt: prompt, model: 'mistral-large', ip: ip, slug: slug || 'new' }
       }])
 

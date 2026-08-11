@@ -177,7 +177,7 @@ export async function checkAndIncrementDashboardUsage(userId: string): Promise<{
   return { allowed: false, remaining: 0 }
 }
 
-export type FreeToolType = 'aidetector' | 'humanizer' | 'tutor' | 'grammar' | 'data_analyzer'
+export type FreeToolType = 'aidetector' | 'humanizer' | 'tutor' | 'grammar' | 'data_analyzer' | 'ai_edit'
 
 export async function checkFreeToolDailyUsage(userId: string, tool: FreeToolType): Promise<{ allowed: boolean, count: number, maxLimit: number, resetsAt: string, isPaid: boolean }> {
   const supabase = await createClient()
@@ -189,16 +189,15 @@ export async function checkFreeToolDailyUsage(userId: string, tool: FreeToolType
 
   const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', userId).single()
   const plan = profile?.plan || 'free'
+  const isPaid = plan !== 'free' && plan !== 'free trial'
   
-  if (plan !== 'free' && plan !== 'free trial') {
-    return { allowed: true, count: 0, maxLimit: Infinity, resetsAt: '', isPaid: true }
-  }
+  const MAX_DAILY = isPaid ? 15 : 3 
 
-  const MAX_DAILY = 3 // 3 scans per day
   const actionMatch = tool === 'aidetector' ? 'AI Detection Scan' 
                     : tool === 'humanizer' ? 'Text Humanized' 
                     : tool === 'tutor' ? 'AI Tutor Query' 
                     : tool === 'data_analyzer' ? 'Data Analysis Run'
+                    : tool === 'ai_edit' ? 'HTML AI Edit'
                     : 'Grammar Check'
 
   const startOfDay = new Date()
@@ -221,6 +220,6 @@ export async function checkFreeToolDailyUsage(userId: string, tool: FreeToolType
     count: usageCount,
     maxLimit: MAX_DAILY,
     resetsAt: nextReset.toISOString(),
-    isPaid: false
+    isPaid
   }
 }
