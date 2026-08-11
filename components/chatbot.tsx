@@ -12,6 +12,9 @@ export function Chatbot() {
   const pathname = usePathname()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
+  // Don't render the main platform agent on the isolated RAG bot iframe routes
+  if (pathname?.startsWith('/bots')) return null
+
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     api: '/api/chat',
     initialMessages: [

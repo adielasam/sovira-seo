@@ -52,6 +52,7 @@ const navigationGroups = [
     items: [
       { name: 'InstantSite', href: '/html-host', icon: Code },
       { name: 'My Websites', href: '/dashboard/websites', icon: Globe },
+      { name: 'RAG Chatbots', href: '/chatbots', icon: Bot },
     ]
   },
   {
