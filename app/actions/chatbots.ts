@@ -11,9 +11,9 @@ export async function createChatbotAction(name: string) {
       return { success: false, error: 'Unauthorized' }
     }
 
-    // Use admin client to bypass RLS issues securely since we already validated the user ID
-    const adminSupabase = createAdminClient()
-    const { data, error } = await adminSupabase
+    // Use the authenticated server client instead of admin client to avoid service_role key issues.
+    // Since the user is authenticated, this will pass the RLS policy.
+    const { data, error } = await supabase
       .from('chatbots')
       .insert({
         name: name,
