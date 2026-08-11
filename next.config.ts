@@ -37,6 +37,7 @@ const securityHeaders = [
 
 const nextConfig: any = {
   experimental: {
+    serverComponentsExternalPackages: ['pdf-parse'],
     serverActions: {
       bodySizeLimit: '50mb',
     },
