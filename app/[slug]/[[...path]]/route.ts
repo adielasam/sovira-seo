@@ -91,6 +91,11 @@ export async function GET(
       const reqUrl = new URL(request.url)
       const isSubdomain = reqUrl.hostname.endsWith('.sovira.com.ng') && !['www.sovira.com.ng', 'sovira.com.ng'].includes(reqUrl.hostname)
       const baseTag = isSubdomain ? `<base href="/">` : `<base href="/${slug}/">`
+      
+      // Dynamically strip the legacy AI chatbot widget from older published sites
+      const chatbotRegex = /<!-- Sovira AI Assistant Widget -->[\s\S]*?(?=<\/body>|<\/html>|$)/i
+      finalContent = finalContent.replace(chatbotRegex, '')
+      
       if (finalContent.match(/<head[^>]*>/i)) {
         finalContent = finalContent.replace(/(<head[^>]*>)/i, `$1\n  ${baseTag}`)
       } else if (finalContent.match(/<html[^>]*>/i)) {
