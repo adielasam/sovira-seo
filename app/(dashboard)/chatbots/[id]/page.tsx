@@ -81,7 +81,15 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
         body: formData
       })
       
-      const data = await res.json()
+      let data;
+      const contentType = res.headers.get("content-type");
+      if (contentType && contentType.includes("application/json")) {
+        data = await res.json()
+      } else {
+        const text = await res.text()
+        throw new Error(`Server returned a non-JSON response (${res.status} ${res.statusText}). It might be a Vercel Payload Limit (4.5MB) or Timeout.`)
+      }
+
       if (res.ok) {
         toast.success(`Processed ${data.chunksProcessed} data chunks.`)
         fetchDocuments()
@@ -256,6 +264,39 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
             </div>
           </div>
           
+          <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
+            <div className="p-6 border-b border-slate-200 dark:border-slate-800">
+              <h2 className="font-semibold text-lg">Public Share Link</h2>
+              <p className="text-sm text-slate-500">Share this link with your students or clients so they can test the chatbot without needing a website.</p>
+            </div>
+            <div className="p-6">
+              <div className="flex gap-2">
+                <input 
+                  readOnly
+                  value={`https://sovira.com.ng/b/${id}`}
+                  className="flex-1 px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-md dark:bg-slate-800 text-sm focus:outline-none"
+                />
+                <button 
+                  className="flex items-center bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                  onClick={() => {
+                    navigator.clipboard.writeText(`https://sovira.com.ng/b/${id}`)
+                    toast.success('Link copied to clipboard!')
+                  }}
+                >
+                  <Code className="h-4 w-4 mr-2" /> Copy Link
+                </button>
+                <a 
+                  href={`/b/${id}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer"
+                  className="flex items-center bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm"
+                >
+                  Open Link
+                </a>
+              </div>
+            </div>
+          </div>
+
           <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-sm">
             <div className="p-6 border-b border-slate-200 dark:border-slate-800">
               <h2 className="font-semibold text-lg">Embed Widget</h2>

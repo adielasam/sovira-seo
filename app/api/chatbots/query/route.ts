@@ -1,10 +1,20 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { createGoogleGenerativeAI } from '@ai-sdk/google'
 import { streamText } from 'ai'
+import { createOpenAI } from '@ai-sdk/openai'
+import OpenAI from 'openai'
 
-const GEMINI_API_KEY = process.env.GEMINI_API_KEY
-const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY || '' })
+// Raw SDK for embeddings
+const openai = new OpenAI({
+  baseURL: 'https://api.agentrouter.org/v1',
+  apiKey: 'sk-FkKCSzDok8WPoKgK3YhhPtJgM9DIcTajHwFQOef0gfhIH39l'
+})
+
+// AI SDK provider for streaming
+const aiOpenAI = createOpenAI({
+  baseURL: 'https://api.agentrouter.org/v1',
+  apiKey: 'sk-FkKCSzDok8WPoKgK3YhhPtJgM9DIcTajHwFQOef0gfhIH39l'
+})
 
 export async function POST(request: Request) {
   try {
@@ -33,17 +43,12 @@ export async function POST(request: Request) {
       return new NextResponse('Latest message must be from user', { status: 400 })
     }
 
-    // 3. Generate Embedding for the query using Gemini API
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'models/text-embedding-004',
-        content: { parts: [{ text: lastMessage.content }] }
-      })
+    // 3. Generate Embedding for the query using raw OpenAI SDK
+    const embeddingResponse = await openai.embeddings.create({
+      model: 'text-embedding-3-small',
+      input: lastMessage.content,
     })
-    const geminiData = await geminiRes.json()
-    const embedding = geminiData.embedding?.values
+    const embedding = embeddingResponse.data[0].embedding
     
     if (!embedding) {
       throw new Error('Failed to generate embedding for query')
@@ -85,9 +90,9 @@ IMPORTANT INSTRUCTIONS:
 - If the user provides an email address, acknowledge it nicely. (We will process it in the background).
 `
 
-    // 7. Stream response using Gemini
+    // 7. Stream response using OpenAI via AgentRouter
     const result = await streamText({
-      model: google('gemini-1.5-flash'),
+      model: aiOpenAI('gpt-4o-mini'),
       system: systemPrompt,
       messages: messages,
       onFinish: async ({ text }) => {
