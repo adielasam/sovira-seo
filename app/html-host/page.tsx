@@ -724,10 +724,10 @@ export default function HtmlHostPage() {
       />
 
       {/* Header - Adaptive IDE Style */}
-      <div className="flex flex-col lg:flex-row items-center justify-between px-2 sm:px-6 py-4 gap-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md z-10">
+      <div className="flex items-center px-2 sm:px-6 py-4 gap-4 border-b border-slate-200 dark:border-slate-800/60 bg-white/80 dark:bg-[#111]/80 backdrop-blur-md z-10 overflow-x-auto whitespace-nowrap scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
         
         {/* Left: Back & Project Info */}
-        <div className="flex items-center gap-3 sm:gap-6 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex items-center gap-3 sm:gap-6 shrink-0">
           <button 
             onClick={() => setMode('landing')}
             className="flex items-center gap-2 text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-white text-sm font-semibold transition-colors bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-lg"
@@ -789,8 +789,10 @@ export default function HtmlHostPage() {
           </div>
         </div>
         
+        <div className="flex-1 min-w-[20px]" />
+        
         {/* Right: Actions */}
-        <div className="flex items-center gap-2 sm:gap-3 w-full lg:w-auto overflow-x-auto pb-1 lg:pb-0 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           {/* File Size Badge */}
           <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-slate-100 dark:bg-[#1A1A1A] rounded-lg border border-slate-200 dark:border-slate-800 text-slate-600 dark:text-slate-400 text-xs font-mono font-medium shadow-sm">
             <Database className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500" />
