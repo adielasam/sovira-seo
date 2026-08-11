@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { FileUp, Save, Code, CheckCircle2, ArrowLeft, Loader2, Bot, Send } from 'lucide-react'
+import { FileUp, Save, Code, CheckCircle2, ArrowLeft, Loader2, Bot, Send, Trash2 } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -13,6 +13,7 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
   const [saving, setSaving] = useState(false)
   const [uploading, setUploading] = useState(false)
   const [documents, setDocuments] = useState<any[]>([])
+  const [deletingDocId, setDeletingDocId] = useState<string | null>(null)
   
   // Test Chat State
   const [messages, setMessages] = useState<{role: string, content: string}[]>([])
@@ -104,6 +105,30 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
     }
   }
 
+  const handleDeleteDocument = async (docId: string) => {
+    if (!confirm('Are you sure you want to delete this document and all its AI knowledge?')) return
+    
+    setDeletingDocId(docId)
+    try {
+      const res = await fetch('/api/chatbots/documents/delete', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ documentId: docId, chatbotId: id })
+      })
+      const data = await res.json()
+      if (res.ok && data.success) {
+        toast.success('Document deleted successfully')
+        fetchDocuments()
+      } else {
+        throw new Error(data.error || 'Failed to delete document')
+      }
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      setDeletingDocId(null)
+    }
+  }
+
   const handleTestChat = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!chatInput.trim()) return
@@ -120,7 +145,10 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
         body: JSON.stringify({ chatbotId: id, messages: newMessages })
       })
 
-      if (!res.ok) throw new Error('Failed to query')
+      if (!res.ok) {
+        const errorText = await res.text()
+        throw new Error(`Failed to query: ${errorText}`)
+      }
 
       const reader = res.body?.getReader()
       const decoder = new TextDecoder()
@@ -195,12 +223,22 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
                   <div className="bg-slate-50 dark:bg-slate-800/50 px-4 py-2 font-medium text-sm text-slate-700 dark:text-slate-300">Trained Documents</div>
                   <ul className="divide-y divide-slate-200 dark:divide-slate-800">
                     {documents.map(doc => (
-                      <li key={doc.id} className="px-4 py-3 flex items-center justify-between text-sm">
-                        <div className="flex items-center gap-2">
-                          <CheckCircle2 className="h-4 w-4 text-green-500" />
-                          {doc.file_name}
+                      <li key={doc.id} className="px-4 py-3 flex items-center justify-between text-sm group hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors">
+                        <div className="flex items-center gap-2 overflow-hidden">
+                          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0" />
+                          <span className="truncate">{doc.file_name}</span>
                         </div>
-                        <span className="text-xs text-slate-500">{new Date(doc.created_at).toLocaleDateString()}</span>
+                        <div className="flex items-center gap-3 shrink-0 ml-4">
+                          <span className="text-xs text-slate-500">{new Date(doc.created_at).toLocaleDateString()}</span>
+                          <button 
+                            onClick={() => handleDeleteDocument(doc.id)}
+                            disabled={deletingDocId === doc.id}
+                            className="text-red-500 hover:text-red-700 disabled:opacity-50 opacity-0 group-hover:opacity-100 transition-opacity"
+                            title="Delete Document"
+                          >
+                            {deletingDocId === doc.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                          </button>
+                        </div>
                       </li>
                     ))}
                   </ul>

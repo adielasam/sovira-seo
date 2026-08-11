@@ -68,11 +68,15 @@ export async function POST(request: Request) {
     }
 
     // Record document in DB
-    await supabase.from('chatbot_documents').insert({
+    const { data: insertedDoc, error: docErr } = await supabase.from('chatbot_documents').insert({
       chatbot_id: chatbotId,
       file_name: file.name,
       status: 'processed'
-    })
+    }).select().single()
+
+    if (docErr || !insertedDoc) {
+      throw new Error('Failed to record document in DB')
+    }
 
     // Chunk text
     const chunks = chunkText(rawText)
@@ -91,6 +95,7 @@ export async function POST(request: Request) {
 
       const recordsToInsert = batchChunks.map((content, idx) => ({
         chatbot_id: chatbotId,
+        document_id: insertedDoc.id,
         content: content.trim(),
         embedding: embeddings[idx]
       })).filter(record => record.content.length > 0)
