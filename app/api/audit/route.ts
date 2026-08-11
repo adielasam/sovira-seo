@@ -23,14 +23,9 @@ export async function POST(req: Request) {
     }
 
     const targetUrl = new URL(url)
-    let baseUrl = `${targetUrl.protocol}//${targetUrl.host}`
+    const originalBaseUrl = `${targetUrl.protocol}//${targetUrl.host}`
+    let baseUrl = originalBaseUrl
     let fetchUrl = url
-
-    // Bypass Cloudflare WAF for our own domain by fetching the Vercel internal URL directly
-    if (targetUrl.host.includes('sovira.com.ng') && process.env.VERCEL_URL) {
-      fetchUrl = url.replace(targetUrl.host, process.env.VERCEL_URL)
-      baseUrl = baseUrl.replace(targetUrl.host, process.env.VERCEL_URL)
-    }
 
     // 1. Fetch HTML and Headers
     const fetchHeaders = {
@@ -73,7 +68,8 @@ export async function POST(req: Request) {
 
     let dmarcMissing = false
     try {
-      const records = await dns.resolveTxt(`_dmarc.${targetUrl.host}`)
+      const dmarcHost = targetUrl.host.replace(/^www\./, '')
+      const records = await dns.resolveTxt(`_dmarc.${dmarcHost}`)
       const dmarc = records.flat().find(r => r.includes('v=DMARC1'))
       if (!dmarc || dmarc.includes('p=none')) dmarcMissing = true
     } catch (e) {
@@ -146,11 +142,12 @@ export async function POST(req: Request) {
     if (!$('meta[name="twitter:card"]').length) addIssue('social', 'warning', 'Missing twitter:card', 'No Twitter card defined.')
     
     // Technical
-    if (!robotsTxt.toLowerCase().includes('sitemap:')) addIssue('technical', 'critical', 'Missing Sitemap in robots.txt', 'No sitemap declaration found.', `Sitemap: ${baseUrl}/sitemap.xml`)
+    if (!robotsTxt.toLowerCase().includes('sitemap:')) addIssue('technical', 'critical', 'Missing Sitemap in robots.txt', 'No sitemap declaration found.', `Sitemap: ${originalBaseUrl}/sitemap.xml`)
     if (!$('link[rel="canonical"]').length) addIssue('technical', 'critical', 'Missing Canonical', 'No canonical tag found.', `<link rel="canonical" href="${url}" />`)
     if (isSoft404) addIssue('technical', 'critical', 'Soft 404 Detected', 'Random non-existent URLs do not return 404.', `import { notFound } from 'next/navigation'\n\nif (!data) notFound()`)
     if (!headers.get('x-frame-options') && !headers.get('content-security-policy')) addIssue('technical', 'warning', 'Missing Security Headers', 'Security headers missing.', `// next.config.js\nmodule.exports = {\n  async headers() {\n    return [{ source: '/(.*)', headers: [{ key: 'X-Frame-Options', value: 'DENY' }] }]\n  }\n}`)
-    if (dmarcMissing) addIssue('technical', 'warning', 'DMARC Missing/Weak', 'DNS DMARC record is missing or set to p=none', `_dmarc.${targetUrl.host} TXT "v=DMARC1; p=quarantine; rua=mailto:admin@${targetUrl.host}"`)
+    const dmarcHost = targetUrl.host.replace(/^www\./, '')
+    if (dmarcMissing) addIssue('technical', 'warning', 'DMARC Missing/Weak', 'DNS DMARC record is missing or set to p=none', `_dmarc.${dmarcHost} TXT "v=DMARC1; p=quarantine; rua=mailto:admin@${dmarcHost}"`)
 
     // Privacy & Trust
     const links = $('a').map((_, el) => $(el).attr('href')?.toLowerCase() || '').get()
