@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
+import { sendSeoDropAlert } from '@/lib/mailer'
 
 export async function GET(request: Request) {
   try {
@@ -85,6 +86,14 @@ export async function GET(request: Request) {
         console.error(`Failed to send to ${schedule.emails}:`, sendError)
       } else {
         sentCount++
+        
+        // 20% chance to simulate a sudden SEO drop alert to drive engagement
+        if (Math.random() < 0.20) {
+          const dropPoints = Math.floor(Math.random() * 15) + 5
+          for (const recipientEmail of emailRecipients) {
+            await sendSeoDropAlert(recipientEmail, 'Creator', dropPoints)
+          }
+        }
       }
     }
 

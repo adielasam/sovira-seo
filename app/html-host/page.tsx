@@ -182,6 +182,9 @@ export default function HtmlHostPage() {
   const [isUploadingMedia, setIsUploadingMedia] = useState(false)
   const [copiedUrl, setCopiedUrl] = useState<string | null>(null)
 
+  // Viral Watermark State
+  const [showWatermarkModal, setShowWatermarkModal] = useState(false)
+
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const mediaInputRef = useRef<HTMLInputElement>(null)
@@ -472,6 +475,16 @@ export default function HtmlHostPage() {
               file.content = file.content.replace('</body>', `${CHAT_WIDGET_SCRIPT}\n</body>`)
             } else {
               file.content += CHAT_WIDGET_SCRIPT;
+            }
+          }
+          
+          // Inject Viral Watermark (if not already removed by the user)
+          if (!file.content.includes('sovira-watermark') && !file.content.includes('sovira-watermark-removed')) {
+            const watermarkHtml = `\n<!-- sovira-watermark --><a href="https://www.sovira.com.ng" target="_blank" style="position:fixed;bottom:20px;left:20px;background:#1e293b;color:#fff;padding:8px 12px;border-radius:6px;font-family:sans-serif;font-size:12px;font-weight:bold;z-index:999999;box-shadow:0 4px 6px rgba(0,0,0,0.1);display:flex;align-items:center;gap:6px;opacity:0.9;transition:opacity 0.2s;text-decoration:none;"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#3b82f6"><path d="M12 2L2 7l10 5 10-5-10-5z"></path><path d="M2 17l10 5 10-5"></path><path d="M2 12l10 5 10-5"></path></svg>Powered by Sovira SEO</a>`;
+            if (file.content.includes('</body>')) {
+              file.content = file.content.replace('</body>', `${watermarkHtml}\n</body>`)
+            } else {
+              file.content += watermarkHtml;
             }
           }
         }
@@ -879,6 +892,17 @@ export default function HtmlHostPage() {
             AI Edit
           </button>
           
+          {/* Remove Watermark Button */}
+          {!htmlContent.includes('sovira-watermark-removed') && (
+            <button 
+              onClick={() => setShowWatermarkModal(true)}
+              className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-sm border bg-amber-50 dark:bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-500/30 hover:bg-amber-100 dark:hover:bg-amber-500/20"
+            >
+              <Trash2 className="w-4 h-4" />
+              Remove Watermark
+            </button>
+          )}
+          
           <button 
             onClick={handlePublish}
             disabled={isUploading}
@@ -1243,6 +1267,56 @@ export default function HtmlHostPage() {
                         Create Free Account
                       </button>
                     </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
+            {/* Remove Watermark Modal */}
+            {showWatermarkModal && (
+              <div className="absolute inset-0 z-50 bg-slate-900/40 dark:bg-black/60 backdrop-blur-md flex items-center justify-center p-4">
+                <div className="bg-white dark:bg-[#111111] border border-slate-200 dark:border-slate-800 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95 duration-200 text-center relative p-8">
+                  <button 
+                    onClick={() => setShowWatermarkModal(false)}
+                    className="absolute top-4 right-4 p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                  <div className="mx-auto w-16 h-16 bg-amber-100 dark:bg-amber-900/30 rounded-full flex items-center justify-center mb-6 shadow-inner">
+                    <Trash2 className="w-8 h-8 text-amber-600 dark:text-amber-400" />
+                  </div>
+                  <h2 className="text-2xl font-extrabold text-slate-900 dark:text-white mb-2">Remove Watermark</h2>
+                  <p className="text-slate-600 dark:text-slate-400 mb-8 font-medium">
+                    Want to remove the "Powered by Sovira SEO" badge for free? Just share your site on X (Twitter)!
+                  </p>
+                  <div className="flex flex-col gap-3">
+                    <a 
+                      href={`https://twitter.com/intent/tweet?text=${encodeURIComponent('I just built an awesome website in seconds using the AI Web Builder by @SoviraSEO! Check it out: ' + (hostedUrl || 'https://sovira.com.ng'))}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      onClick={() => {
+                        setTimeout(() => {
+                          let newHtml = htmlContent.replace(/<!-- sovira-watermark -->.*?<\/a>/g, '');
+                          if (newHtml.includes('<head>')) {
+                            newHtml = newHtml.replace('<head>', '<head>\n  <meta name="sovira-watermark-removed" content="true">');
+                          } else {
+                            newHtml = '<meta name="sovira-watermark-removed" content="true">\n' + newHtml;
+                          }
+                          setHtmlContent(newHtml);
+                          setShowWatermarkModal(false);
+                          alert("Watermark removed! Make sure to click Publish to save changes.");
+                        }, 2000);
+                      }}
+                      className="w-full flex items-center justify-center gap-2 py-3.5 bg-black text-white rounded-xl font-bold transition-all shadow-lg hover:-translate-y-0.5"
+                    >
+                      Share on X to Remove
+                    </a>
+                    <button 
+                      onClick={() => setShowWatermarkModal(false)}
+                      className="w-full py-3.5 text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 font-semibold mt-2"
+                    >
+                      Maybe Later
+                    </button>
                   </div>
                 </div>
               </div>

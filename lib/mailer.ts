@@ -7,6 +7,7 @@ import TrialEndingEmail from '@/emails/TrialEndingEmail'
 import ProjectDeletionEmail from '@/emails/ProjectDeletionEmail'
 import AdvantagesEmail from '@/emails/AdvantagesEmail'
 import RecurringPromoEmail from '@/emails/RecurringPromoEmail'
+import SeoAlertEmail from '@/emails/SeoAlertEmail'
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy')
 const fromEmail = 'Sovira SEO <onboarding@resend.dev>'
@@ -241,6 +242,29 @@ export async function sendRecurringPromoEmail(email: string, name: string, userI
     return { success: true, data }
   } catch (error) {
     console.error('Error sending recurring promo email:', error)
+    return { success: false, error }
+  }
+}
+
+export async function sendSeoDropAlert(email: string, name: string, pointsDropped: number) {
+  try {
+    const html = await render(React.createElement(SeoAlertEmail, { name, pointsDropped }))
+    
+    const { data, error } = await resend.emails.send({
+      from: 'Sovira Scanner <onboarding@resend.dev>',
+      to: [email],
+      subject: `🚨 URGENT: SEO Score dropped by ${pointsDropped} points`,
+      html: html,
+    })
+
+    if (error) {
+      console.error('Failed to send SEO alert email:', error)
+      return { success: false, error }
+    }
+
+    return { success: true, data }
+  } catch (error) {
+    console.error('Error sending SEO alert email:', error)
     return { success: false, error }
   }
 }

@@ -7,6 +7,7 @@ import { useState, useRef, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import Link from 'next/link'
 import { getNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '@/app/actions/notifications'
+import { StreakBadge } from '@/components/ui/streak-badge'
 
 function getPageName(pathname: string) {
   if (pathname === '/dashboard') return 'Dashboard Overview'
@@ -163,7 +164,10 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
       </div>
 
       {/* Right section */}
-      <div className="flex items-center gap-x-4 lg:gap-x-6">
+      <div className="flex items-center gap-2 sm:gap-4 ml-auto">
+        <StreakBadge />
+        <ThemeToggle />
+        
         {/* Trial Indicator */}
         {!isPaidPlan && trialDaysRemaining !== null && (
           <div className="hidden sm:flex items-center mr-2">
@@ -183,8 +187,7 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
           </div>
         )}
 
-        <ThemeToggle />
-        
+
         {/* Notifications */}
         <div className="relative" ref={notifRef}>
           <button 
