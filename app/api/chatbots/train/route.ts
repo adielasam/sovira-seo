@@ -21,17 +21,6 @@ function chunkText(text: string, chunkSize: number = 1000, overlap: number = 200
 
 export async function POST(request: Request) {
   try {
-    // Polyfill DOMMatrix for pdf-parse (pdf.js dependency) which crashes in Node.js
-    if (typeof globalThis.DOMMatrix === 'undefined') {
-      (globalThis as any).DOMMatrix = class DOMMatrix {
-        a=1; b=0; c=0; d=1; e=0; f=0;
-        constructor() {}
-      };
-    }
-    
-    // Dynamically require pdf-parse inside the handler to prevent Vercel Serverless crashes on startup
-    const pdfParse = require('pdf-parse')
-
     const supabase = await createClient()
     const { data: { user } } = await supabase.auth.getUser()
 
@@ -62,8 +51,18 @@ export async function POST(request: Request) {
     // Parse PDF
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
-    const pdfData = await pdfParse(buffer)
-    const rawText = pdfData.text
+    // Use pdf2json for rock-solid Node.js parsing without Vercel Edge/Webpack breakages
+    const text = await new Promise<string>((resolve, reject) => {
+      const PDFParser = require('pdf2json')
+      const pdfParser = new PDFParser(null, 1) // 1 = raw text
+      
+      pdfParser.on('pdfParser_dataError', (errData: any) => reject(errData.parserError))
+      pdfParser.on('pdfParser_dataReady', () => resolve(pdfParser.getRawTextContent()))
+      
+      pdfParser.parseBuffer(buffer)
+    })
+    
+    const rawText = text.replace(/\r\n/g, ' ')
 
     if (!rawText || rawText.trim().length === 0) {
       return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 })
