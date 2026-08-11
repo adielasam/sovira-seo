@@ -20,6 +20,7 @@ import { useRouter } from 'next/navigation'
 import { getUserProfile, updateUserPlan } from '@/app/(dashboard)/settings/actions'
 import { getPublicStats, getTestimonials } from '@/app/actions/marketing'
 import { SocialProofToast } from '@/components/marketing/SocialProofToast'
+import { ScrollNavigator } from '@/components/ui/scroll-navigator'
 
 // --- Custom Hooks & Helpers ---
 function useIntersectionObserver(ref: React.RefObject<Element | null>, options = {}) {
@@ -233,6 +234,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0F172A] text-slate-900 dark:text-white transition-colors duration-300 overflow-hidden">
+      <ScrollNavigator />
       <SocialProofToast />
       
       {/* Styles for custom animations */}
