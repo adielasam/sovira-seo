@@ -1,10 +1,10 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import OpenAI from 'openai'
+import { createGoogleGenerativeAI } from '@ai-sdk/google'
+import { streamText } from 'ai'
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || 'dummy-key-for-build',
-})
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY
+const google = createGoogleGenerativeAI({ apiKey: GEMINI_API_KEY || '' })
 
 export async function POST(request: Request) {
   try {
@@ -33,12 +33,21 @@ export async function POST(request: Request) {
       return new NextResponse('Latest message must be from user', { status: 400 })
     }
 
-    // 3. Generate Embedding for the query using raw OpenAI SDK
-    const embeddingResponse = await openai.embeddings.create({
-      model: 'text-embedding-3-small',
-      input: lastMessage.content,
+    // 3. Generate Embedding for the query using Gemini API
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        model: 'models/text-embedding-004',
+        content: { parts: [{ text: lastMessage.content }] }
+      })
     })
-    const embedding = embeddingResponse.data[0].embedding
+    const geminiData = await geminiRes.json()
+    const embedding = geminiData.embedding?.values
+    
+    if (!embedding) {
+      throw new Error('Failed to generate embedding for query')
+    }
 
     // 4. Similarity Search in Vector DB
     const { data: matchedDocuments, error: matchError } = await adminSupabase.rpc('match_chatbot_embeddings', {
@@ -76,33 +85,16 @@ IMPORTANT INSTRUCTIONS:
 - If the user provides an email address, acknowledge it nicely. (We will process it in the background).
 `
 
-    // 7. Stream response using raw OpenAI SDK
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini',
-      stream: true,
-      messages: [
-        { role: 'system', content: systemPrompt },
-        ...messages
-      ]
-    })
-
-    const stream = new ReadableStream({
-      async start(controller) {
-        let fullResponse = ''
-        for await (const chunk of response) {
-          const content = chunk.choices[0]?.delta?.content || ''
-          fullResponse += content
-          if (content) {
-            // Encode in the format expected by the frontend (Vercel AI SDK style: `0:"text"\n`)
-            controller.enqueue(new TextEncoder().encode(`0:${JSON.stringify(content)}\n`))
-          }
-        }
-        controller.close()
-        
+    // 7. Stream response using Gemini
+    const result = await streamText({
+      model: google('gemini-1.5-flash'),
+      system: systemPrompt,
+      messages: messages,
+      onFinish: async ({ text }) => {
         // Optional Webhook Trigger Logic
         if (bot.webhook_url) {
           const emailRegex = /[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/
-          const emailMatch = lastMessage.content.match(emailRegex) || fullResponse.match(emailRegex)
+          const emailMatch = lastMessage.content.match(emailRegex) || text.match(emailRegex)
           if (emailMatch) {
             try {
               await fetch(bot.webhook_url, {
@@ -112,7 +104,7 @@ IMPORTANT INSTRUCTIONS:
                   event: 'lead_captured',
                   chatbot_name: bot.name,
                   email: emailMatch[0],
-                  transcript: [...messages, { role: 'assistant', content: fullResponse }]
+                  transcript: [...messages, { role: 'assistant', content: text }]
                 })
               })
             } catch (e) {
@@ -123,12 +115,7 @@ IMPORTANT INSTRUCTIONS:
       }
     })
 
-    return new NextResponse(stream, {
-      headers: {
-        'Content-Type': 'text/plain; charset=utf-8',
-        'Transfer-Encoding': 'chunked'
-      }
-    })
+    return result.toDataStreamResponse()
 
   } catch (error: any) {
     console.error('Chatbot Query Error:', error)
