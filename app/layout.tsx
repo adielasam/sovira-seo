@@ -5,6 +5,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import { Toaster } from "react-hot-toast";
 import { Chatbot } from "@/components/chatbot";
 import { StructuredData } from "@/components/seo/StructuredData";
+import Script from "next/script";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -67,6 +68,24 @@ export default function RootLayout({
           <StructuredData />
           <script defer data-domain="sovira.com.ng" src="https://plausible.io/js/script.js" />
         </ThemeProvider>
+
+        {/* OneSignal Web Push SDK */}
+        <Script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" strategy="afterInteractive" />
+        <Script id="onesignal-init" strategy="afterInteractive">
+          {`
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+              await OneSignal.init({
+                appId: "e24c9093-62c7-40b8-8a44-720a4de14f99",
+                safari_web_id: "",
+                notifyButton: {
+                  enable: true,
+                },
+                allowLocalhostAsSecureOrigin: true,
+              });
+            });
+          `}
+        </Script>
       </body>
     </html>
   );
