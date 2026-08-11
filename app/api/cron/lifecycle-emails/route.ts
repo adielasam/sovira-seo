@@ -44,8 +44,8 @@ export async function GET(request: Request) {
       let emailsSent = 0;
 
       for (const profile of profiles) {
-        // Skip agency users explicitly
-        if (profile.email === 'adielasam2015@gmail.com') continue
+        // Ensure we only process free tier emails
+        if (profile.plan !== 'free') continue
 
         // Re-verify they haven't received this email type yet
         const { data: existingEmail } = await supabaseAdmin
