@@ -20,7 +20,7 @@ export async function POST(request: Request) {
     const { data: { user } } = await supabase.auth.getUser()
 
     if (!user) {
-      return new NextResponse('Unauthorized', { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
     const formData = await request.formData()
@@ -28,7 +28,7 @@ export async function POST(request: Request) {
     const chatbotId = formData.get('chatbotId') as string
 
     if (!file || !chatbotId) {
-      return new NextResponse('Missing file or chatbotId', { status: 400 })
+      return NextResponse.json({ error: 'Missing file or chatbotId' }, { status: 400 })
     }
 
     // Verify ownership of chatbot
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
       .single()
 
     if (botErr || !bot) {
-      return new NextResponse('Chatbot not found or unauthorized', { status: 403 })
+      return NextResponse.json({ error: 'Chatbot not found or unauthorized' }, { status: 403 })
     }
 
     // Parse PDF
@@ -50,12 +50,11 @@ export async function POST(request: Request) {
     const rawText = pdfData.text
 
     if (!rawText || rawText.trim().length === 0) {
-      return new NextResponse('Could not extract text from PDF', { status: 400 })
+      return NextResponse.json({ error: 'Could not extract text from PDF' }, { status: 400 })
     }
 
     // Record document in DB
-    const adminSupabase = createAdminClient()
-    await adminSupabase.from('chatbot_documents').insert({
+    await supabase.from('chatbot_documents').insert({
       chatbot_id: chatbotId,
       file_name: file.name,
       status: 'processed'
@@ -97,13 +96,13 @@ export async function POST(request: Request) {
       })).filter(record => record.content.length > 0)
 
       if (recordsToInsert.length > 0) {
-        const { error: insertErr } = await adminSupabase
+        const { error: insertErr } = await supabase
           .from('chatbot_embeddings')
           .insert(recordsToInsert)
 
         if (insertErr) {
           console.error('Error inserting embeddings:', insertErr)
-          throw new Error('Failed to save embeddings to database')
+          throw new Error('Failed to save embeddings to database: ' + insertErr.message)
         }
         totalInserted += recordsToInsert.length
       }
@@ -112,6 +111,6 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, chunksProcessed: totalInserted })
   } catch (error: any) {
     console.error('Error training chatbot:', error)
-    return new NextResponse(error.message || 'Internal Server Error', { status: 500 })
+    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 })
   }
 }
