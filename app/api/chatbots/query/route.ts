@@ -92,6 +92,7 @@ IMPORTANT INSTRUCTIONS:
 
     // 7. Stream response using OpenAI via AgentRouter
     const result = await streamText({
+      // @ts-ignore - Bypass interface mismatch between @ai-sdk/openai and ai packages
       model: aiOpenAI('gpt-4o-mini'),
       system: systemPrompt,
       messages: messages,
