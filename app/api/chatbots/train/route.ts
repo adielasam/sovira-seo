@@ -2,7 +2,8 @@ import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/server'
 import OpenAI from 'openai'
-import pdfParse from 'pdf-parse'
+// Use require for pdf-parse to bypass Turbopack strict ESM default export errors
+const pdfParse = require('pdf-parse')
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
