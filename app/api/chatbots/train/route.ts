@@ -85,7 +85,7 @@ export async function POST(request: Request) {
       const batchChunks = chunks.slice(i, i + BATCH_SIZE)
       
       const { embeddings } = await embedMany({
-        model: google.textEmbeddingModel('text-embedding-004'),
+        model: google.textEmbeddingModel('gemini-embedding-001'),
         values: batchChunks,
       })
 

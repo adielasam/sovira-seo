@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/server'
-import { streamText } from 'ai'
+import { streamText, embed } from 'ai'
 import { createGoogleGenerativeAI } from '@ai-sdk/google'
 
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY
@@ -34,16 +34,10 @@ export async function POST(request: Request) {
     }
 
     // 3. Generate Embedding for the query using Gemini API
-    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/text-embedding-004:embedContent?key=${GEMINI_API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        model: 'models/text-embedding-004',
-        content: { parts: [{ text: lastMessage.content }] }
-      })
+    const { embedding } = await embed({
+      model: google.textEmbeddingModel('gemini-embedding-001'),
+      value: lastMessage.content
     })
-    const geminiData = await geminiRes.json()
-    const embedding = geminiData.embedding?.values
     
     if (!embedding) {
       throw new Error('Failed to generate embedding for query')
