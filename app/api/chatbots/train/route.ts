@@ -95,7 +95,13 @@ export async function POST(request: Request) {
       if (!geminiRes.ok) {
         const err = await geminiRes.text()
         console.error('Gemini Embed Error:', err)
-        throw new Error('Failed to generate embeddings via Gemini')
+        // Extract the actual JSON error message if possible
+        let errorMsg = err
+        try {
+          const parsed = JSON.parse(err)
+          if (parsed.error && parsed.error.message) errorMsg = parsed.error.message
+        } catch(e) {}
+        throw new Error(`Gemini Error: ${errorMsg}`)
       }
 
       const geminiData = await geminiRes.json()
