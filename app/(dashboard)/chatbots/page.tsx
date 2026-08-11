@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client'
 import { Bot, Plus, ArrowRight, Loader2 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
+import { createChatbotAction } from '@/app/actions/chatbots'
 
 export default function ChatbotsPage() {
   const [chatbots, setChatbots] = useState<any[]>([])
@@ -39,25 +40,16 @@ export default function ChatbotsPage() {
     if (!newName.trim()) return
 
     setCreating(true)
-    const { data: { user } } = await supabase.auth.getUser()
     
-    if (user) {
-      const { data, error } = await supabase
-        .from('chatbots')
-        .insert({
-          name: newName,
-          user_id: user.id
-        })
-        .select()
-        .single()
-
-      if (error) {
-        toast.error(error.message)
-      } else if (data) {
-        toast.success('Chatbot created successfully!')
-        router.push(`/chatbots/${data.id}`)
-      }
+    const res = await createChatbotAction(newName)
+    
+    if (res.success && res.chatbotId) {
+      toast.success('Chatbot created successfully!')
+      router.push(`/chatbots/${res.chatbotId}`)
+    } else {
+      toast.error(res.error || 'Failed to create chatbot')
     }
+    
     setCreating(false)
   }
 
