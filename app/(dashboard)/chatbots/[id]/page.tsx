@@ -2,7 +2,7 @@
 
 import { useState, useEffect, use, useRef } from 'react'
 import { createClient } from '@/lib/supabase/client'
-import { FileUp, Save, Code, CheckCircle2, ArrowLeft, Loader2, Bot, Send, Trash2 } from 'lucide-react'
+import { FileUp, Save, Code, CheckCircle2, ArrowLeft, Loader2, Bot, Send, Trash2, ImagePlus } from 'lucide-react'
 import Link from 'next/link'
 import toast from 'react-hot-toast'
 
@@ -19,6 +19,12 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
   const [messages, setMessages] = useState<{role: string, content: string}[]>([])
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
+
+  const [avatarTab, setAvatarTab] = useState<'preset' | 'upload'>('preset')
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
+  const avatarInputRef = useRef<HTMLInputElement>(null)
+  
+  const PRESET_AVATARS = Array.from({length: 8}).map((_, i) => `/avatars/preset_${i+1}.jpg`)
 
   const supabase = createClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -55,7 +61,8 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
         name: bot.name,
         system_prompt: bot.system_prompt,
         webhook_url: bot.webhook_url,
-        theme_color: bot.theme_color
+        theme_color: bot.theme_color,
+        bot_avatar: bot.bot_avatar
       })
       .eq('id', id)
 
@@ -102,6 +109,40 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
     } finally {
       setUploading(false)
       if (fileInputRef.current) fileInputRef.current.value = ''
+    }
+  }
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    setUploadingAvatar(true)
+    try {
+      const fileExt = file.name.split('.').pop()
+      const fileName = `${id}-${Math.random()}.${fileExt}`
+      const { error: uploadError } = await supabase.storage.from('avatars').upload(fileName, file)
+      
+      if (uploadError) {
+        // Fallback: If bucket doesn't exist or RLS blocks it, try to use the bot_avatar as a direct base64 string
+        // Warning: This is a hacky fallback, ideally Supabase storage should be configured
+        const reader = new FileReader()
+        reader.onloadend = () => {
+          setBot({...bot, bot_avatar: reader.result as string})
+          toast.success('Avatar updated (saved as data URI due to storage limits)')
+          setUploadingAvatar(false)
+        }
+        reader.readAsDataURL(file)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage.from('avatars').getPublicUrl(fileName)
+      setBot({...bot, bot_avatar: publicUrl})
+      toast.success('Avatar uploaded successfully')
+    } catch (err: any) {
+      toast.error(err.message)
+    } finally {
+      if (avatarInputRef.current) avatarInputRef.current.value = ''
+      setUploadingAvatar(false)
     }
   }
 
@@ -260,6 +301,71 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
                   className="w-full px-3 py-2 border border-slate-200 dark:border-slate-700 rounded-md dark:bg-slate-800 text-sm"
                 />
               </div>
+
+              {/* Bot Avatar Section */}
+              <div className="space-y-3 pt-2">
+                <label className="text-sm font-medium">Bot Avatar</label>
+                <div className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden bg-slate-50 dark:bg-slate-800/50">
+                  <div className="flex border-b border-slate-200 dark:border-slate-700">
+                    <button 
+                      className={`flex-1 py-2 text-xs font-semibold ${avatarTab === 'preset' ? 'bg-white dark:bg-slate-800 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      onClick={() => setAvatarTab('preset')}
+                    >
+                      Choose Preset
+                    </button>
+                    <button 
+                      className={`flex-1 py-2 text-xs font-semibold ${avatarTab === 'upload' ? 'bg-white dark:bg-slate-800 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-700 dark:hover:text-slate-300'}`}
+                      onClick={() => setAvatarTab('upload')}
+                    >
+                      Upload Custom
+                    </button>
+                  </div>
+                  <div className="p-4">
+                    {avatarTab === 'preset' ? (
+                      <div className="grid grid-cols-4 gap-3">
+                        {PRESET_AVATARS.map((src, i) => (
+                          <div 
+                            key={i}
+                            onClick={() => setBot({...bot, bot_avatar: src})}
+                            className={`aspect-square rounded-full overflow-hidden cursor-pointer border-2 transition-all hover:scale-105 ${bot.bot_avatar === src ? 'border-blue-600 shadow-md ring-2 ring-blue-600/20' : 'border-transparent hover:border-slate-300 dark:hover:border-slate-600'}`}
+                          >
+                            <img src={src} alt={`Preset ${i+1}`} className="w-full h-full object-cover" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <div className="w-16 h-16 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-200 dark:bg-slate-800 flex-shrink-0 flex items-center justify-center">
+                          {bot.bot_avatar && bot.bot_avatar.startsWith('data:') || bot.bot_avatar?.includes('supabase') ? (
+                            <img src={bot.bot_avatar} alt="Custom" className="w-full h-full object-cover" />
+                          ) : (
+                            <ImagePlus className="w-6 h-6 text-slate-400" />
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <input 
+                            type="file" 
+                            accept="image/*" 
+                            ref={avatarInputRef} 
+                            onChange={handleAvatarUpload} 
+                            className="hidden" 
+                          />
+                          <button 
+                            onClick={() => avatarInputRef.current?.click()}
+                            disabled={uploadingAvatar}
+                            className="text-sm px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md hover:bg-white dark:hover:bg-slate-800 transition-colors flex items-center"
+                          >
+                            {uploadingAvatar ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <FileUp className="w-4 h-4 mr-2" />}
+                            {uploadingAvatar ? 'Uploading...' : 'Choose Image'}
+                          </button>
+                          <p className="text-xs text-slate-500 mt-2">Recommended: Square image, max 2MB. Will be cropped to a circle.</p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="space-y-2">
                 <label className="text-sm font-medium">System Prompt (Personality & Rules)</label>
                 <textarea 
@@ -363,9 +469,23 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
         {/* Right Column: Test Chat */}
         <div>
           <div className="h-[600px] flex flex-col sticky top-6 shadow-xl border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden bg-white dark:bg-slate-900">
-            <div className="p-4 flex items-center gap-2 text-white" style={{ backgroundColor: bot.theme_color || '#2563eb' }}>
-              <Bot className="h-5 w-5" />
-              <h2 className="font-semibold text-lg">{bot.name} (Test)</h2>
+            <div className="p-4 flex items-center gap-3 text-white shadow-sm z-10 relative" style={{ backgroundColor: bot.theme_color || '#2563eb' }}>
+              {bot.bot_avatar ? (
+                <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-white/20 shadow-sm shrink-0">
+                  <img src={bot.bot_avatar} alt="Bot Avatar" className="w-full h-full object-cover" />
+                </div>
+              ) : (
+                <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center border border-white/30 shrink-0">
+                  <Bot className="h-5 w-5" />
+                </div>
+              )}
+              <div>
+                <h2 className="font-semibold text-lg leading-tight">{bot.name} (Test)</h2>
+                <div className="flex items-center gap-1.5 text-xs font-medium text-white/80">
+                  <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse border border-green-200/50" />
+                  Online
+                </div>
+              </div>
             </div>
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
               {messages.length === 0 ? (
@@ -374,16 +494,48 @@ export default function ChatbotDetailsPage({ params }: { params: Promise<{ id: s
                   <p className="text-sm">Send a message to test your knowledgebase.</p>
                 </div>
               ) : (
-                messages.map((m, i) => (
-                  <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div 
-                      className={`max-w-[85%] rounded-xl px-4 py-2 text-sm whitespace-pre-wrap shadow-sm ${m.role === 'user' ? 'text-white' : 'bg-slate-100 dark:bg-slate-800'}`}
-                      style={m.role === 'user' ? { backgroundColor: bot.theme_color || '#2563eb' } : {}}
-                    >
-                      {m.content || (chatLoading && i === messages.length - 1 ? <Loader2 className="h-4 w-4 animate-spin text-slate-400" /> : '')}
+                messages.map((m, i) => {
+                  const isUser = m.role === 'user';
+                  
+                  // Calculate contrast color for text if themeColor is used
+                  const hex = (bot.theme_color || '#2563eb').replace('#', '');
+                  const r = parseInt(hex.substr(0, 2), 16) || 0;
+                  const g = parseInt(hex.substr(2, 2), 16) || 0;
+                  const b = parseInt(hex.substr(4, 2), 16) || 0;
+                  const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+                  const textColor = yiq >= 128 ? '#0f172a' : '#ffffff';
+
+                  return (
+                    <div key={i} className={`flex w-full ${isUser ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-2 duration-300`}>
+                      {!isUser ? (
+                        <div className="flex gap-2 max-w-[90%]">
+                          <div className="shrink-0 mt-auto mb-1 w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
+                            {bot.bot_avatar ? <img src={bot.bot_avatar} className="w-full h-full object-cover" /> : <Bot className="w-4 h-4 text-slate-400" />}
+                          </div>
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-slate-500 font-medium ml-1">{bot.name}</span>
+                            <div 
+                              className="rounded-2xl rounded-bl-sm px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-wrap transition-colors"
+                              style={{ backgroundColor: bot.theme_color || '#2563eb', color: textColor }}
+                            >
+                              {m.content || (chatLoading && i === messages.length - 1 ? (
+                                <div className="flex items-center gap-1.5 h-5 px-1">
+                                  <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.3s]" style={{ backgroundColor: textColor, opacity: 0.6 }}></span>
+                                  <span className="w-1.5 h-1.5 rounded-full animate-bounce [animation-delay:-0.15s]" style={{ backgroundColor: textColor, opacity: 0.6 }}></span>
+                                  <span className="w-1.5 h-1.5 rounded-full animate-bounce" style={{ backgroundColor: textColor, opacity: 0.6 }}></span>
+                                </div>
+                              ) : '')}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="max-w-[85%] rounded-2xl rounded-br-sm px-4 py-3 text-sm leading-relaxed shadow-sm whitespace-pre-wrap bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100">
+                          {m.content}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))
+                  )
+                })
               )}
             </div>
             <div className="p-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50">

@@ -7,11 +7,11 @@ export default async function PublicChatbotPage({ params }: { params: Promise<{ 
 
   // Fetch bot details using admin client because viewers are anonymous
   const adminSupabase = createAdminClient()
-  const { data: bot, error } = await adminSupabase
-    .from('chatbots')
-    .select('name, theme_color')
-    .eq('id', id)
-    .single()
+    const { data: bot, error } = await adminSupabase
+      .from('chatbots')
+      .select('name, theme_color, bot_avatar')
+      .eq('id', id)
+      .single()
 
   if (error || !bot) {
     return notFound()
@@ -22,6 +22,7 @@ export default async function PublicChatbotPage({ params }: { params: Promise<{ 
       botId={id} 
       name={bot.name} 
       themeColor={bot.theme_color || '#2563eb'} 
+      botAvatar={bot.bot_avatar}
     />
   )
 }
