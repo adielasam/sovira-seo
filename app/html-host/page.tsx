@@ -703,7 +703,7 @@ export default function HtmlHostPage() {
   // EDITOR MODE
   return (
     <div 
-      className="flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans relative overflow-hidden transition-colors duration-300"
+      className="flex flex-col h-screen bg-slate-50 dark:bg-[#0A0A0A] text-slate-900 dark:text-slate-300 font-sans relative overflow-y-auto overflow-x-hidden scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 transition-colors duration-300"
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={processDrop}
@@ -1083,13 +1083,13 @@ export default function HtmlHostPage() {
           </div>
           
           {/* Iframe Container */}
-          <div className="flex-1 flex items-center justify-center bg-slate-100 dark:bg-[#0A0A0A] overflow-hidden relative p-4 sm:p-8">
+          <div className="flex-1 flex items-start justify-center bg-slate-100 dark:bg-[#0A0A0A] overflow-y-auto overflow-x-hidden relative p-4 sm:p-8 scrollbar-thin scrollbar-thumb-slate-300 dark:scrollbar-thumb-slate-700">
             <iframe 
               ref={iframeRef}
-              className={`bg-white border-none transition-all duration-500 ease-out max-w-full max-h-full ${
+              className={`bg-white border-none transition-all duration-500 ease-out shrink-0 ${
                 devicePreview === 'desktop' ? 'w-full h-full shadow-sm rounded-lg border border-slate-200 dark:border-slate-800' :
-                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-xl shadow-2xl border-[8px] sm:border-[12px] border-slate-800 dark:border-[#1A1A1A] object-contain' :
-                'w-[375px] h-[812px] rounded-[2rem] sm:rounded-[3rem] shadow-2xl border-[10px] sm:border-[14px] border-slate-800 dark:border-[#1A1A1A] object-contain'
+                devicePreview === 'tablet' ? 'w-[768px] h-[1024px] rounded-xl shadow-2xl border-[8px] sm:border-[12px] border-slate-800 dark:border-[#1A1A1A]' :
+                'w-[375px] h-[812px] rounded-[2rem] sm:rounded-[3rem] shadow-2xl border-[10px] sm:border-[14px] border-slate-800 dark:border-[#1A1A1A]'
               }`}
               title="Live Preview"
             />
