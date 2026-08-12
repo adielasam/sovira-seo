@@ -12,8 +12,8 @@ export function Chatbot() {
   const pathname = usePathname()
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
-  // Don't render the main platform agent on the isolated RAG bot iframe routes
-  if (pathname?.startsWith('/bots')) return null
+  // Don't render the main platform agent on user-created custom routes (like custom RAG bots or html-host)
+  if (pathname?.startsWith('/bots') || pathname?.startsWith('/b/') || pathname?.startsWith('/html-host')) return null
 
   const { messages, input, handleInputChange, handleSubmit, error } = useChat({
     api: '/api/chat',
