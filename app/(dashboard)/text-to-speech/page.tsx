@@ -1,122 +1,145 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { PlaySquare, Download, Volume2, Mic, Settings, Play, Square, Loader2, Pause } from 'lucide-react'
+import { useState, useRef, useEffect } from 'react'
+import { PlaySquare, Download, Volume2, VolumeX, Mic, Settings, Play, Square, Loader2, Pause } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+const VOICES = [
+  { id: 'd8a1340984ee4b63ad1ffae27a6a4339', name: 'Adam (Dominant, Firm)', region: 'US' },
+  { id: '52e0660e03fe4f9a8d2336f67cab5440', name: 'Rachel (Calm, Professional)', region: 'US' },
+  { id: 'd13f84b987ad4f22b56d2b47f4eb838e', name: 'Chidi (Warm, Engaging)', region: 'NG' },
+  { id: '5b67899dc9a34685ae09c94c890a606f', name: 'Ezinne (Clear, Authoritative)', region: 'NG' },
+]
+
 export default function TextToSpeechPage() {
+  const [selectedVoice, setSelectedVoice] = useState(VOICES[0].id)
   const [script, setScript] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
+  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  
+  // Audio playback state
   const [isPlaying, setIsPlaying] = useState(false)
-  const [isPaused, setIsPaused] = useState(false)
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0)
-  const [rate, setRate] = useState(1)
-  const [pitch, setPitch] = useState(1)
-  const [hasGenerated, setHasGenerated] = useState(false)
-  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const [isMuted, setIsMuted] = useState(false)
+  const [duration, setDuration] = useState(0)
+  const [currentTime, setCurrentTime] = useState(0)
+  
+  const audioRef = useRef<HTMLAudioElement | null>(null)
 
-  // Load browser voices
-  useEffect(() => {
-    const loadVoices = () => {
-      const allVoices = window.speechSynthesis.getVoices()
-      // Filter to English voices and sort by quality
-      const englishVoices = allVoices.filter(v => v.lang.startsWith('en'))
-      if (englishVoices.length > 0) {
-        setVoices(englishVoices)
-        // Try to pick a good default (Google US English or Microsoft)
-        const preferred = englishVoices.findIndex(v => 
-          v.name.includes('Google US') || v.name.includes('Microsoft David') || v.name.includes('Daniel')
-        )
-        if (preferred !== -1) setSelectedVoiceIndex(preferred)
-      } else if (allVoices.length > 0) {
-        setVoices(allVoices)
-      }
-    }
-    
-    loadVoices()
-    // Chrome loads voices async
-    window.speechSynthesis.onvoiceschanged = loadVoices
-    
-    return () => {
-      window.speechSynthesis.cancel()
-    }
-  }, [])
-
-  const handleGenerate = () => {
+  // Handle generation using Fish Audio S2.1 Pro-Free
+  const handleGenerate = async () => {
     if (!script.trim()) {
       toast.error('Please enter a script to generate speech.')
       return
     }
-    if (voices.length === 0) {
-      toast.error('No voices available in your browser.')
-      return
-    }
-
-    // Stop any existing speech
-    window.speechSynthesis.cancel()
 
     setIsGenerating(true)
-    setHasGenerated(false)
+    setAudioUrl(null)
     setIsPlaying(false)
-    setIsPaused(false)
+    setCurrentTime(0)
 
-    // Small delay to let the cancel complete
-    setTimeout(() => {
-      const utterance = new SpeechSynthesisUtterance(script)
-      utterance.voice = voices[selectedVoiceIndex]
-      utterance.rate = rate
-      utterance.pitch = pitch
-      utterance.volume = 1
+    try {
+      const response = await fetch('/api/tts/fish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: script,
+          reference_id: selectedVoice
+        })
+      })
 
-      utterance.onstart = () => {
-        setIsGenerating(false)
-        setHasGenerated(true)
-        setIsPlaying(true)
-        setIsPaused(false)
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to generate audio')
       }
 
-      utterance.onend = () => {
-        setIsPlaying(false)
-        setIsPaused(false)
+      const data = await response.json()
+      if (!data.audioBase64) {
+        throw new Error('Failed to parse audio data')
       }
 
-      utterance.onerror = (e) => {
-        console.error('Speech error:', e)
-        setIsGenerating(false)
-        setIsPlaying(false)
-        toast.error('Speech synthesis error. Try a different voice.')
+      // Convert base64 safely to a native Blob URL to ensure cross-browser playback & downloadability
+      const byteCharacters = atob(data.audioBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
       }
-
-      utteranceRef.current = utterance
-      window.speechSynthesis.speak(utterance)
-      toast.success('Playing voiceover!')
-    }, 100)
-  }
-
-  const handlePlayPause = () => {
-    if (isPlaying && !isPaused) {
-      window.speechSynthesis.pause()
-      setIsPaused(true)
-    } else if (isPaused) {
-      window.speechSynthesis.resume()
-      setIsPaused(false)
-    } else if (hasGenerated) {
-      // Replay
-      handleGenerate()
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      
+      setAudioUrl(url)
+      toast.success('Voiceover generated successfully!')
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || 'An error occurred during generation.')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
-  const handleStop = () => {
-    window.speechSynthesis.cancel()
-    setIsPlaying(false)
-    setIsPaused(false)
+  // Auto-play when audio URL is set
+  useEffect(() => {
+    if (audioUrl && audioRef.current) {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => console.error("Playback prevented:", e))
+    }
+  }, [audioUrl])
+
+  // Sync playback time & duration
+  const handleTimeUpdate = () => {
+    if (audioRef.current) {
+      setCurrentTime(audioRef.current.currentTime)
+    }
   }
 
-  // Group voices by region
-  const usVoices = voices.map((v, i) => ({ voice: v, index: i })).filter(v => v.voice.lang === 'en-US')
-  const gbVoices = voices.map((v, i) => ({ voice: v, index: i })).filter(v => v.voice.lang === 'en-GB')
-  const otherVoices = voices.map((v, i) => ({ voice: v, index: i })).filter(v => !['en-US', 'en-GB'].includes(v.voice.lang))
+  const handleLoadedMetadata = () => {
+    if (audioRef.current) {
+      setDuration(audioRef.current.duration)
+    }
+  }
+
+  const handleAudioEnded = () => {
+    setIsPlaying(false)
+    setCurrentTime(0)
+  }
+
+  // Play/Pause control
+  const togglePlayPause = () => {
+    if (!audioRef.current || !audioUrl) return
+    if (isPlaying) {
+      audioRef.current.pause()
+      setIsPlaying(false)
+    } else {
+      audioRef.current.play()
+        .then(() => setIsPlaying(true))
+        .catch(e => console.error(e))
+    }
+  }
+
+  // Stop control
+  const handleStop = () => {
+    if (!audioRef.current || !audioUrl) return
+    audioRef.current.pause()
+    audioRef.current.currentTime = 0
+    setIsPlaying(false)
+    setCurrentTime(0)
+  }
+
+  // Mute/Silent control
+  const toggleMute = () => {
+    if (!audioRef.current) return
+    audioRef.current.muted = !isMuted
+    setIsMuted(!isMuted)
+  }
+
+  // Format time (00:00)
+  const formatTime = (time: number) => {
+    if (isNaN(time)) return '00:00'
+    const minutes = Math.floor(time / 60)
+    const seconds = Math.floor(time % 60)
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`
+  }
 
   return (
     <div className="space-y-8">
@@ -125,7 +148,7 @@ export default function TextToSpeechPage() {
           <Mic className="w-8 h-8 text-blue-500" />
           Text to Speech
         </h1>
-        <p className="text-slate-600 dark:text-slate-400 mt-1">Generate high-quality voiceovers using your browser&apos;s built-in speech engine. Instant, free, unlimited.</p>
+        <p className="text-slate-600 dark:text-slate-400 mt-1">Generate high-quality voiceovers with premium global and regional voices powered by Fish Audio S2.1.</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -138,73 +161,28 @@ export default function TextToSpeechPage() {
             </label>
             <div className="relative">
               <select
-                value={selectedVoiceIndex}
-                onChange={(e) => setSelectedVoiceIndex(Number(e.target.value))}
+                value={selectedVoice}
+                onChange={(e) => setSelectedVoice(e.target.value)}
                 className="block w-full appearance-none pl-4 pr-10 py-3 bg-slate-50 dark:bg-[#0F172A] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
               >
-                {usVoices.length > 0 && (
-                  <optgroup label="🇺🇸 United States">
-                    {usVoices.map(({ voice, index }) => (
-                      <option key={index} value={index}>
-                        {voice.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {gbVoices.length > 0 && (
-                  <optgroup label="🇬🇧 United Kingdom">
-                    {gbVoices.map(({ voice, index }) => (
-                      <option key={index} value={index}>
-                        {voice.name}
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                {otherVoices.length > 0 && (
-                  <optgroup label="🌍 Other English">
-                    {otherVoices.map(({ voice, index }) => (
-                      <option key={index} value={index}>
-                        {voice.name} ({voice.lang})
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
+                <optgroup label="United States (US)">
+                  {VOICES.filter(v => v.region === 'US').map(voice => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Nigeria (NG)">
+                  {VOICES.filter(v => v.region === 'NG').map(voice => (
+                    <option key={voice.id} value={voice.id}>
+                      {voice.name}
+                    </option>
+                  ))}
+                </optgroup>
               </select>
               <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center px-3 text-slate-500">
                 <Settings className="w-4 h-4" />
               </div>
-            </div>
-          </div>
-
-          {/* Speed & Pitch Controls */}
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase mb-2">
-                Speed ({rate}x)
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={rate}
-                onChange={(e) => setRate(parseFloat(e.target.value))}
-                className="w-full accent-blue-500"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase mb-2">
-                Pitch ({pitch})
-              </label>
-              <input
-                type="range"
-                min="0.5"
-                max="2"
-                step="0.1"
-                value={pitch}
-                onChange={(e) => setPitch(parseFloat(e.target.value))}
-                className="w-full accent-blue-500"
-              />
             </div>
           </div>
 
@@ -235,7 +213,7 @@ export default function TextToSpeechPage() {
             ) : (
               <PlaySquare className="w-5 h-5" />
             )}
-            {isGenerating ? 'Generating...' : 'Generate & Play'}
+            {isGenerating ? 'Generating Audio...' : 'Generate & Play'}
           </button>
         </div>
 
@@ -244,7 +222,7 @@ export default function TextToSpeechPage() {
           
           {/* Canvas Area */}
           <div className="flex-1 flex items-center justify-center bg-black/40 relative">
-            {!hasGenerated && !isGenerating && (
+            {!audioUrl && !isGenerating && (
               <div className="text-center text-slate-500 flex flex-col items-center">
                 <Volume2 className="w-16 h-16 mb-4 opacity-20" />
                 <p className="font-medium">No audio generated yet.</p>
@@ -257,10 +235,10 @@ export default function TextToSpeechPage() {
                 <p className="font-medium">Synthesizing Voiceover...</p>
               </div>
             )}
-            {hasGenerated && !isGenerating && (
+            {audioUrl && (
               <div className="w-64 h-96 bg-black rounded-lg shadow-2xl border border-slate-800 flex items-center justify-center relative overflow-hidden group">
                 <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-blue-600/30 to-transparent"></div>
-                {isPlaying && !isPaused ? (
+                {isPlaying ? (
                   <div className="flex items-end justify-center gap-1 h-12 z-10 opacity-80">
                     <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_1s_ease-in-out_infinite] h-full"></div>
                     <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_1.2s_ease-in-out_infinite] h-4/5"></div>
@@ -277,50 +255,72 @@ export default function TextToSpeechPage() {
                     <div className="w-2 bg-blue-500 rounded-t-sm h-2"></div>
                   </div>
                 )}
-                <div className="absolute bottom-6 text-center text-white z-10">
-                  <p className="text-xs font-medium opacity-60">
-                    {isPlaying && !isPaused ? '● Speaking...' : isPaused ? '❚❚ Paused' : '■ Stopped'}
-                  </p>
-                </div>
               </div>
             )}
           </div>
 
-          {/* Controls Bar */}
+          {/* Timeline & Controls Bar */}
           <div className="h-20 bg-blue-600 text-white flex items-center px-6 justify-between shadow-[0_-4px_20px_rgba(37,99,235,0.15)] shrink-0 z-10 relative">
             <div className="flex items-center gap-4 w-1/3">
               <span className="text-sm font-mono font-medium opacity-90">
-                {voices[selectedVoiceIndex]?.name || 'No voice'}
+                {formatTime(currentTime)} / {formatTime(duration)}
               </span>
             </div>
             
             <div className="flex items-center justify-center gap-6 w-1/3">
               <button 
                 onClick={handleStop}
-                disabled={!isPlaying && !isPaused}
-                className="p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100 disabled:opacity-30"
+                disabled={!audioUrl}
+                className="p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100 disabled:opacity-35"
               >
                 <Square className="w-5 h-5" fill="currentColor" />
               </button>
               <button 
-                onClick={hasGenerated ? handlePlayPause : handleGenerate}
-                disabled={script.length === 0}
+                onClick={togglePlayPause}
+                disabled={!audioUrl}
                 className="w-12 h-12 bg-white text-blue-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
               >
-                {isPlaying && !isPaused ? (
+                {isPlaying ? (
                    <Pause className="w-5 h-5" fill="currentColor" />
                 ) : (
                    <Play className="w-6 h-6 ml-1" fill="currentColor" />
                 )}
               </button>
-              <button className="p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100">
-                <Volume2 className="w-5 h-5" />
+              <button 
+                onClick={toggleMute}
+                disabled={!audioUrl}
+                className="p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100 disabled:opacity-35"
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
             </div>
 
             <div className="flex items-center justify-end w-1/3">
-              <span className="text-xs opacity-60 font-medium">Browser Engine</span>
+              {audioUrl && (
+                <a
+                  href={audioUrl}
+                  download="voiceover.mp3"
+                  className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                >
+                  <Download className="w-4 h-4" />
+                  Export Audio
+                </a>
+              )}
             </div>
+
+            {audioUrl && (
+               <audio 
+                 ref={audioRef}
+                 id="tts-audio" 
+                 src={audioUrl} 
+                 onTimeUpdate={handleTimeUpdate}
+                 onLoadedMetadata={handleLoadedMetadata}
+                 onEnded={handleAudioEnded}
+                 onPlay={() => setIsPlaying(true)}
+                 onPause={() => setIsPlaying(false)}
+                 className="hidden" 
+               />
+            )}
           </div>
         </div>
       </div>
