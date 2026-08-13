@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import * as cheerio from 'cheerio'
 
 export async function POST(req: Request) {
   try {
@@ -13,45 +12,57 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid YouTube URL' }, { status: 400 })
     }
 
-    const res = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+    // 1. Fetch reliable metadata via oEmbed
+    let title = 'Unknown Title'
+    let thumbnail = ''
+    let channel = 'Unknown Channel'
+    
+    try {
+      const oembedRes = await fetch(`https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`)
+      if (oembedRes.ok) {
+        const oembedData = await oembedRes.json()
+        title = oembedData.title || title
+        channel = oembedData.author_name || channel
+        thumbnail = oembedData.thumbnail_url || thumbnail
       }
-    })
-    
-    if (!res.ok) {
-      throw new Error(`Failed to fetch page: ${res.statusText}`)
+    } catch (e) {
+      console.warn('oEmbed fetch failed', e)
     }
-    
-    const html = await res.text()
-    const $ = cheerio.load(html)
-    
-    const title = $('meta[property="og:title"]').attr('content') || $('title').text()
-    const thumbnail = $('meta[property="og:image"]').attr('content') || ''
-    
-    // Channel name is usually in <link itemprop="name" content="..."> inside a span itemprop="author"
-    let channel = $('span[itemprop="author"] link[itemprop="name"]').attr('content')
-    if (!channel) {
-       // fallback: parse from JSON block
-       const scriptMatch = html.match(/"ownerChannelName":"([^"]+)"/)
-       if (scriptMatch && scriptMatch[1]) {
-           channel = scriptMatch[1]
-       }
-    }
-    
-    let uploadDate = $('meta[itemprop="uploadDate"]').attr('content') || $('meta[itemprop="datePublished"]').attr('content')
-    if (!uploadDate) {
-       const dateMatch = html.match(/"publishDate":"([^"]+)"/)
-       if (dateMatch && dateMatch[1]) {
-           uploadDate = dateMatch[1]
-       }
+
+    // 2. Fetch HTML to scrape Date and Category
+    let uploadDate = 'Unknown Date'
+    let category = 'Unknown Category'
+
+    try {
+      const res = await fetch(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+        }
+      })
+      
+      if (res.ok) {
+        const html = await res.text()
+        
+        const dateMatch = html.match(/"publishDate":"([^"]+)"/) || html.match(/<meta itemprop="datePublished" content="([^"]+)">/)
+        if (dateMatch && dateMatch[1]) {
+           uploadDate = new Date(dateMatch[1]).toLocaleDateString()
+        }
+
+        const categoryMatch = html.match(/"category":"([^"]+)"/)
+        if (categoryMatch && categoryMatch[1]) {
+           category = categoryMatch[1]
+        }
+      }
+    } catch (e) {
+      console.warn('HTML scrape failed', e)
     }
     
     return NextResponse.json({
-      title: title || 'Unknown Title',
+      title,
       thumbnail,
-      channel: channel || 'Unknown Channel',
-      uploadDate: uploadDate ? new Date(uploadDate).toLocaleDateString() : 'Unknown Date',
+      channel,
+      uploadDate,
+      category
     })
     
   } catch (error: any) {

@@ -66,6 +66,9 @@ export async function POST(req: Request) {
     } else if (type === 'tags') {
       systemPrompt = 'You are a YouTube SEO expert. Generate a comma-separated list of EXACTLY 12 high-volume, low-competition tags (keywords) for the given topic. Output ONLY the tags separated by commas. Do not include numbers, bullet points, hashtags, or any other text.'
       prompt = `Generate 12 YouTube tags for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+    } else if (type === 'rankings') {
+      systemPrompt = 'You are a YouTube SEO expert analyzer. Estimate the top 12 keywords a video with the given title might rank for, and simulate a realistic YouTube search ranking position (between 1 and 20) for each. Output the result strictly as a JSON array of objects, e.g. [{"tag": "how to", "rank": 3}]. Do not include any markdown formatting, backticks, or other text.'
+      prompt = `Analyze the video title: "${topic}". Return a JSON array of 12 keywords and estimated search rank positions.`
     } else {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }

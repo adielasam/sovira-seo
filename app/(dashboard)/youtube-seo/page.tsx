@@ -94,7 +94,7 @@ export default function YouTubeSeoPage() {
         const tagRes = await fetch('/api/generate/youtube', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'tags', topic: data.title, keywords: '' })
+          body: JSON.stringify({ type: 'rankings', topic: data.title, keywords: '' })
         })
         const tagData = await tagRes.json()
         if (tagRes.ok && tagData.result) {
@@ -460,6 +460,12 @@ export default function YouTubeSeoPage() {
                               <p className="text-xs text-slate-500 dark:text-slate-400">Upload Date</p>
                               <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{videoMeta.uploadDate}</p>
                             </div>
+                            {videoMeta.category && videoMeta.category !== 'Unknown Category' && (
+                              <div>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Category</p>
+                                <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{videoMeta.category}</p>
+                              </div>
+                            )}
                           </div>
                           <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-200 hover:bg-slate-300 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-md text-xs font-medium transition-colors">
                             <PlaySquare className="w-3.5 h-3.5 text-red-500" />
@@ -478,11 +484,37 @@ export default function YouTubeSeoPage() {
                       <h4 className="font-semibold text-slate-900 dark:text-white mb-4">Estimated Ranking Keywords</h4>
                     )}
                     <div className="flex flex-wrap gap-2.5">
-                      {content.split(',').map((tag, i) => (
-                        <div key={i} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
-                          {tag.trim()}
-                        </div>
-                      ))}
+                      {activeTab === 'video-rankings' ? (() => {
+                        try {
+                          const rankings = JSON.parse(content);
+                          if (Array.isArray(rankings)) {
+                            return rankings.map((item: any, i: number) => (
+                              <div key={i} className="flex items-center overflow-hidden border border-slate-200 dark:border-slate-700 rounded-full shadow-sm bg-slate-100 dark:bg-slate-800 transition-colors">
+                                <div className="px-3 py-1.5 bg-red-100 text-red-700 dark:bg-red-500/20 dark:text-red-400 text-xs font-bold border-r border-slate-200 dark:border-slate-700">
+                                  #{item.rank}
+                                </div>
+                                <div className="px-3 py-1.5 text-sm font-medium text-slate-700 dark:text-slate-300">
+                                  {item.tag}
+                                </div>
+                              </div>
+                            ))
+                          }
+                          throw new Error('Not an array');
+                        } catch (e) {
+                          // Fallback if AI fails to return JSON
+                          return content.split(',').map((tag, i) => (
+                            <div key={i} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
+                              {tag.trim()}
+                            </div>
+                          ))
+                        }
+                      })() : (
+                        content.split(',').map((tag, i) => (
+                          <div key={i} className="px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-full text-sm font-medium text-slate-700 dark:text-slate-300 transition-colors shadow-sm">
+                            {tag.trim()}
+                          </div>
+                        ))
+                      )}
                     </div>
                   </div>
                 ) : (
