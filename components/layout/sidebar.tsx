@@ -103,8 +103,8 @@ function NavItems({ pathname, onNav, isCollapsed = false, searchQuery = '' }: { 
                     className={`
                       group flex gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium transition-all duration-200 desktop-center-collapsed
                       ${isActive
-                        ? 'bg-blue-600 text-white'
-                        : 'text-slate-300 hover:text-white hover:bg-slate-800'
+                        ? 'bg-blue-600 text-white shadow-sm'
+                        : 'text-slate-300 hover:text-white hover:bg-slate-800/50'
                       }
                     `}
                   >
@@ -231,7 +231,7 @@ export function Sidebar() {
               <button
                 onClick={handleLogout}
                 disabled={loggingOut}
-                className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+                className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 disabled:opacity-50"
               >
                 <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
                 {loggingOut ? 'Logging out...' : 'Log out'}
@@ -292,7 +292,7 @@ export function Sidebar() {
                   onClick={handleLogout}
                   disabled={loggingOut}
                   title={isCollapsed ? "Log out" : undefined}
-                  className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50 desktop-center-collapsed"
+                  className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 disabled:opacity-50 desktop-center-collapsed"
                 >
                   <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
                   <span className="desktop-hide-collapsed">{loggingOut ? 'Logging out...' : 'Log out'}</span>
