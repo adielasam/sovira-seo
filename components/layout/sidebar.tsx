@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import {
-  LayoutDashboard, Search, Tag, Users, Sparkles,
+  LayoutDashboard, Search, Tag, Users, Sparkles, Mic,
   TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft, User, CreditCard, HelpCircle, Moon, Sun
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -30,6 +30,7 @@ const navigationGroups = [
     name: 'AI Writing',
     items: [
       { name: 'Content AI', href: '/content', icon: Sparkles },
+      { name: 'Text-to-Speech', href: '/text-to-speech', icon: Mic },
     ]
   },
   {
