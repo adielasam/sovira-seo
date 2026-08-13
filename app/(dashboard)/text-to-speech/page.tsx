@@ -5,6 +5,7 @@ import { PlaySquare, Download, Volume2, VolumeX, Mic, Settings, Play, Square, Lo
 import toast from 'react-hot-toast'
 
 export default function TextToSpeechPage() {
+  const [mounted, setMounted] = useState(false)
   const [script, setScript] = useState('')
   const [isGenerating, setIsGenerating] = useState(false)
   const [isExporting, setIsExporting] = useState(false)
@@ -19,8 +20,15 @@ export default function TextToSpeechPage() {
   
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
 
+  // Ensure hydration safety by rendering only after component mounts on the client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
   // Load browser voices
   useEffect(() => {
+    if (!mounted || typeof window === 'undefined' || !window.speechSynthesis) return
+
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices()
       // Filter to English voices
@@ -43,10 +51,15 @@ export default function TextToSpeechPage() {
     return () => {
       window.speechSynthesis.cancel()
     }
-  }, [])
+  }, [mounted])
 
   // Web Speech Playback
   const handlePlaySpeech = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast.error('Speech synthesis is not supported in this browser.')
+      return
+    }
+
     if (!script.trim()) {
       toast.error('Please enter a script to generate speech.')
       return
@@ -97,7 +110,7 @@ export default function TextToSpeechPage() {
 
   // Play/Pause control
   const handlePlayPause = () => {
-    if (isGenerating) return
+    if (typeof window === 'undefined' || !window.speechSynthesis || isGenerating) return
 
     if (isPlaying && !isPaused) {
       window.speechSynthesis.pause()
@@ -112,6 +125,7 @@ export default function TextToSpeechPage() {
 
   // Stop control
   const handleStop = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
     window.speechSynthesis.cancel()
     setIsPlaying(false)
     setIsPaused(false)
@@ -119,6 +133,7 @@ export default function TextToSpeechPage() {
 
   // Mute/Unmute control
   const handleToggleMute = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
     const nextMuted = !isMuted
     setIsMuted(nextMuted)
     
@@ -202,6 +217,22 @@ export default function TextToSpeechPage() {
     } finally {
       setIsExporting(false)
     }
+  }
+
+  // Render a clean loading skeleton on the server side to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div className="space-y-8 animate-pulse">
+        <div>
+          <div className="h-8 bg-slate-200 dark:bg-slate-700 w-1/4 rounded"></div>
+          <div className="h-4 bg-slate-200 dark:bg-slate-700 w-2/3 mt-2 rounded"></div>
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="h-96 bg-white dark:bg-[#1E293B] rounded-xl lg:col-span-1 border border-slate-200 dark:border-slate-800"></div>
+          <div className="h-96 bg-slate-900 dark:bg-[#0B0F19] rounded-xl lg:col-span-2"></div>
+        </div>
+      </div>
+    )
   }
 
   // Group voices by region
