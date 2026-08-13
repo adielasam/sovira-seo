@@ -5,11 +5,11 @@ import { PlaySquare, Download, Volume2, Mic, Settings, Play, Square, Loader2 } f
 import toast from 'react-hot-toast'
 
 const VOICES = [
-  { id: 'adam', name: 'Adam', description: 'Dominant, Firm', region: 'US', premium: true },
-  { id: 'rachel', name: 'Rachel', description: 'Calm, Professional', region: 'US', premium: false },
-  { id: 'chidi', name: 'Chidi', description: 'Warm, Engaging', region: 'NG', premium: true },
-  { id: 'ezinne', name: 'Ezinne', description: 'Clear, Authoritative', region: 'NG', premium: false },
-  { id: 'antoni', name: 'Antoni', description: 'Friendly, Storyteller', region: 'US', premium: true },
+  { id: 'adam', name: 'Adam', description: 'Dominant, Firm', region: 'US' },
+  { id: 'rachel', name: 'Rachel', description: 'Calm, Professional', region: 'US' },
+  { id: 'chidi', name: 'Chidi', description: 'Warm, Engaging', region: 'NG' },
+  { id: 'ezinne', name: 'Ezinne', description: 'Clear, Authoritative', region: 'NG' },
+  { id: 'antoni', name: 'Antoni', description: 'Friendly, Storyteller', region: 'US' },
 ]
 
 export default function TextToSpeechPage() {

@@ -26,6 +26,7 @@
     "canvas-confetti": "^1.9.4",
     "cheerio": "^1.2.0",
     "google-trends-api": "^4.9.2",
+    "google-tts-api": "^2.0.2",
     "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "jspdf": "^4.2.1",
