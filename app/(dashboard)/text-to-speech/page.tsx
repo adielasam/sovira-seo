@@ -48,8 +48,16 @@ export default function TextToSpeechPage() {
         throw new Error('Failed to parse audio data')
       }
 
-      // Convert base64 safely to a playable Data URI
-      const url = `data:audio/mp3;base64,${data.audioBase64}`
+      // Convert base64 safely to a native Blob URL to ensure cross-browser playback
+      const byteCharacters = atob(data.audioBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+      
       setAudioUrl(url)
       
       // Auto-play the audio once it's ready
