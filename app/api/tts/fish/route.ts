@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'model': 's2.1-pro' // User specifically requested S2.1 Pro
+        'model': 's2.1-pro-free' // Free developer tier (switch to 's2.1-pro' when you add API credits)
       },
       body: JSON.stringify(payload)
     })
