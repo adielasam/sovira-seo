@@ -64,8 +64,8 @@ export async function POST(req: Request) {
       Target keywords: ${keywords || 'none provided'}.
       Niche: ${niche || 'General'}`
     } else if (type === 'tags') {
-      systemPrompt = 'You are a YouTube SEO expert. Generate a comma-separated list of the top 20-30 high-volume, low-competition tags (keywords) for the given topic. Output ONLY the tags separated by commas.'
-      prompt = `Generate YouTube tags for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
+      systemPrompt = 'You are a YouTube SEO expert. Generate a comma-separated list of EXACTLY 12 high-volume, low-competition tags (keywords) for the given topic. Output ONLY the tags separated by commas. Do not include numbers, bullet points, hashtags, or any other text.'
+      prompt = `Generate 12 YouTube tags for a video about: "${topic}". Target keywords: ${keywords || 'none provided'}.`
     } else {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }
