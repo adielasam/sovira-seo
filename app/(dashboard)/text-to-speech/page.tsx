@@ -5,11 +5,10 @@ import { PlaySquare, Download, Volume2, Mic, Settings, Play, Square, Loader2 } f
 import toast from 'react-hot-toast'
 
 const VOICES = [
-  { id: 'adam', name: 'Adam', description: 'Dominant, Firm', region: 'US' },
-  { id: 'rachel', name: 'Rachel', description: 'Calm, Professional', region: 'US' },
-  { id: 'chidi', name: 'Chidi', description: 'Warm, Engaging', region: 'NG' },
-  { id: 'ezinne', name: 'Ezinne', description: 'Clear, Authoritative', region: 'NG' },
-  { id: 'antoni', name: 'Antoni', description: 'Friendly, Storyteller', region: 'US' },
+  { id: 'd8a1340984ee4b63ad1ffae27a6a4339', name: 'Adam', description: 'Dominant, Firm', region: 'US' },
+  { id: '52e0660e03fe4f9a8d2336f67cab5440', name: 'Rachel', description: 'Calm, Professional', region: 'US' },
+  { id: 'd13f84b987ad4f22b56d2b47f4eb838e', name: 'Chidi', description: 'Warm, Engaging', region: 'NG' },
+  { id: '5b67899dc9a34685ae09c94c890a606f', name: 'Ezinne', description: 'Clear, Authoritative', region: 'NG' },
 ]
 
 export default function TextToSpeechPage() {
@@ -29,12 +28,12 @@ export default function TextToSpeechPage() {
     setAudioUrl(null)
 
     try {
-      const response = await fetch('/api/tts/generate', {
+      const response = await fetch('/api/tts/fish', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          script,
-          voiceId: selectedVoice
+          text: script,
+          reference_id: selectedVoice
         })
       })
 
