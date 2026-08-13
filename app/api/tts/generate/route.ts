@@ -14,11 +14,11 @@ export async function POST(req: Request) {
     }
 
     // Since budget is $0, we map the voices to free Google Translate TTS locales
-    let lang = 'en-US'
+    let lang = 'en'
     if (voiceId === 'chidi' || voiceId === 'ezinne') {
-      lang = 'en-ZA' // Fallback for African accent since en-NG isn't supported by the free API
+      lang = 'en' // Fallback for African accent since en-NG isn't supported by the free API
     } else if (voiceId === 'rachel') {
-      lang = 'en-GB' // UK accent for variety
+      lang = 'en' // UK accent for variety
     }
 
     // Get array of base64 audio chunks for scripts longer than 200 chars
