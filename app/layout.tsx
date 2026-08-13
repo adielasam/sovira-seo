@@ -86,6 +86,17 @@ export default function RootLayout({
             });
           `}
         </Script>
+        
+        {/* BFCache handler to fix "This page couldn't load" errors when using browser back button */}
+        <Script id="bfcache-handler" strategy="afterInteractive">
+          {`
+            window.addEventListener('pageshow', function(event) {
+              if (event.persisted) {
+                window.location.reload();
+              }
+            });
+          `}
+        </Script>
       </body>
     </html>
   );
