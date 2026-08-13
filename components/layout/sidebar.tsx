@@ -30,6 +30,7 @@ const navigationGroups = [
     name: 'AI Writing',
     items: [
       { name: 'Content AI', href: '/content', icon: Sparkles },
+      { name: 'AI Podcast', href: '/ai-podcast', icon: Mic },
       { name: 'Text-to-Speech', href: '/text-to-speech', icon: Mic },
     ]
   },
