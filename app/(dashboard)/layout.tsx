@@ -42,7 +42,7 @@ export default async function DashboardLayout({
   return (
     <div className="h-full bg-slate-50 dark:bg-[#0F172A] min-h-screen text-slate-900 dark:text-white transition-colors duration-200 pb-16 lg:pb-0">
       <div className="hidden lg:block">
-        <Sidebar />
+        <Sidebar userEmail={user.email} />
       </div>
       <div className="pl-0 lg:pl-[var(--sidebar-width)] flex flex-col min-h-screen transition-[padding] duration-200 ease-in-out">
         <Topbar userEmail={user.email} />

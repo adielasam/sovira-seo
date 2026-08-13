@@ -3,10 +3,11 @@
 import Link from 'next/link'
 import Image from 'next/image'
 import { usePathname } from 'next/navigation'
-import { useState, useMemo, useRef } from 'react'
+import { useState, useMemo, useRef, useEffect } from 'react'
+import { useTheme } from 'next-themes'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft, User, CreditCard, HelpCircle, Moon, Sun
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -124,7 +125,87 @@ function NavItems({ pathname, onNav, isCollapsed = false, searchQuery = '' }: { 
   )
 }
 
-export function Sidebar() {
+function ProfileDropdown({ userEmail, isCollapsed = false, handleLogout }: { userEmail?: string, isCollapsed?: boolean, handleLogout: () => void }) {
+  const { theme, setTheme } = useTheme()
+  const [profileOpen, setProfileOpen] = useState(false)
+  const profileRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    function handleClickOutside(e: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(e.target as Node)) {
+        setProfileOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  return (
+    <div className="relative" ref={profileRef}>
+      {profileOpen && (
+        <div className={`absolute bottom-full mb-2 w-56 rounded-xl bg-white dark:bg-slate-800 shadow-xl border border-gray-100 dark:border-slate-700 py-2 focus:outline-none animate-in fade-in slide-in-from-bottom-2 duration-200 z-50 ${isCollapsed ? 'left-0' : 'left-0'}`}>
+          <div className="px-4 py-3 flex flex-col gap-1">
+            <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+              {userEmail || 'User'}
+            </p>
+          </div>
+          
+          <div className="h-px bg-gray-100 dark:bg-slate-700 my-1" />
+          
+          <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+            <User className="h-4 w-4" /> My Profile
+          </Link>
+          <Link href="/settings" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+            <Settings className="h-4 w-4" /> Account Settings
+          </Link>
+          <Link href="/settings?tab=billing" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+            <CreditCard className="h-4 w-4" /> Billing & Plans
+          </Link>
+          <Link href="/help" onClick={() => setProfileOpen(false)} className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+            <HelpCircle className="h-4 w-4" /> Help Center
+          </Link>
+          
+          <button onClick={() => { setTheme(theme === 'dark' ? 'light' : 'dark'); setProfileOpen(false) }} className="flex w-full items-center justify-between px-4 py-2 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 transition-colors">
+            <div className="flex items-center gap-2">
+              {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              Dark Mode
+            </div>
+            <div className={`w-8 h-4 rounded-full transition-colors ${theme === 'dark' ? 'bg-blue-600' : 'bg-slate-300'}`}>
+              <div className={`w-3 h-3 rounded-full bg-white transition-transform mt-0.5 ${theme === 'dark' ? 'translate-x-4' : 'translate-x-0.5'}`} />
+            </div>
+          </button>
+          
+          <div className="h-px bg-gray-100 dark:bg-slate-700 my-1" />
+
+          <button onClick={() => { setProfileOpen(false); handleLogout(); }} className="flex w-full items-center gap-2 px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors">
+            <LogOut className="h-4 w-4" />
+            Sign Out
+          </button>
+        </div>
+      )}
+
+      <button
+        onClick={() => setProfileOpen(!profileOpen)}
+        title={isCollapsed ? "Profile & Settings" : undefined}
+        className="group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 desktop-center-collapsed outline-none"
+      >
+        <div className="h-8 w-8 shrink-0 rounded-full bg-blue-600 flex items-center justify-center text-sm font-bold text-white shadow-sm ring-2 ring-transparent group-hover:ring-slate-700 transition-all">
+          {userEmail ? userEmail.charAt(0).toUpperCase() : 'U'}
+        </div>
+        <div className="flex flex-col items-start truncate desktop-hide-collapsed">
+          <span className="text-sm font-semibold text-white truncate max-w-[140px] leading-tight mb-0.5">
+            {userEmail ? userEmail.split('@')[0] : 'User'}
+          </span>
+          <span className="text-xs text-slate-400 truncate max-w-[140px] leading-tight">
+            {userEmail || 'user@example.com'}
+          </span>
+        </div>
+      </button>
+    </div>
+  )
+}
+
+export function Sidebar({ userEmail }: { userEmail?: string }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -228,14 +309,7 @@ export function Sidebar() {
               <NavItems pathname={pathname} onNav={() => setMobileOpen(false)} searchQuery={searchQuery} />
             </li>
             <li className="mt-auto pt-4">
-              <button
-                onClick={handleLogout}
-                disabled={loggingOut}
-                className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 disabled:opacity-50"
-              >
-                <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
-                {loggingOut ? 'Logging out...' : 'Log out'}
-              </button>
+              <ProfileDropdown userEmail={userEmail} handleLogout={handleLogout} />
             </li>
           </ul>
         </nav>
@@ -288,15 +362,7 @@ export function Sidebar() {
                 <NavItems pathname={pathname} isCollapsed={isCollapsed} searchQuery={searchQuery} />
               </li>
               <li className="mt-auto">
-                <button
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                  title={isCollapsed ? "Log out" : undefined}
-                  className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800/50 transition-all duration-200 disabled:opacity-50 desktop-center-collapsed"
-                >
-                  <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
-                  <span className="desktop-hide-collapsed">{loggingOut ? 'Logging out...' : 'Log out'}</span>
-                </button>
+                <ProfileDropdown userEmail={userEmail} isCollapsed={isCollapsed} handleLogout={handleLogout} />
               </li>
             </ul>
           </nav>
