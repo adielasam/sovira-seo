@@ -32,11 +32,9 @@ export async function POST(req: Request) {
     const buffers = base64Chunks.map(chunk => Buffer.from(chunk.base64, 'base64'))
     const finalBuffer = Buffer.concat(buffers)
 
-    return new NextResponse(finalBuffer, {
-      headers: {
-        'Content-Type': 'audio/mpeg',
-        'Content-Length': finalBuffer.byteLength.toString(),
-      },
+    // Return as base64 JSON to completely avoid Next.js binary buffer corruption on Vercel
+    return NextResponse.json({
+      audioBase64: finalBuffer.toString('base64')
     })
 
   } catch (error: any) {

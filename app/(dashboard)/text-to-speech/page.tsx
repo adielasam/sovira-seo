@@ -43,10 +43,24 @@ export default function TextToSpeechPage() {
         throw new Error(error.error || 'Failed to generate audio')
       }
 
-      // Convert response stream to blob
-      const blob = await response.blob()
-      const url = URL.createObjectURL(blob)
+      const data = await response.json()
+      if (!data.audioBase64) {
+        throw new Error('Failed to parse audio data')
+      }
+
+      // Convert base64 safely to a playable Data URI
+      const url = `data:audio/mp3;base64,${data.audioBase64}`
       setAudioUrl(url)
+      
+      // Auto-play the audio once it's ready
+      setTimeout(() => {
+        const audio = document.getElementById('tts-audio') as HTMLAudioElement;
+        if (audio) {
+          audio.play().catch(e => console.error("Autoplay prevented:", e));
+          setIsPlaying(true);
+        }
+      }, 500);
+
       toast.success('Voiceover generated successfully!')
     } catch (error: any) {
       console.error(error)
