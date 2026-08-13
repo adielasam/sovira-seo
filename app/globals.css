@@ -7,6 +7,26 @@
 }
 
 :root {
+  --sidebar-width: 260px;
+}
+@media (min-width: 1024px) {
+  :root[data-sidebar-collapsed="true"] {
+    --sidebar-width: 72px;
+  }
+
+  :root[data-sidebar-collapsed="true"] .desktop-hide-collapsed {
+    display: none !important;
+    opacity: 0 !important;
+  }
+
+  :root[data-sidebar-collapsed="true"] .desktop-center-collapsed {
+    justify-content: center !important;
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+}
+
+:root {
   --background: #ffffff;
   --foreground: #0f172a;
   --card: #ffffff;

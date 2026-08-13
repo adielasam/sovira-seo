@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import { useState } from 'react'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -66,12 +66,12 @@ const navigationGroups = [
   }
 ]
 
-function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void }) {
+function NavItems({ pathname, onNav, isCollapsed = false }: { pathname: string; onNav?: () => void; isCollapsed?: boolean }) {
   return (
     <ul role="list" className="flex flex-1 flex-col gap-y-7 -mx-2">
       {navigationGroups.map((group) => (
         <li key={group.name}>
-          <div className="text-xs font-semibold leading-6 text-slate-400 px-2 uppercase tracking-wider mb-2">
+          <div className="text-xs font-semibold leading-6 text-slate-400 px-2 uppercase tracking-wider mb-2 desktop-hide-collapsed">
             {group.name}
           </div>
           <ul role="list" className="space-y-1">
@@ -82,8 +82,9 @@ function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void })
                   <Link
                     href={item.href}
                     onClick={onNav}
+                    title={isCollapsed ? item.name : undefined}
                     className={`
-                      group flex gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium transition-all duration-200
+                      group flex gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium transition-all duration-200 desktop-center-collapsed
                       ${isActive
                         ? 'bg-blue-600 text-white'
                         : 'text-slate-300 hover:text-white hover:bg-slate-800'
@@ -94,7 +95,7 @@ function NavItems({ pathname, onNav }: { pathname: string; onNav?: () => void })
                       className={`h-5 w-5 shrink-0 transition-colors ${isActive ? 'text-white' : 'text-slate-400 group-hover:text-white'}`}
                       aria-hidden="true"
                     />
-                    {item.name}
+                    <span className="desktop-hide-collapsed">{item.name}</span>
                   </Link>
                 </li>
               )
@@ -111,6 +112,24 @@ export function Sidebar() {
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
+  const [isCollapsed, setIsCollapsed] = useState(false)
+
+  // Sync initial state with pre-hydration script to avoid mismatch flicker
+  if (typeof window !== 'undefined' && !isCollapsed && document.documentElement.getAttribute('data-sidebar-collapsed') === 'true') {
+    setIsCollapsed(true)
+  }
+
+  const toggleCollapse = () => {
+    const newState = !isCollapsed
+    setIsCollapsed(newState)
+    if (newState) {
+      document.documentElement.setAttribute('data-sidebar-collapsed', 'true')
+      localStorage.setItem('sovira-sidebar-collapsed', 'true')
+    } else {
+      document.documentElement.removeAttribute('data-sidebar-collapsed')
+      localStorage.setItem('sovira-sidebar-collapsed', 'false')
+    }
+  }
 
   async function handleLogout() {
     setLoggingOut(true)
@@ -183,10 +202,10 @@ export function Sidebar() {
       </div>
 
       {/* Desktop fixed sidebar */}
-      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
-        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 border-r border-slate-800 px-6 pb-4">
-          <div className="flex h-16 shrink-0 items-center mt-2">
-            <Link href="/dashboard" className="flex items-center">
+      <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-[var(--sidebar-width)] transition-[width] duration-200 ease-in-out lg:flex-col">
+        <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-slate-900 border-r border-slate-800 px-6 pb-4 overflow-x-hidden">
+          <div className="flex h-16 shrink-0 items-center justify-between mt-2">
+            <Link href="/dashboard" className="flex items-center desktop-hide-collapsed">
               <Image
                 src="/sovira-logo.png"
                 alt="Sovira SEO"
@@ -196,20 +215,28 @@ export function Sidebar() {
                 priority
               />
             </Link>
+            <button 
+              onClick={toggleCollapse} 
+              className="text-slate-400 hover:text-white transition-colors p-1.5 rounded-md hover:bg-slate-800 ml-auto"
+              aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            >
+              <ChevronLeft className={`w-5 h-5 transition-transform duration-200 ${isCollapsed ? 'rotate-180' : ''}`} />
+            </button>
           </div>
           <nav className="flex flex-1 flex-col">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
-                <NavItems pathname={pathname} />
+                <NavItems pathname={pathname} isCollapsed={isCollapsed} />
               </li>
               <li className="mt-auto">
                 <button
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50"
+                  title={isCollapsed ? "Log out" : undefined}
+                  className="group flex w-full items-center gap-x-3 rounded-md p-2.5 text-sm leading-6 font-medium text-slate-300 hover:text-white hover:bg-slate-800 transition-colors disabled:opacity-50 desktop-center-collapsed"
                 >
                   <LogOut className="h-5 w-5 shrink-0 text-slate-400 group-hover:text-white" />
-                  {loggingOut ? 'Logging out...' : 'Log out'}
+                  <span className="desktop-hide-collapsed">{loggingOut ? 'Logging out...' : 'Log out'}</span>
                 </button>
               </li>
             </ul>

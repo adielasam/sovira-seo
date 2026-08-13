@@ -55,6 +55,17 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{
+          __html: `
+            try {
+              if (localStorage.getItem('sovira-sidebar-collapsed') === 'true') {
+                document.documentElement.setAttribute('data-sidebar-collapsed', 'true');
+              }
+            } catch (e) {}
+          `
+        }} />
+      </head>
       <body className={inter.className}>
         <ThemeProvider
           attribute="class"
