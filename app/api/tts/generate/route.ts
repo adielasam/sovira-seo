@@ -1,5 +1,13 @@
 import { NextResponse } from 'next/server'
-import * as googleTTS from 'google-tts-api'
+
+// Map our voice IDs to free Amazon Polly voices provided by StreamElements
+const STREAM_ELEMENTS_VOICES: Record<string, string> = {
+  adam: 'Matthew', // Premium US Male
+  rachel: 'Joanna', // Premium US Female
+  antoni: 'Justin', // Friendly US Male
+  chidi: 'Brian', // UK Male (Fallback for Nigerian)
+  ezinne: 'Amy' // UK Female (Fallback for Nigerian)
+}
 
 export async function POST(req: Request) {
   try {
@@ -13,24 +21,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Voice ID is required' }, { status: 400 })
     }
 
-    // Since budget is $0, we map the voices to free Google Translate TTS locales
-    let lang = 'en'
-    if (voiceId === 'chidi' || voiceId === 'ezinne') {
-      lang = 'en' // Fallback for African accent since en-NG isn't supported by the free API
-    } else if (voiceId === 'rachel') {
-      lang = 'en' // UK accent for variety
+    // Fallback to Matthew if voice not found
+    const targetVoice = STREAM_ELEMENTS_VOICES[voiceId] || 'Matthew'
+
+    // StreamElements provides free access to Amazon Polly voices
+    const response = await fetch(`https://api.streamelements.com/kappa/v2/speech?voice=${targetVoice}&text=${encodeURIComponent(script)}`)
+
+    if (!response.ok) {
+      throw new Error(`Failed to generate audio (Status ${response.status})`)
     }
 
-    // Get array of base64 audio chunks for scripts longer than 200 chars
-    const base64Chunks = await googleTTS.getAllAudioBase64(script, {
-      lang,
-      slow: false,
-      host: 'https://translate.google.com',
-    })
-
-    // Decode base64 chunks and concatenate them into a single Buffer
-    const buffers = base64Chunks.map(chunk => Buffer.from(chunk.base64, 'base64'))
-    const finalBuffer = Buffer.concat(buffers)
+    // Get the raw audio buffer from the response
+    const audioBuffer = await response.arrayBuffer()
+    const finalBuffer = Buffer.from(audioBuffer)
 
     // Return as base64 JSON to completely avoid Next.js binary buffer corruption on Vercel
     return NextResponse.json({
