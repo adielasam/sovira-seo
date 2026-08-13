@@ -75,21 +75,44 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'System configuration error. No admin found for anonymous upload.' }, { status: 500 })
     }
 
-    // NEW LIMIT CHECK: Free users can only save 1 project
-    // Only apply limits if not overwriting an existing slug (since updating is allowed)
-    if (!providedSlug) {
-      // 1. Check user plan
-      const { data: profile } = await supabaseAdmin.from('user_profiles').select('plan').eq('id', user_id).single()
-      const plan = profile?.plan || 'free'
-      
-      const isFree = plan === 'free' || plan === 'free trial'
-      
-      // Admins bypass
-      const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user_id)
-      const isAdmin = userData?.user?.email === 'adielasam2015@gmail.com'
-      
-      if (isFree && !isAdmin) {
-        // Count unique slugs for this user
+    // Check user plan
+    const { data: profile } = await supabaseAdmin.from('user_profiles').select('plan').eq('id', user_id).single()
+    const plan = (profile?.plan || 'free').toLowerCase()
+    const isFree = plan === 'free' || plan === 'free trial'
+    
+    // Admins bypass
+    const { data: userData } = await supabaseAdmin.auth.admin.getUserById(user_id)
+    const isAdmin = userData?.user?.email === 'adielasam2015@gmail.com' || userData?.user?.email === 'microsoftportharcourt@gmail.com'
+
+    if (!isAdmin) {
+      // 1. Daily Edit Limit (For Free Users)
+      if (isFree) {
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+        
+        const { count: uploadsToday } = await supabaseAdmin
+          .from('content_generations')
+          .select('id', { count: 'exact', head: true })
+          .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
+          .eq('user_id', user_id)
+          .like('topic', '%|index.html')
+          .gte('created_at', today.toISOString())
+          
+        // Limit to 3 uploads/edits per day
+        if (uploadsToday !== null && uploadsToday >= 3) {
+          return NextResponse.json({ 
+            error: 'Free tier limit reached. You can only edit/publish sites 2 times per day. Please upgrade to a paid plan for unlimited edits.' 
+          }, { status: 403 })
+        }
+      }
+
+      // 2. Max Sites Limit (Only check when creating a new site)
+      if (!providedSlug) {
+        let maxSites = 1;
+        if (plan === 'basic') maxSites = 5;
+        else if (plan === 'starter') maxSites = 10;
+        else if (plan === 'pro' || plan === 'agency') maxSites = 999999;
+
         const { data: userSites } = await supabaseAdmin
           .from('content_generations')
           .select('topic')
@@ -98,9 +121,9 @@ export async function POST(req: Request) {
           
         if (userSites) {
           const uniqueSlugs = new Set(userSites.map(s => s.topic.split('|')[0]))
-          if (uniqueSlugs.size >= 1) {
+          if (uniqueSlugs.size >= maxSites) {
             return NextResponse.json({ 
-              error: 'Free tier limit reached. You can only host 1 InstantSite at a time on the Free Plan. Please upgrade to Pro to host unlimited websites.' 
+              error: `Plan limit reached. You can only host ${maxSites} InstantSite(s) at a time on the ${plan.charAt(0).toUpperCase() + plan.slice(1)} Plan. Please upgrade to host more.` 
             }, { status: 403 })
           }
         }

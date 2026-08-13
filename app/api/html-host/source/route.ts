@@ -22,9 +22,10 @@ export async function GET(req: Request) {
     // Fetch the site
     const { data: siteFiles } = await supabaseAdmin
       .from('content_generations')
-      .select('user_id, content')
+      .select('user_id, generated_content')
       .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
       .eq('topic', `${slug}|index.html`)
+      .order('created_at', { ascending: false })
       .limit(1)
 
     if (!siteFiles || siteFiles.length === 0) {
@@ -39,7 +40,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized. You do not have permission to view this site source.' }, { status: 403 })
     }
 
-    return NextResponse.json({ html: siteFiles[0].content })
+    return NextResponse.json({ html: siteFiles[0].generated_content })
 
   } catch (error) {
     console.error('Failed to fetch site source:', error)

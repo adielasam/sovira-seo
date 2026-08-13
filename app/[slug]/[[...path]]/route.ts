@@ -22,6 +22,7 @@ export async function GET(
       .select('generated_content, content_type, tone')
       .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
       .ilike('topic', `${slug}|${searchPath}`)
+      .order('created_at', { ascending: false })
       .limit(1)
       .single()
 
@@ -37,6 +38,7 @@ export async function GET(
         .select('generated_content, content_type, tone')
         .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
         .ilike('topic', `${slug}|${fallbackPath}`)
+        .order('created_at', { ascending: false })
         .limit(1)
         .single()
         
@@ -50,6 +52,7 @@ export async function GET(
             .select('generated_content, content_type, tone')
             .in('tone', ['INSTANT_SITE', 'INSTANT_SITE_BINARY'])
             .ilike('topic', `${slug}|%${fileName}`)
+            .order('created_at', { ascending: false })
             .limit(1)
             .single()
             
