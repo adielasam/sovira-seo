@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect, useMemo } from 'react'
-import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database, Image as ImageIcon, LayoutDashboard } from 'lucide-react'
+import { Play, Upload, Code, Copy, Check, ExternalLink, Loader2, FolderArchive, FileCode2, Globe, Command, Trash2, Eye, Monitor, Smartphone, Tablet, Maximize2, X, Sparkles, Database, Image as ImageIcon, LayoutDashboard, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 import JSZip from 'jszip'
 import confetti from 'canvas-confetti'
@@ -1071,7 +1071,24 @@ export default function HtmlHostPage() {
                   Phone
                 </button>
               </div>
-              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <button 
+                onClick={() => {
+                  const blob = new Blob([htmlContent], { type: 'text/html' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = 'index.html';
+                  a.click();
+                  URL.revokeObjectURL(url);
+                  toast.success('Code downloaded successfully!');
+                }}
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-slate-700 hover:text-blue-600 dark:hover:text-blue-400 rounded-lg shadow-sm transition-all shrink-0"
+                title="Download Code"
+              >
+                <Download className="w-3.5 h-3.5" />
+                Download
+              </button>
+              <span className="text-slate-300 dark:text-slate-700 hidden sm:inline">|</span>
               <button 
                 onClick={() => hostedUrl && window.open(hostedUrl, '_blank')}
                 className="hover:text-blue-600 dark:hover:text-white transition-colors bg-white dark:bg-[#1A1A1A] border border-slate-200 dark:border-slate-700 w-8 h-8 rounded-lg flex items-center justify-center shadow-sm"
