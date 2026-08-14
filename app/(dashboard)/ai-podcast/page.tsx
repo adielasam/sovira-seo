@@ -14,6 +14,27 @@ const EMOTIONS = [
   'Dramatic'
 ]
 
+const humanizeVoiceName = (name: string) => {
+  let cleanName = name
+    .replace(/Microsoft |Google |Apple /gi, '')
+    .replace(/ - English \([^)]+\)/gi, '')
+    .replace(/ \([^)]+\)/g, '')
+    .replace(/Desktop|Online \(Natural\)/gi, '')
+    .trim();
+  
+  if (cleanName.includes('Zira')) return 'Zira (Warm Female)'
+  if (cleanName.includes('David')) return 'David (Professional Male)'
+  if (cleanName.includes('Mark')) return 'Mark (Friendly Male)'
+  if (cleanName.includes('Hazel')) return 'Hazel (British Female)'
+  if (cleanName.includes('US English') && name.includes('Female')) return 'Sarah (Clear US Female)'
+  if (cleanName.includes('US English') && name.includes('Male')) return 'James (Clear US Male)'
+  if (cleanName.includes('US English')) return 'Sarah (Clear US Female)' // Fallback
+  if (cleanName.includes('UK English Male')) return 'Arthur (British Male)'
+  if (cleanName.includes('UK English Female')) return 'Emma (British Female)'
+  
+  return cleanName || name;
+}
+
 export default function AIPodcastPage() {
   const [mounted, setMounted] = useState(false)
   const [topic, setTopic] = useState('')
@@ -53,6 +74,7 @@ export default function AIPodcastPage() {
         setVoices(allVoices)
       }
     }
+
     
     loadVoices()
     window.speechSynthesis.onvoiceschanged = loadVoices
@@ -166,7 +188,7 @@ export default function AIPodcastPage() {
     if (!generatedScript.trim()) return
 
     setIsExporting(true)
-    const exportToast = toast.loading('Preparing ultra-realistic MP3 download via Fish Audio...')
+    const exportToast = toast.loading('Preparing ultra-realistic MP3 download...')
 
     try {
       const response = await fetch('/api/tts/fish', {
@@ -229,7 +251,7 @@ export default function AIPodcastPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white">AI Podcast Studio</h1>
           </div>
           <p className="text-slate-400 text-sm ml-14">
-            Powered by Browser Native Speech & Groq Llama 3
+            Powered by AI Engine & Groq Llama 3
           </p>
         </div>
       </div>
@@ -267,7 +289,7 @@ export default function AIPodcastPage() {
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   >
                     {voices.map((v, idx) => (
-                      <option key={v.name + idx} value={idx}>{v.name}</option>
+                      <option key={v.name + idx} value={idx}>{humanizeVoiceName(v.name)}</option>
                     ))}
                   </select>
                 </div>
@@ -367,7 +389,7 @@ export default function AIPodcastPage() {
                         <p className="text-white font-medium">
                            {isPlaying && !isPaused ? 'Playing Podcast...' : isPaused ? 'Paused' : 'Ready'}
                         </p>
-                        <p className="text-slate-400 text-xs">Browser Native Speech</p>
+                        <p className="text-slate-400 text-xs">AI Voice Engine</p>
                       </div>
                     </div>
                     

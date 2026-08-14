@@ -4,6 +4,27 @@ import { useState, useEffect, useRef } from 'react'
 import { PlaySquare, Download, Volume2, VolumeX, Mic, Settings, Play, Square, Loader2, Pause } from 'lucide-react'
 import toast from 'react-hot-toast'
 
+const humanizeVoiceName = (name: string) => {
+  let cleanName = name
+    .replace(/Microsoft |Google |Apple /gi, '')
+    .replace(/ - English \([^)]+\)/gi, '')
+    .replace(/ \([^)]+\)/g, '')
+    .replace(/Desktop|Online \(Natural\)/gi, '')
+    .trim();
+  
+  if (cleanName.includes('Zira')) return 'Zira (Warm Female)'
+  if (cleanName.includes('David')) return 'David (Professional Male)'
+  if (cleanName.includes('Mark')) return 'Mark (Friendly Male)'
+  if (cleanName.includes('Hazel')) return 'Hazel (British Female)'
+  if (cleanName.includes('US English') && name.includes('Female')) return 'Sarah (Clear US Female)'
+  if (cleanName.includes('US English') && name.includes('Male')) return 'James (Clear US Male)'
+  if (cleanName.includes('US English')) return 'Sarah (Clear US Female)' // Fallback
+  if (cleanName.includes('UK English Male')) return 'Arthur (British Male)'
+  if (cleanName.includes('UK English Female')) return 'Emma (British Female)'
+  
+  return cleanName || name;
+}
+
 export default function TextToSpeechPage() {
   const [mounted, setMounted] = useState(false)
   const [script, setScript] = useState('')
@@ -270,7 +291,7 @@ export default function TextToSpeechPage() {
                   <optgroup label="🇺🇸 United States">
                     {usVoices.map(({ voice, index }) => (
                       <option key={index} value={index}>
-                        {voice.name}
+                        {humanizeVoiceName(voice.name)}
                       </option>
                     ))}
                   </optgroup>
@@ -279,7 +300,7 @@ export default function TextToSpeechPage() {
                   <optgroup label="🇬🇧 United Kingdom">
                     {gbVoices.map(({ voice, index }) => (
                       <option key={index} value={index}>
-                        {voice.name}
+                        {humanizeVoiceName(voice.name)}
                       </option>
                     ))}
                   </optgroup>
@@ -288,7 +309,7 @@ export default function TextToSpeechPage() {
                   <optgroup label="🌍 Other English">
                     {otherVoices.map(({ voice, index }) => (
                       <option key={index} value={index}>
-                        {voice.name} ({voice.lang})
+                        {humanizeVoiceName(voice.name)} ({voice.lang})
                       </option>
                     ))}
                   </optgroup>
@@ -414,7 +435,7 @@ export default function TextToSpeechPage() {
           <div className="h-16 sm:h-20 bg-blue-600 text-white flex items-center px-4 sm:px-6 justify-between shadow-[0_-4px_20px_rgba(37,99,235,0.15)] shrink-0 z-10 relative">
             <div className="hidden sm:flex items-center gap-4 w-1/3">
               <span className="text-xs font-mono font-medium opacity-90 truncate max-w-full">
-                {voices[selectedVoiceIndex]?.name || 'No voice'}
+                {voices[selectedVoiceIndex] ? humanizeVoiceName(voices[selectedVoiceIndex].name) : 'No voice'}
               </span>
             </div>
             
