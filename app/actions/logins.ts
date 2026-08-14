@@ -28,38 +28,25 @@ export async function trackAndGetStreak() {
     return { streak: 1 }
   }
 
-  // Calculate streak based on unique dates
-  const loginDates = [...new Set(logins.map(log => new Date(log.created_at).toISOString().split('T')[0]))]
+  // We now just return the raw login dates, and calculate the actual streak on the client side
+  // to ensure perfectly consistent timezone handling (PC vs Mobile).
   
-  let currentStreak = 0
-  let expectedDate = new Date()
-
-  // Did they log in today?
-  let loggedInToday = loginDates[0] === todayStr
-
-  // If they haven't logged in today, record it!
+  const loginDates = [...new Set(logins.map(log => log.created_at))]
+  
+  // Did they log in within the last 24 hours in UTC? Just ensure there's a recent record.
+  // We'll let the client do the precise "today" insertion.
+  let loggedInToday = logins.some(log => log.created_at.startsWith(todayStr))
+  
   if (!loggedInToday) {
-    await supabase.from('activity_logs').insert({
+    const { data: newLog } = await supabase.from('activity_logs').insert({
       user_id: user.id,
       action: 'LOGIN',
       details: 'Daily Login'
-    })
-    loginDates.unshift(todayStr) // Add today to front for streak calc
-  }
-
-  // Calculate consecutive days backwards
-  for (let i = 0; i < loginDates.length; i++) {
-    const logDate = loginDates[i]
-    const expectedStr = expectedDate.toISOString().split('T')[0]
-    
-    if (logDate === expectedStr) {
-      currentStreak++
-      // subtract 1 day
-      expectedDate.setDate(expectedDate.getDate() - 1)
-    } else {
-      break
+    }).select('created_at').single()
+    if (newLog) {
+      loginDates.unshift(newLog.created_at)
     }
   }
 
-  return { streak: currentStreak }
+  return { loginDates }
 }

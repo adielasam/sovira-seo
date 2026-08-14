@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { Mic, RefreshCw, AudioLines, Settings2, PlaySquare } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Mic, RefreshCw, AudioLines, Settings2, PlaySquare, Play, Square, Pause, Loader2, Download } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 const EMOTIONS = [
@@ -14,25 +14,53 @@ const EMOTIONS = [
   'Dramatic'
 ]
 
-// Default Fish Audio popular voices or allow custom ID
-const VOICES = [
-  { id: '5b67899dc9a34685ae09c94c890a606f', name: 'Essam (Arabic/Male)' },
-  { id: 'd13f84b987ad4f22b56d2b47f4eb838e', name: 'Mortal Kombat (US/Male)' },
-  { id: '52e0660e03fe4f9a8d2336f67cab5440', name: 'Alex Chikna (US/Fast)' },
-  { id: 'd8a1340984ee4b63ad1ffae27a6a4339', name: 'ELITE (US/Professional)' },
-  { id: 'custom', name: 'Custom Fish Audio Voice ID' }
-]
-
 export default function AIPodcastPage() {
+  const [mounted, setMounted] = useState(false)
   const [topic, setTopic] = useState('')
   const [emotion, setEmotion] = useState('Professional')
-  const [voiceId, setVoiceId] = useState(VOICES[3].id)
-  const [customVoiceId, setCustomVoiceId] = useState('')
   
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isExporting, setIsExporting] = useState(false)
   const [generatedScript, setGeneratedScript] = useState('')
-  const [audioUrl, setAudioUrl] = useState<string | null>(null)
+  
+  // Speech Synthesis state
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
+  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
+  const [isPaused, setIsPaused] = useState(false)
+  
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
+
+  // Ensure hydration safety
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Load browser voices
+  useEffect(() => {
+    if (!mounted || typeof window === 'undefined' || !window.speechSynthesis) return
+
+    const loadVoices = () => {
+      const allVoices = window.speechSynthesis.getVoices()
+      const englishVoices = allVoices.filter(v => v.lang.startsWith('en'))
+      if (englishVoices.length > 0) {
+        setVoices(englishVoices)
+        const preferred = englishVoices.findIndex(v => 
+          v.name.includes('Google US') || v.name.includes('Microsoft David') || v.name.includes('Daniel')
+        )
+        if (preferred !== -1) setSelectedVoiceIndex(preferred)
+      } else if (allVoices.length > 0) {
+        setVoices(allVoices)
+      }
+    }
+    
+    loadVoices()
+    window.speechSynthesis.onvoiceschanged = loadVoices
+    
+    return () => {
+      window.speechSynthesis.cancel()
+    }
+  }, [mounted])
 
   const handleGenerate = async () => {
     if (!topic.trim()) {
@@ -40,16 +68,13 @@ export default function AIPodcastPage() {
       return
     }
 
-    const finalVoiceId = voiceId === 'custom' ? customVoiceId : voiceId
-    if (!finalVoiceId) {
-      toast.error('Please select or enter a Voice ID')
-      return
-    }
-
     setIsGenerating(true)
-    setAudioUrl(null)
     setGeneratedScript('')
     setIsPlaying(false)
+    setIsPaused(false)
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      window.speechSynthesis.cancel()
+    }
 
     try {
       // Step 1: Generate the Podcast Script
@@ -64,47 +89,12 @@ export default function AIPodcastPage() {
       const scriptData = await scriptRes.json()
       setGeneratedScript(scriptData.script)
 
-      // Step 2: Generate Audio with Fish Audio
-      toast.loading('Generating ultra-realistic audio...', { id: 'podcast' })
-      const audioRes = await fetch('/api/tts/fish', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          text: scriptData.script, 
-          reference_id: finalVoiceId,
-          emotion: emotion 
-        })
-      })
-
-      if (!audioRes.ok) throw new Error('Failed to generate audio')
-      
-      const audioData = await audioRes.json()
-      if (!audioData.audioBase64) {
-        throw new Error('Failed to parse audio data')
-      }
-
-      // Convert Base64 to Blob URL for playback
-      const byteCharacters = atob(audioData.audioBase64);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: 'audio/mpeg' });
-      const url = URL.createObjectURL(blob);
-      
-      setAudioUrl(url)
-
-      // Auto-play
-      setTimeout(() => {
-        const audio = document.getElementById('podcast-audio') as HTMLAudioElement;
-        if (audio) {
-          audio.play().catch(e => console.error("Autoplay prevented:", e));
-          setIsPlaying(true);
-        }
-      }, 500);
-
       toast.success('Podcast generated successfully!', { id: 'podcast' })
+
+      // Auto-play with native browser speech engine!
+      setTimeout(() => {
+        handlePlaySpeech(scriptData.script)
+      }, 500)
 
     } catch (error: any) {
       console.error(error)
@@ -113,6 +103,119 @@ export default function AIPodcastPage() {
       setIsGenerating(false)
     }
   }
+
+  // Web Speech Playback
+  const handlePlaySpeech = (textToSpeak = generatedScript) => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) {
+      toast.error('Speech synthesis is not supported in this browser.')
+      return
+    }
+    if (!textToSpeak.trim()) return
+    if (voices.length === 0) return
+
+    window.speechSynthesis.cancel()
+    setIsPlaying(false)
+    setIsPaused(false)
+
+    setTimeout(() => {
+      const utterance = new SpeechSynthesisUtterance(textToSpeak)
+      utterance.voice = voices[selectedVoiceIndex]
+      
+      utterance.onstart = () => {
+        setIsPlaying(true)
+        setIsPaused(false)
+      }
+
+      utterance.onend = () => {
+        setIsPlaying(false)
+        setIsPaused(false)
+      }
+
+      utterance.onerror = (e) => {
+        console.error('Speech synthesis error:', e)
+        setIsPlaying(false)
+      }
+
+      utteranceRef.current = utterance
+      window.speechSynthesis.speak(utterance)
+    }, 100)
+  }
+
+  const handlePlayPause = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+
+    if (isPlaying && !isPaused) {
+      window.speechSynthesis.pause()
+      setIsPaused(true)
+    } else if (isPaused) {
+      window.speechSynthesis.resume()
+      setIsPaused(false)
+    } else {
+      handlePlaySpeech()
+    }
+  }
+
+  const handleStop = () => {
+    if (typeof window === 'undefined' || !window.speechSynthesis) return
+    window.speechSynthesis.cancel()
+    setIsPlaying(false)
+    setIsPaused(false)
+  }
+
+  const handleExportAudio = async () => {
+    if (!generatedScript.trim()) return
+
+    setIsExporting(true)
+    const exportToast = toast.loading('Preparing ultra-realistic MP3 download via Fish Audio...')
+
+    try {
+      const response = await fetch('/api/tts/fish', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: generatedScript,
+          reference_id: 'd8a1340984ee4b63ad1ffae27a6a4339', // Premium default fallback voice
+          emotion: emotion
+        })
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to export audio')
+      }
+
+      const data = await response.json()
+      if (!data.audioBase64) {
+        throw new Error('Failed to parse audio data')
+      }
+
+      const byteCharacters = atob(data.audioBase64);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: 'audio/mpeg' });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `sovira-podcast-${Date.now()}.mp3`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      toast.success('Podcast exported successfully!', { id: exportToast })
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || 'Failed to export audio.', { id: exportToast })
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  if (!mounted) return null
 
   return (
     <div className="p-8 max-w-7xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -126,7 +229,7 @@ export default function AIPodcastPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white">AI Podcast Studio</h1>
           </div>
           <p className="text-slate-400 text-sm ml-14">
-            Powered by Fish Audio S2.1 Pro & Groq Llama 3
+            Powered by Browser Native Speech & Groq Llama 3
           </p>
         </div>
       </div>
@@ -157,30 +260,18 @@ export default function AIPodcastPage() {
                 </div>
                 
                 <div className="space-y-2">
-                  <label className="text-sm text-slate-300">Voice ID</label>
+                  <label className="text-sm text-slate-300">Podcast Voice</label>
                   <select 
-                    value={voiceId}
-                    onChange={(e) => setVoiceId(e.target.value)}
+                    value={selectedVoiceIndex}
+                    onChange={(e) => setSelectedVoiceIndex(Number(e.target.value))}
                     className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
                   >
-                    {VOICES.map(v => (
-                      <option key={v.id} value={v.id}>{v.name}</option>
+                    {voices.map((v, idx) => (
+                      <option key={v.name + idx} value={idx}>{v.name}</option>
                     ))}
                   </select>
                 </div>
               </div>
-
-              {voiceId === 'custom' && (
-                <div className="pt-2 animate-in fade-in slide-in-from-top-2">
-                  <input
-                    type="text"
-                    value={customVoiceId}
-                    onChange={(e) => setCustomVoiceId(e.target.value)}
-                    placeholder="Enter Fish Audio Reference ID (e.g. 5b67899dc9a...)"
-                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-4 py-2.5 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50"
-                  />
-                </div>
-              )}
             </div>
 
             <div className="space-y-2">
@@ -247,49 +338,49 @@ export default function AIPodcastPage() {
                   </p>
                 </div>
 
-                {audioUrl && (
-                  <div className="bg-slate-900 border border-blue-500/30 rounded-xl p-4 flex flex-col gap-4 sticky bottom-0 backdrop-blur-md shadow-2xl">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <button 
-                          onClick={() => {
-                            const audio = document.getElementById('podcast-audio') as HTMLAudioElement;
-                            if (audio) {
-                              if (isPlaying) audio.pause();
-                              else audio.play();
-                              setIsPlaying(!isPlaying);
-                            }
-                          }}
-                          className="w-10 h-10 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center transition-colors shrink-0"
-                        >
-                          <div className={`w-3 h-3 ${isPlaying ? 'bg-white rounded-sm' : 'border-y-8 border-y-transparent border-l-[12px] border-l-white ml-1'}`} />
-                        </button>
-                        <div className="text-sm">
-                          <p className="text-white font-medium">Podcast Generated</p>
-                          <p className="text-slate-400 text-xs">Fish Audio S2.1 Pro</p>
-                        </div>
-                      </div>
+                <div className="bg-slate-900 border border-blue-500/30 rounded-xl p-4 flex flex-col gap-4 sticky bottom-0 backdrop-blur-md shadow-2xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-4">
                       
-                      <a 
-                        href={audioUrl} 
-                        download="ai-podcast.mp3"
-                        className="text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-1.5 rounded-lg transition-colors"
+                      {/* Play/Pause Control */}
+                      <button 
+                        onClick={handlePlayPause}
+                        className="w-12 h-12 bg-blue-600 hover:bg-blue-500 rounded-full flex items-center justify-center transition-colors shrink-0 shadow-lg"
                       >
-                        Download MP3
-                      </a>
+                        {isPlaying && !isPaused ? (
+                          <Pause className="w-5 h-5 text-white" fill="currentColor" />
+                        ) : (
+                          <Play className="w-6 h-6 text-white ml-1" fill="currentColor" />
+                        )}
+                      </button>
+
+                      {/* Stop Control */}
+                      <button 
+                        onClick={handleStop}
+                        disabled={!isPlaying && !isPaused}
+                        className="w-10 h-10 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:hover:bg-slate-800 rounded-full flex items-center justify-center transition-colors shrink-0"
+                      >
+                        <Square className="w-4 h-4 text-white" fill="currentColor" />
+                      </button>
+
+                      <div className="text-sm hidden sm:block">
+                        <p className="text-white font-medium">
+                           {isPlaying && !isPaused ? 'Playing Podcast...' : isPaused ? 'Paused' : 'Ready'}
+                        </p>
+                        <p className="text-slate-400 text-xs">Browser Native Speech</p>
+                      </div>
                     </div>
                     
-                    <audio 
-                      id="podcast-audio" 
-                      src={audioUrl} 
-                      onEnded={() => setIsPlaying(false)}
-                      onPause={() => setIsPlaying(false)}
-                      onPlay={() => setIsPlaying(true)}
-                      controls
-                      className="w-full h-8 outline-none [&::-webkit-media-controls-panel]:bg-slate-800 [&::-webkit-media-controls-current-time-display]:text-white [&::-webkit-media-controls-time-remaining-display]:text-white"
-                    />
+                    <button 
+                      onClick={handleExportAudio}
+                      disabled={isExporting}
+                      className="flex items-center gap-2 text-xs font-medium text-blue-400 hover:text-blue-300 bg-blue-500/10 hover:bg-blue-500/20 px-3 py-2 rounded-lg transition-colors disabled:opacity-50"
+                    >
+                      {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                      Export MP3
+                    </button>
                   </div>
-                )}
+                </div>
               </div>
             )}
           </div>

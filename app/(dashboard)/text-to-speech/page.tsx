@@ -364,45 +364,45 @@ export default function TextToSpeechPage() {
         </div>
 
         {/* Right Panel - Preview/Timeline */}
-        <div className="bg-slate-900 dark:bg-[#0B0F19] rounded-xl shadow-inner ring-1 ring-slate-800 lg:col-span-2 flex flex-col h-[600px] overflow-hidden relative">
+        <div className="bg-slate-900 dark:bg-[#0B0F19] rounded-xl shadow-inner ring-1 ring-slate-800 lg:col-span-2 flex flex-col h-[400px] lg:h-[600px] overflow-hidden relative">
           
           {/* Canvas Area */}
           <div className="flex-1 flex items-center justify-center bg-black/40 relative">
             {!hasGenerated && !isGenerating && (
               <div className="text-center text-slate-500 flex flex-col items-center">
-                <Volume2 className="w-16 h-16 mb-4 opacity-20" />
+                <Volume2 className="w-12 h-12 sm:w-16 sm:h-16 mb-4 opacity-20" />
                 <p className="font-medium">No audio generated yet.</p>
-                <p className="text-sm opacity-70">Enter a script and click Generate to play.</p>
+                <p className="text-xs sm:text-sm opacity-70">Enter a script and click Generate to play.</p>
               </div>
             )}
             {isGenerating && (
               <div className="text-center text-blue-400 flex flex-col items-center animate-pulse">
-                <Loader2 className="w-12 h-12 mb-4 animate-spin opacity-80" />
-                <p className="font-medium">Synthesizing Voiceover...</p>
+                <Loader2 className="w-10 h-10 sm:w-12 sm:h-12 mb-4 animate-spin opacity-80" />
+                <p className="font-medium text-sm sm:text-base">Synthesizing Voiceover...</p>
               </div>
             )}
             {hasGenerated && !isGenerating && (
-              <div className="w-64 h-96 bg-black rounded-lg shadow-2xl border border-slate-800 flex items-center justify-center relative overflow-hidden group">
+              <div className="w-48 sm:w-64 h-64 sm:h-96 bg-black rounded-lg shadow-2xl border border-slate-800 flex items-center justify-center relative overflow-hidden group">
                 <div className="absolute bottom-0 w-full h-1/2 bg-gradient-to-t from-blue-600/30 to-transparent"></div>
                 {isPlaying && !isPaused ? (
-                  <div className="flex items-end justify-center gap-1 h-12 z-10 opacity-80">
-                    <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_1s_ease-in-out_infinite] h-full"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_1.2s_ease-in-out_infinite] h-4/5"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_0.8s_ease-in-out_infinite] h-3/5"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_1.1s_ease-in-out_infinite] h-full"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm animate-[bounce_0.9s_ease-in-out_infinite] h-2/5"></div>
+                  <div className="flex items-end justify-center gap-1 h-8 sm:h-12 z-10 opacity-80">
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm animate-[bounce_1s_ease-in-out_infinite] h-full"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm animate-[bounce_1.2s_ease-in-out_infinite] h-4/5"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm animate-[bounce_0.8s_ease-in-out_infinite] h-3/5"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm animate-[bounce_1.1s_ease-in-out_infinite] h-full"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm animate-[bounce_0.9s_ease-in-out_infinite] h-2/5"></div>
                   </div>
                 ) : (
-                  <div className="flex items-end justify-center gap-1 h-12 z-10 opacity-40">
-                    <div className="w-2 bg-blue-500 rounded-t-sm h-3"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm h-5"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm h-4"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm h-6"></div>
-                    <div className="w-2 bg-blue-500 rounded-t-sm h-2"></div>
+                  <div className="flex items-end justify-center gap-1 h-8 sm:h-12 z-10 opacity-40">
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm h-3"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm h-5"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm h-4"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm h-6"></div>
+                    <div className="w-1.5 sm:w-2 bg-blue-500 rounded-t-sm h-2"></div>
                   </div>
                 )}
-                <div className="absolute bottom-6 text-center text-white z-10">
-                  <p className="text-xs font-medium opacity-60">
+                <div className="absolute bottom-4 sm:bottom-6 text-center text-white z-10">
+                  <p className="text-[10px] sm:text-xs font-medium opacity-60">
                     {isPlaying && !isPaused ? '● Speaking...' : isPaused ? '❚❚ Paused' : '■ Stopped'}
                   </p>
                 </div>
@@ -411,49 +411,49 @@ export default function TextToSpeechPage() {
           </div>
 
           {/* Controls Bar */}
-          <div className="h-20 bg-blue-600 text-white flex items-center px-6 justify-between shadow-[0_-4px_20px_rgba(37,99,235,0.15)] shrink-0 z-10 relative">
-            <div className="flex items-center gap-4 w-1/3">
+          <div className="h-16 sm:h-20 bg-blue-600 text-white flex items-center px-4 sm:px-6 justify-between shadow-[0_-4px_20px_rgba(37,99,235,0.15)] shrink-0 z-10 relative">
+            <div className="hidden sm:flex items-center gap-4 w-1/3">
               <span className="text-xs font-mono font-medium opacity-90 truncate max-w-full">
                 {voices[selectedVoiceIndex]?.name || 'No voice'}
               </span>
             </div>
             
-            <div className="flex items-center justify-center gap-6 w-1/3">
+            <div className="flex items-center justify-start sm:justify-center gap-2 sm:gap-6 flex-1 sm:w-1/3">
               <button 
                 onClick={handleStop}
                 disabled={!isPlaying && !isPaused}
-                className="p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100 disabled:opacity-30"
+                className="p-1.5 sm:p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100 disabled:opacity-30"
               >
-                <Square className="w-5 h-5" fill="currentColor" />
+                <Square className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
               </button>
               <button 
                 onClick={handlePlayPause}
                 disabled={script.length === 0}
-                className="w-12 h-12 bg-white text-blue-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
+                className="w-10 h-10 sm:w-12 sm:h-12 bg-white text-blue-600 rounded-full flex items-center justify-center hover:scale-105 transition-transform disabled:opacity-50 disabled:hover:scale-100 shadow-lg"
               >
                 {isPlaying && !isPaused ? (
-                   <Pause className="w-5 h-5" fill="currentColor" />
+                   <Pause className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" />
                 ) : (
-                   <Play className="w-6 h-6 ml-1" fill="currentColor" />
+                   <Play className="w-5 h-5 sm:w-6 sm:h-6 ml-1" fill="currentColor" />
                 )}
               </button>
               <button 
                 onClick={handleToggleMute}
-                className="p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100"
+                className="p-1.5 sm:p-2 hover:bg-blue-500 rounded-full transition-colors opacity-70 hover:opacity-100"
               >
-                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
+                {isMuted ? <VolumeX className="w-4 h-4 sm:w-5 sm:h-5" /> : <Volume2 className="w-4 h-4 sm:w-5 sm:h-5" />}
               </button>
             </div>
 
-            <div className="flex items-center justify-end w-1/3">
+            <div className="flex items-center justify-end w-auto sm:w-1/3">
               {script.trim().length > 0 && (
                 <button
                   onClick={handleExportAudio}
                   disabled={isExporting}
-                  className="flex items-center gap-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 px-4 py-2 rounded-lg text-sm font-semibold transition-colors"
+                  className="flex items-center gap-1.5 sm:gap-2 bg-blue-700 hover:bg-blue-800 disabled:opacity-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-semibold transition-colors"
                 >
-                  {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
-                  Export MP3
+                  {isExporting ? <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" /> : <Download className="w-3 h-3 sm:w-4 sm:h-4" />}
+                  Export <span className="hidden sm:inline">MP3</span>
                 </button>
               )}
             </div>

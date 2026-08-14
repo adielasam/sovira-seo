@@ -12,7 +12,43 @@ export function StreakBadge() {
     const hasTracked = sessionStorage.getItem('sovira_streak_tracked')
     
     trackAndGetStreak().then(res => {
-      setStreak(res.streak)
+      if (res.streak !== undefined) {
+         // Fallback for old cached server actions
+         setStreak(res.streak)
+      } else if (res.loginDates) {
+         // Calculate consecutive streak based on user's LOCAL timezone
+         const localDates = [...new Set(res.loginDates.map((dateStr: string) => {
+            const d = new Date(dateStr)
+            return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0')
+         }))]
+
+         let currentStreak = 0
+         let expectedDate = new Date() // Today in local time
+
+         // Check if today is logged
+         const todayStr = expectedDate.getFullYear() + '-' + String(expectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(expectedDate.getDate()).padStart(2, '0')
+         const loggedInToday = localDates[0] === todayStr
+         
+         // If they haven't logged in today in their local time, check yesterday
+         if (!loggedInToday) {
+            expectedDate.setDate(expectedDate.getDate() - 1)
+         }
+
+         for (let i = 0; i < localDates.length; i++) {
+            const logStr = localDates[i]
+            const expectedStr = expectedDate.getFullYear() + '-' + String(expectedDate.getMonth() + 1).padStart(2, '0') + '-' + String(expectedDate.getDate()).padStart(2, '0')
+            
+            if (logStr === expectedStr) {
+               currentStreak++
+               expectedDate.setDate(expectedDate.getDate() - 1)
+            } else {
+               break
+            }
+         }
+         
+         setStreak(Math.max(currentStreak, 1))
+      }
+
       if (!hasTracked) {
         sessionStorage.setItem('sovira_streak_tracked', 'true')
       }
