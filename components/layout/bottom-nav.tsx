@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation } from 'lucide-react'
+import { LayoutDashboard, Search, Tag, Sparkles, Menu, X, Link as LinkIcon, TrendingUp, Users, Settings, PlaySquare, Bot, Video, FileText, Plug, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, Mic } from 'lucide-react'
 import { useState } from 'react'
 
 const mainLinks = [
@@ -20,7 +20,15 @@ const moreGroups = [
       { name: 'Rank Tracker', href: '/rank-tracker', icon: TrendingUp },
       { name: 'Backlinks', href: '/backlinks', icon: LinkIcon },
       { name: 'AI Search (GEO)', href: '/ai-search-optimization', icon: Bot },
+      { name: 'AI Tutor', href: '/ai-tutor', icon: GraduationCap },
       { name: 'Slides Agent', href: '/slides-agent', icon: Presentation },
+    ]
+  },
+  {
+    name: 'AI Writing',
+    items: [
+      { name: 'AI Podcast', href: '/ai-podcast', icon: Mic },
+      { name: 'Text-to-Speech', href: '/text-to-speech', icon: Mic },
     ]
   },
   {
@@ -37,6 +45,14 @@ const moreGroups = [
       { name: 'Trending Topics', href: '/trending', icon: Flame },
       { name: 'Competitors', href: '/competitors', icon: Users },
       { name: 'AI Video', href: '/ai-video', icon: Video },
+    ]
+  },
+  {
+    name: 'Developer Tools',
+    items: [
+      { name: 'InstantSite', href: '/html-host', icon: Code },
+      { name: 'My Websites', href: '/dashboard/websites', icon: Globe },
+      { name: 'RAG Chatbots', href: '/chatbots', icon: Bot },
     ]
   },
   {
