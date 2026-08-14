@@ -251,7 +251,7 @@ export default function AIPodcastPage() {
             <h1 className="text-3xl font-bold tracking-tight text-white">AI Podcast Studio</h1>
           </div>
           <p className="text-slate-400 text-sm ml-14">
-            Powered by AI Engine & Groq Llama 3
+            Generate ultra-realistic podcasts in seconds
           </p>
         </div>
       </div>
