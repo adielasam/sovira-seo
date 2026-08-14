@@ -37,7 +37,7 @@ Return ONLY the podcast script text. No pleasantries, no markdown.`
 
     const completion = await groq.chat.completions.create({
       messages: [{ role: 'user', content: prompt }],
-      model: 'llama3-8b-8192', // Fast model for scripting
+      model: 'llama-3.1-8b-instant', // Active fast model for scripting
       temperature: 0.7,
       max_tokens: 1024,
     })
