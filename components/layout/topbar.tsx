@@ -72,8 +72,14 @@ export function Topbar({ userEmail }: { userEmail: string | undefined }) {
       }
 
       const plan = profile?.plan || 'free'
-      if (plan !== 'free') {
+      const isAdiela = user?.email?.toLowerCase().includes('adielasam2015') || userEmail?.toLowerCase().includes('adielasam2015')
+      
+      if (plan !== 'free' || isAdiela) {
         setIsPaidPlan(true)
+        if (isAdiela) {
+          // Hardcode 100-year agency plan override
+          setTrialDaysRemaining(36500) // 100 years
+        }
       } else {
         const signupDate = new Date(user.created_at).getTime()
         const msSinceSignup = Date.now() - signupDate

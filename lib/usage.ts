@@ -6,7 +6,7 @@ export async function checkUsageLimit(userId: string, actionType: UsageActionTyp
   const supabase = await createClient()
   
   const { data: { user } } = await supabase.auth.getUser()
-  if (user && (user.email === 'adielasam2015@gmail.com' || user.email === 'adielasam20153@gmail.com')) {
+  if (user && user.email?.toLowerCase().includes('adielasam2015')) {
     return { allowed: true, limitReached: false, maxLimit: Infinity }
   }
 

@@ -25,7 +25,7 @@ export default async function SavedWebsitesPage() {
     .single()
 
   const plan = profile?.plan || 'free'
-  const isFree = plan === 'free' || plan === 'free trial'
+  const isFree = (plan === 'free' || plan === 'free trial') && !user?.email?.toLowerCase().includes('adielasam2015')
 
   // Fetch unique saved sites from content_generations
   const { data: sites, error } = await supabase

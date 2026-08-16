@@ -31,7 +31,9 @@ export default async function DashboardLayout({
 
   // 3-Month Free Trial Expiration Check
   const plan = profile?.plan || 'free'
-  if (plan === 'free') {
+  const isAdiela = user.email?.toLowerCase().includes('adielasam2015')
+  
+  if (plan === 'free' && !isAdiela) {
     const signupDate = new Date(user.created_at).getTime()
     const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000
     if (Date.now() - signupDate > ninetyDaysMs) {
