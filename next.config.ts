@@ -72,6 +72,30 @@ const nextConfig: any = {
       },
     ]
   },
+  webpack: (config: any, { isServer, webpack }: { isServer: boolean, webpack: any }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        https: false,
+        http: false,
+        net: false,
+        tls: false,
+        crypto: false,
+        os: false,
+        path: false,
+        child_process: false,
+      };
+      
+      // Strip 'node:' prefix for imports (like node:fs) so Webpack can apply the false fallbacks
+      config.plugins.push(
+        new webpack.NormalModuleReplacementPlugin(/^node:/, (resource: any) => {
+          resource.request = resource.request.replace(/^node:/, '');
+        })
+      );
+    }
+    return config;
+  },
 };
 
 export default withPWA(nextConfig);
