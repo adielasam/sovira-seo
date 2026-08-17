@@ -46,7 +46,6 @@ export const metadata: Metadata = {
     apple: '/sovira-logo.png',
     shortcut: '/favicon.ico',
   },
-  },
 };
 
 export const viewport = {
