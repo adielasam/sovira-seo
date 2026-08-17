@@ -46,6 +46,14 @@ export const metadata: Metadata = {
     apple: '/sovira-logo.png',
     shortcut: '/favicon.ico',
   },
+  },
+};
+
+export const viewport = {
+  themeColor: '#0F172A',
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({

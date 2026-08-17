@@ -22,6 +22,8 @@ import { getPublicStats, getTestimonials } from '@/app/actions/marketing'
 import { SocialProofToast } from '@/components/marketing/SocialProofToast'
 import { ScrollNavigator } from '@/components/ui/scroll-navigator'
 
+import { InstallPWA } from '@/components/marketing/InstallPWA'
+
 // --- Custom Hooks & Helpers ---
 function useIntersectionObserver(ref: React.RefObject<Element | null>, options = {}) {
   const [isIntersecting, setIsIntersecting] = useState(false)
@@ -236,6 +238,7 @@ export default function LandingPage() {
     <div className="min-h-screen bg-[#FDFBF7] dark:bg-[#0F172A] text-slate-900 dark:text-white transition-colors duration-300 overflow-hidden">
       <ScrollNavigator />
       <SocialProofToast />
+      <InstallPWA />
       
       {/* Styles for custom animations */}
       <style dangerouslySetInnerHTML={{__html: `
