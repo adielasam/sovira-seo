@@ -8,9 +8,10 @@ export const dynamic = 'force-dynamic'
 export default async function AdminActivityPage({
   searchParams,
 }: {
-  searchParams: { user_id?: string; search?: string; action?: string }
+  searchParams: Promise<{ user_id?: string; search?: string; action?: string }>
 }) {
   const supabase = await createClient()
+  const resolvedParams = await searchParams
 
   let query = supabase
     .from('activity_logs')
@@ -18,12 +19,12 @@ export default async function AdminActivityPage({
     .order('created_at', { ascending: false })
     .limit(500) // Increased limit to provide meaningful chart data
 
-  if (searchParams.user_id) {
-    query = query.eq('user_id', searchParams.user_id)
+  if (resolvedParams.user_id) {
+    query = query.eq('user_id', resolvedParams.user_id)
   }
 
-  if (searchParams.action) {
-    query = query.eq('action', searchParams.action)
+  if (resolvedParams.action) {
+    query = query.eq('action', resolvedParams.action)
   }
 
   const { data: rawLogs } = await query
@@ -34,8 +35,8 @@ export default async function AdminActivityPage({
 
   // In-memory filtering for the search term to include emails and JSON details
   let logs = rawLogs || []
-  if (searchParams.search) {
-    const s = searchParams.search.toLowerCase()
+  if (resolvedParams.search) {
+    const s = resolvedParams.search.toLowerCase()
     logs = logs.filter((log) => {
       const email = emailMap[log.user_id] || ''
       const action = log.action || ''

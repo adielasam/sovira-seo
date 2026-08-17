@@ -10,9 +10,10 @@ export const dynamic = 'force-dynamic'
 export default async function AdminOverviewPage({
   searchParams,
 }: {
-  searchParams: { search?: string; role?: string; plan?: string }
+  searchParams: Promise<{ search?: string; role?: string; plan?: string }>
 }) {
   const supabase = await createClient()
+  const resolvedParams = await searchParams
 
   // Fetch counts
   const [{ count: userCount }, { count: contentCount }, { count: keywordCount }] = await Promise.all([
@@ -47,18 +48,18 @@ export default async function AdminOverviewPage({
     .order('created_at', { ascending: false })
     .limit(50)
 
-  if (searchParams.search) {
-    query = query.ilike('email', `%${searchParams.search}%`)
+  if (resolvedParams.search) {
+    query = query.ilike('email', `%${resolvedParams.search}%`)
   }
-  if (searchParams.role) {
-    query = query.eq('role', searchParams.role)
+  if (resolvedParams.role) {
+    query = query.eq('role', resolvedParams.role)
   }
-  if (searchParams.plan) {
+  if (resolvedParams.plan) {
     // Some free users might have plan=null, so we handle "free" explicitly
-    if (searchParams.plan === 'free') {
+    if (resolvedParams.plan === 'free') {
       query = query.or('plan.eq.free,plan.is.null')
     } else {
-      query = query.eq('plan', searchParams.plan)
+      query = query.eq('plan', resolvedParams.plan)
     }
   }
 
