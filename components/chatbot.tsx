@@ -33,17 +33,10 @@ export function Chatbot() {
     }
   }, [messages, isOpen])
 
-  // Optional: Auto open after 3 seconds for urgency
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsOpen(true)
-    }, 3000)
-    return () => clearTimeout(timer)
-  }, [])
+  // Removed auto-open to prevent blocking other UI elements like the PWA prompt
 
   // Don't render the main platform agent on user-created custom routes (like custom RAG bots or html-host)
   if (pathname?.startsWith('/bots') || pathname?.startsWith('/b/') || pathname?.startsWith('/html-host')) return null
-
 
   return (
     <>
@@ -51,7 +44,7 @@ export function Chatbot() {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 z-50 animate-bounce"
+          className="fixed bottom-6 left-6 w-14 h-14 bg-blue-600 hover:bg-blue-700 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-110 z-[60] animate-bounce"
           aria-label="Open chat"
         >
           <MessageCircle className="w-6 h-6" />
@@ -60,7 +53,7 @@ export function Chatbot() {
 
       {/* Chat Window */}
       {isOpen && (
-        <div className={`fixed bottom-4 right-4 left-4 md:left-auto w-auto md:w-[400px] ${isExpanded ? 'h-[600px] max-h-[85vh]' : 'h-[350px] max-h-[45vh]'} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-50 animate-in slide-in-from-bottom-5 fade-in duration-300 transition-all`}>
+        <div className={`fixed bottom-4 left-4 md:left-6 w-[calc(100vw-2rem)] md:w-[400px] ${isExpanded ? 'h-[600px] max-h-[85vh]' : 'h-[350px] max-h-[45vh]'} bg-white dark:bg-slate-900 rounded-2xl shadow-2xl overflow-hidden flex flex-col z-[60] animate-in slide-in-from-bottom-5 fade-in duration-300 transition-all`}>
           
           {/* Header */}
           <div className="bg-[#0099FF] text-white p-4 flex items-center justify-between shadow-md z-10">
