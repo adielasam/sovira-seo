@@ -23,11 +23,6 @@ export function InstallPWA() {
     const isIosDevice = /iphone|ipad|ipod/.test(userAgent);
     setIsIOS(isIosDevice);
     
-    // Check if previously dismissed
-    if (localStorage.getItem('sovira_pwa_dismissed') === 'true') {
-      return
-    }
-
     // On iOS, we can't show native prompt, so we automatically show our own banner
     if (isIosDevice) {
       setShowPrompt(true)
@@ -68,7 +63,6 @@ export function InstallPWA() {
 
   const handleDismiss = () => {
     setShowPrompt(false)
-    localStorage.setItem('sovira_pwa_dismissed', 'true')
   }
 
   // If installed or not showing prompt
