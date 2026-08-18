@@ -37,8 +37,11 @@ const humanizeVoiceName = (name: string, isAlgorithmicNG = false) => {
 }
 
 export type VoiceOption = {
-  voice: SpeechSynthesisVoice;
+  voice?: SpeechSynthesisVoice;
+  name: string;
+  lang: string;
   isAlgorithmicNG: boolean;
+  isFishClone?: boolean;
   id: string;
 };
 
@@ -56,7 +59,12 @@ export default function TextToSpeechPage() {
   const [pitch, setPitch] = useState(1)
   const [hasGenerated, setHasGenerated] = useState(false)
   
+  // Custom cloned voice state
+  const [isUploadingVoice, setIsUploadingVoice] = useState(false)
+  const [customClonedVoiceId, setCustomClonedVoiceId] = useState<string | null>(null)
+  
   const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null)
+  const customAudioRef = useRef<HTMLAudioElement | null>(null)
 
   // Ensure hydration safety by rendering only after component mounts on the client
   useEffect(() => {
@@ -73,16 +81,30 @@ export default function TextToSpeechPage() {
       
       let options: VoiceOption[] = []
       
+      // If user uploaded a voice, add it to the options
+      if (customClonedVoiceId) {
+        options.push({
+          name: '🎙️ Your Cloned Voice',
+          lang: 'en-US',
+          isAlgorithmicNG: false,
+          isFishClone: true,
+          id: customClonedVoiceId
+        })
+      }
+      
       if (englishVoices.length > 0) {
         // Native voices
-        options = englishVoices.map(v => ({ voice: v, isAlgorithmicNG: false, id: v.name }))
+        englishVoices.forEach(v => {
+          options.push({ voice: v, name: v.name, lang: v.lang, isAlgorithmicNG: false, id: v.name })
+        })
         
         // Generate Algorithmic Nigerian Voices from British voices (en-GB)
-        // Nigerian professional accents are structurally close to British, but usually spoken with a distinct cadence and resonance.
         const gbVoices = englishVoices.filter(v => v.lang === 'en-GB')
         gbVoices.forEach(v => {
           options.push({
             voice: v,
+            name: v.name,
+            lang: v.lang,
             isAlgorithmicNG: true,
             id: `algo-ng-${v.name}`
           })
@@ -90,13 +112,17 @@ export default function TextToSpeechPage() {
         
         setVoiceOptions(options)
         
-        // Default to the first Nigerian algorithmic voice, or native fallback
-        const preferred = options.find(o => o.isAlgorithmicNG) || options[0]
-        if (preferred) setSelectedVoiceId(preferred.id)
+        // Default to cloned voice if exists, else first Nigerian algorithmic voice, or native fallback
+        if (!selectedVoiceId) {
+          const preferred = options.find(o => o.isFishClone) || options.find(o => o.isAlgorithmicNG) || options[0]
+          if (preferred) setSelectedVoiceId(preferred.id)
+        }
       } else if (allVoices.length > 0) {
-        options = allVoices.map(v => ({ voice: v, isAlgorithmicNG: false, id: v.name }))
+        allVoices.forEach(v => {
+          options.push({ voice: v, name: v.name, lang: v.lang, isAlgorithmicNG: false, id: v.name })
+        })
         setVoiceOptions(options)
-        setSelectedVoiceId(options[0].id)
+        if (!selectedVoiceId) setSelectedVoiceId(options[0].id)
       }
     }
     
@@ -105,15 +131,13 @@ export default function TextToSpeechPage() {
     
     return () => {
       window.speechSynthesis.cancel()
+      if (customAudioRef.current) customAudioRef.current.pause()
     }
-  }, [mounted])
+  }, [mounted, customClonedVoiceId])
 
   // Web Speech Playback
-  const handlePlaySpeech = () => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) {
-      toast.error('Speech synthesis is not supported in this browser.')
-      return
-    }
+  const handlePlaySpeech = async () => {
+    if (typeof window === 'undefined') return
 
     if (!script.trim()) {
       toast.error('Please enter a script to generate speech.')
@@ -127,23 +151,92 @@ export default function TextToSpeechPage() {
     const selectedOption = voiceOptions.find(o => o.id === selectedVoiceId)
     if (!selectedOption) return;
 
-    // Reset synthesis
+    // Stop existing audio
     window.speechSynthesis.cancel()
+    if (customAudioRef.current) {
+      customAudioRef.current.pause()
+      customAudioRef.current = null
+    }
 
     setIsGenerating(true)
     setHasGenerated(false)
     setIsPlaying(false)
     setIsPaused(false)
 
+    // Handle Custom Cloned Voices (Fish API)
+    if (selectedOption.isFishClone) {
+      try {
+        const response = await fetch('/api/tts/fish', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            text: script,
+            reference_id: selectedOption.id
+          })
+        })
+
+        if (!response.ok) {
+          const error = await response.json()
+          throw new Error(error.error || 'Failed to generate cloned voice')
+        }
+
+        const data = await response.json()
+        const byteCharacters = atob(data.audioBase64)
+        const byteNumbers = new Array(byteCharacters.length)
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i)
+        }
+        const byteArray = new Uint8Array(byteNumbers)
+        const blob = new Blob([byteArray], { type: 'audio/mpeg' })
+        const url = URL.createObjectURL(blob)
+
+        const audio = new Audio(url)
+        audio.volume = isMuted ? 0 : 1
+        
+        audio.onplay = () => {
+          setIsGenerating(false)
+          setHasGenerated(true)
+          setIsPlaying(true)
+          setIsPaused(false)
+        }
+        
+        audio.onended = () => {
+          setIsPlaying(false)
+          setIsPaused(false)
+        }
+        
+        audio.onerror = () => {
+          setIsGenerating(false)
+          setIsPlaying(false)
+          toast.error('Error playing cloned voice.')
+        }
+
+        customAudioRef.current = audio
+        audio.play()
+
+      } catch (error: any) {
+        console.error(error)
+        setIsGenerating(false)
+        toast.error(error.message || 'Failed to play cloned voice')
+      }
+      return;
+    }
+
+    // Handle Web Speech API Voices
+    if (!window.speechSynthesis) {
+      toast.error('Speech synthesis is not supported in this browser.')
+      setIsGenerating(false)
+      return
+    }
+
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(script)
-      utterance.voice = selectedOption.voice
+      utterance.voice = selectedOption.voice || null
       
       // ALGORITHMIC NIGERIAN ACCENT TWEAKS
       if (selectedOption.isAlgorithmicNG) {
-        // Professional Nigerian English is often spoken at a more measured pace and lower, steadier pitch than standard British
-        utterance.rate = rate * 0.85; // 15% slower for deliberate, clear enunciation
-        utterance.pitch = pitch * 0.90; // 10% deeper resonance
+        utterance.rate = rate * 0.85; 
+        utterance.pitch = pitch * 0.90; 
       } else {
         utterance.rate = rate
         utterance.pitch = pitch
@@ -213,7 +306,7 @@ export default function TextToSpeechPage() {
 
       setTimeout(() => {
         const utterance = new SpeechSynthesisUtterance(script)
-        utterance.voice = selectedOption.voice
+        utterance.voice = selectedOption.voice || null
         if (selectedOption.isAlgorithmicNG) {
           utterance.rate = rate * 0.85
           utterance.pitch = pitch * 0.90
@@ -244,6 +337,8 @@ export default function TextToSpeechPage() {
       return
     }
 
+    const selectedOption = voiceOptions.find(o => o.id === selectedVoiceId)
+
     setIsExporting(true)
     const exportToast = toast.loading('Preparing MP3 download...')
 
@@ -253,7 +348,7 @@ export default function TextToSpeechPage() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           text: script,
-          reference_id: 'd8a1340984ee4b63ad1ffae27a6a4339' // Adam (US Male) default fallback for export
+          reference_id: selectedOption?.isFishClone ? selectedOption.id : 'd8a1340984ee4b63ad1ffae27a6a4339' // Use cloned voice or Adam fallback
         })
       })
 
@@ -294,6 +389,47 @@ export default function TextToSpeechPage() {
     }
   }
 
+  // Upload Voice Handler
+  const handleUploadVoice = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File must be less than 5MB')
+      return
+    }
+
+    setIsUploadingVoice(true)
+    const toastId = toast.loading('Creating your voice clone...')
+
+    try {
+      const formData = new FormData()
+      formData.append('voice', file)
+
+      const response = await fetch('/api/tts/fish-model', {
+        method: 'POST',
+        body: formData
+      })
+
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to upload voice')
+      }
+
+      const data = await response.json()
+      setCustomClonedVoiceId(data.voice_id)
+      setSelectedVoiceId(data.voice_id)
+      toast.success('Voice cloned successfully!', { id: toastId })
+    } catch (error: any) {
+      console.error(error)
+      toast.error(error.message || 'Error cloning voice', { id: toastId })
+    } finally {
+      setIsUploadingVoice(false)
+      // Reset input
+      e.target.value = ''
+    }
+  }
+
   // Render a clean loading skeleton on the server side to avoid hydration mismatch
   if (!mounted) {
     return (
@@ -311,13 +447,14 @@ export default function TextToSpeechPage() {
   }
 
   // Group voices by region and premium status
-  const ngPremiumVoices = voiceOptions.filter(o => o.isAlgorithmicNG || o.voice.name.includes('Abeo') || o.voice.name.includes('Nneka') || o.voice.name.toLowerCase().includes('nigeria'))
+  const ngPremiumVoices = voiceOptions.filter(o => o.isAlgorithmicNG || o.voice?.name.includes('Abeo') || o.voice?.name.includes('Nneka') || o.voice?.name.toLowerCase().includes('nigeria'))
   
-  // Standard voices (excluding the ones already in Premium NG)
-  const standardVoices = voiceOptions.filter(o => !ngPremiumVoices.includes(o))
-  const usVoices = standardVoices.filter(o => o.voice.lang === 'en-US')
-  const gbVoices = standardVoices.filter(o => o.voice.lang === 'en-GB')
-  const otherVoices = standardVoices.filter(o => !['en-US', 'en-GB'].includes(o.voice.lang))
+  // Standard voices (excluding the ones already in Premium NG and Clones)
+  const standardVoices = voiceOptions.filter(o => !ngPremiumVoices.includes(o) && !o.isFishClone)
+  const usVoices = standardVoices.filter(o => o.lang === 'en-US')
+  const gbVoices = standardVoices.filter(o => o.lang === 'en-GB')
+  const otherVoices = standardVoices.filter(o => !['en-US', 'en-GB'].includes(o.lang))
+  const clonedVoices = voiceOptions.filter(o => o.isFishClone)
 
   return (
     <div className="space-y-8">
@@ -336,20 +473,46 @@ export default function TextToSpeechPage() {
         <div className="bg-white dark:bg-[#1E293B] p-6 rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 lg:col-span-1 h-fit flex flex-col space-y-6">
           
           <div>
-            <label className="block text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase mb-3">
-              Voice
-            </label>
+            <div className="flex items-center justify-between mb-3">
+              <label className="block text-xs font-bold tracking-wider text-slate-500 dark:text-slate-400 uppercase">
+                Voice
+              </label>
+              <label className={`text-xs font-bold px-2 py-1 rounded-md cursor-pointer transition-colors ${isUploadingVoice ? 'bg-slate-100 text-slate-400 cursor-not-allowed' : 'bg-blue-100 text-blue-700 hover:bg-blue-200 dark:bg-blue-900/50 dark:text-blue-400'}`}>
+                {isUploadingVoice ? (
+                  <span className="flex items-center gap-1"><Loader2 className="w-3 h-3 animate-spin" /> Cloning...</span>
+                ) : (
+                  '🎙️ Clone Voice'
+                )}
+                <input 
+                  type="file" 
+                  accept="audio/mp3,audio/wav,audio/mpeg" 
+                  className="hidden" 
+                  onChange={handleUploadVoice}
+                  disabled={isUploadingVoice}
+                />
+              </label>
+            </div>
+            
             <div className="relative">
               <select
                 value={selectedVoiceId}
                 onChange={(e) => setSelectedVoiceId(e.target.value)}
                 className="block w-full appearance-none pl-4 pr-10 py-3 bg-slate-50 dark:bg-[#0F172A] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
               >
+                {clonedVoices.length > 0 && (
+                  <optgroup label="✨ Your Custom Voices">
+                    {clonedVoices.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {opt.name}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
                 {ngPremiumVoices.length > 0 && (
                   <optgroup label="🇳🇬 Nigerian (Premium)">
                     {ngPremiumVoices.map((opt) => (
                       <option key={opt.id} value={opt.id}>
-                        {humanizeVoiceName(opt.voice.name, opt.isAlgorithmicNG)}
+                        {humanizeVoiceName(opt.name, opt.isAlgorithmicNG)}
                       </option>
                     ))}
                   </optgroup>
@@ -358,7 +521,7 @@ export default function TextToSpeechPage() {
                   <optgroup label="🇺🇸 United States">
                     {usVoices.map((opt) => (
                       <option key={opt.id} value={opt.id}>
-                        {humanizeVoiceName(opt.voice.name)}
+                        {humanizeVoiceName(opt.name)}
                       </option>
                     ))}
                   </optgroup>
@@ -367,7 +530,7 @@ export default function TextToSpeechPage() {
                   <optgroup label="🇬🇧 United Kingdom">
                     {gbVoices.map((opt) => (
                       <option key={opt.id} value={opt.id}>
-                        {humanizeVoiceName(opt.voice.name)}
+                        {humanizeVoiceName(opt.name)}
                       </option>
                     ))}
                   </optgroup>
@@ -376,7 +539,7 @@ export default function TextToSpeechPage() {
                   <optgroup label="🌍 Other English">
                     {otherVoices.map((opt) => (
                       <option key={opt.id} value={opt.id}>
-                        {humanizeVoiceName(opt.voice.name)} ({opt.voice.lang})
+                        {humanizeVoiceName(opt.name)} ({opt.lang})
                       </option>
                     ))}
                   </optgroup>
@@ -503,7 +666,9 @@ export default function TextToSpeechPage() {
             <div className="hidden sm:flex items-center gap-4 w-1/3">
               <span className="text-xs font-mono font-medium opacity-90 truncate max-w-full">
                 {voiceOptions.find(o => o.id === selectedVoiceId) 
-                  ? humanizeVoiceName(voiceOptions.find(o => o.id === selectedVoiceId)!.voice.name, voiceOptions.find(o => o.id === selectedVoiceId)!.isAlgorithmicNG) 
+                  ? voiceOptions.find(o => o.id === selectedVoiceId)!.isFishClone 
+                    ? voiceOptions.find(o => o.id === selectedVoiceId)!.name
+                    : humanizeVoiceName(voiceOptions.find(o => o.id === selectedVoiceId)!.name, voiceOptions.find(o => o.id === selectedVoiceId)!.isAlgorithmicNG)
                   : 'No voice'}
               </span>
             </div>

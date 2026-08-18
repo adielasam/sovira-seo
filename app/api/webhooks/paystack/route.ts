@@ -59,6 +59,42 @@ export async function POST(req: Request) {
           ai_words_limit: planId === 'pro' ? 50000 : planId === 'elite' ? 200000 : 5000,
           updated_at: new Date().toISOString()
         } as any).eq('user_id', userId)
+
+        // 3. Process Affiliate Commission (5%)
+        const { data: referral } = await supabaseAdmin
+          .from('affiliate_referrals')
+          .select('referring_affiliate_id')
+          .eq('referred_user_id', userId)
+          .single()
+
+        if (referral?.referring_affiliate_id) {
+          const amountNgn = amount / 100 // Paystack sends amounts in kobo (cents)
+          const commission = amountNgn * 0.05 // 5% commission
+
+          // Insert into earnings
+          await supabaseAdmin.from('affiliate_earnings').insert({
+            affiliate_id: referral.referring_affiliate_id,
+            referred_user_id: userId,
+            transaction_reference: reference,
+            amount_paid_ngn: amountNgn,
+            commission_earned_ngn: commission
+          })
+
+          // Update affiliate's balance
+          // Note: using RPC for atomic increment is better, but doing a select/update for simplicity if no RPC exists
+          const { data: affiliate } = await supabaseAdmin
+            .from('affiliate_profiles')
+            .select('balance_ngn, total_earned_ngn')
+            .eq('user_id', referral.referring_affiliate_id)
+            .single()
+
+          if (affiliate) {
+            await supabaseAdmin.from('affiliate_profiles').update({
+              balance_ngn: Number(affiliate.balance_ngn || 0) + commission,
+              total_earned_ngn: Number(affiliate.total_earned_ngn || 0) + commission
+            }).eq('user_id', referral.referring_affiliate_id)
+          }
+        }
       }
     }
 

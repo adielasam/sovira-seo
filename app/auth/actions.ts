@@ -79,8 +79,11 @@ export async function loginAction(formData: FormData) {
   redirect(destination)
 }
 
+import { cookies } from 'next/headers'
+
 export async function signupAction(formData: FormData) {
   const supabase = await createClient()
+  const cookieStore = await cookies()
   
   const email = formData.get('email') as string
   const password = formData.get('password') as string
@@ -145,6 +148,24 @@ export async function signupAction(formData: FormData) {
       }
       
       await adminClient.from('user_profiles').update(updateData).eq('id', data.user!.id)
+      
+      // Handle Affiliate Referral
+      const refCode = cookieStore.get('sovira_ref')?.value
+      if (refCode) {
+        // Find affiliate by referral code
+        const { data: affiliate } = await adminClient
+          .from('affiliate_profiles')
+          .select('user_id')
+          .eq('referral_code', refCode)
+          .single()
+          
+        if (affiliate) {
+          await adminClient.from('affiliate_referrals').insert({
+            referred_user_id: data.user!.id,
+            referring_affiliate_id: affiliate.user_id
+          })
+        }
+      }
     }, 2000)
   }
 

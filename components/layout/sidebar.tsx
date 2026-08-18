@@ -48,6 +48,7 @@ const navigationGroups = [
       { name: 'Trending Topics', href: '/trending', icon: Flame },
       { name: 'Competitors', href: '/competitors', icon: Users },
       { name: 'AI Video', href: '/ai-video', icon: Video },
+      { name: 'Affiliates', href: '/affiliate', icon: TrendingUp },
     ]
   },
   {
@@ -65,6 +66,7 @@ const navigationGroups = [
       { name: 'Reports', href: '/reports', icon: FileText },
       { name: 'Integrations', href: '/integrations', icon: Plug },
       { name: 'Settings', href: '/settings', icon: Settings },
+      { name: 'Admin Affiliates', href: '/admin/affiliates', icon: Settings },
     ]
   }
 ]
