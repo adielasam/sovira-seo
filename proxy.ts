@@ -25,7 +25,21 @@ export default async function middleware(request: NextRequest) {
   }
 
   // Otherwise, run standard Supabase session update for the main dashboard/marketing site
-  return await updateSession(request)
+  let response = await updateSession(request)
+
+  // Check for affiliate referral code in URL
+  const refCode = request.nextUrl.searchParams.get('ref')
+  if (refCode) {
+    response.cookies.set('sovira_ref', refCode, {
+      maxAge: 60 * 60 * 24 * 30, // 30 days
+      path: '/',
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+    })
+  }
+
+  return response
 }
 
 export const config = {
