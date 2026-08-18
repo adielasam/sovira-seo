@@ -42,6 +42,7 @@ export default async function AdminLayout({
     { name: 'Activity Logs', href: '/admin/activity', icon: Activity },
     { name: 'Notifications', href: '/admin/notifications', icon: Bell },
     { name: 'Subscriptions', href: '/admin/subscriptions', icon: CreditCard },
+    { name: 'Affiliates', href: '/admin/affiliates', icon: Users },
     { name: 'Blog', href: '/admin/blog', icon: FileText },
     { name: 'Scheme of Work', href: '/admin/scheme-of-work', icon: GraduationCap },
     { name: 'Security Settings', href: '/admin/settings', icon: Settings },
