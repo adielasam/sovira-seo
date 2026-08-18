@@ -32,10 +32,7 @@ export async function GET() {
       // Generate a short unique referral code
       const referralCode = 'REF' + Math.random().toString(36).substring(2, 8).toUpperCase()
       
-      const { createAdminClient } = await import('@/lib/supabase/server')
-      const supabaseAdmin = createAdminClient()
-      
-      const { data: newProfile, error: insertError } = await supabaseAdmin
+      const { data: newProfile, error: insertError } = await supabase
         .from('affiliate_profiles')
         .insert({
           user_id: user.id,
