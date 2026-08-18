@@ -66,6 +66,25 @@ export default function AdminAffiliates() {
   const pending = withdrawals.filter(w => w.status === 'pending')
   const completed = withdrawals.filter(w => w.status !== 'pending')
 
+  const getAffiliateName = (w: any) => {
+    try {
+      const p = w.affiliate_profiles?.user_profiles;
+      if (!p) return 'Unknown User';
+      if (Array.isArray(p)) return p[0]?.full_name || p[0]?.email || 'Unknown User';
+      return p.full_name || p.email || 'Unknown User';
+    } catch {
+      return 'Unknown User';
+    }
+  }
+
+  const formatAmount = (amount: any) => {
+    try {
+      return Number(amount || 0).toLocaleString();
+    } catch {
+      return '0';
+    }
+  }
+
   return (
     <div className="space-y-8 p-6 max-w-7xl mx-auto">
       <div>
@@ -99,22 +118,22 @@ export default function AdminAffiliates() {
                   
                   <div className="flex justify-between items-start mb-4">
                     <div>
-                      <p className="text-2xl font-black text-slate-900 dark:text-white">₦{w.amount.toLocaleString()}</p>
-                      <p className="text-xs text-slate-500">{new Date(w.created_at).toLocaleDateString()}</p>
+                      <p className="text-2xl font-black text-slate-900 dark:text-white">₦{formatAmount(w.amount)}</p>
+                      <p className="text-xs text-slate-500">{new Date(w.created_at || new Date()).toLocaleDateString()}</p>
                     </div>
                     <span className="px-2 py-1 bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-xs font-bold uppercase rounded">
                       Pending
                     </span>
                   </div>
 
-                  <div className="space-y-3 mb-6 bg-slate-50 dark:bg-[#0F172A] p-4 rounded-lg border border-slate-100 dark:border-slate-800">
-                    <div>
-                      <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Affiliate</p>
-                      <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
-                        {w.affiliate_profiles?.user_profiles?.[0]?.full_name || w.affiliate_profiles?.user_profiles?.[0]?.email || 'Unknown User'}
-                      </p>
-                      <p className="text-xs text-slate-500 font-mono mt-0.5">Ref: {w.affiliate_profiles?.referral_code}</p>
-                    </div>
+                    <div className="space-y-3 mb-6 bg-slate-50 dark:bg-[#0F172A] p-4 rounded-lg border border-slate-100 dark:border-slate-800">
+                      <div>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-1">Affiliate</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-white truncate">
+                          {getAffiliateName(w)}
+                        </p>
+                        <p className="text-xs text-slate-500 font-mono mt-0.5">Ref: {w.affiliate_profiles?.referral_code}</p>
+                      </div>
 
                     <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
                       <p className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Bank Details</p>
@@ -186,11 +205,11 @@ export default function AdminAffiliates() {
                       <tr key={w.id} className="text-slate-700 dark:text-slate-300">
                         <td className="px-6 py-4">
                           <p className="font-medium text-slate-900 dark:text-white">
-                            {w.affiliate_profiles?.user_profiles?.[0]?.full_name || 'Unknown User'}
+                            {getAffiliateName(w)}
                           </p>
                           <p className="text-xs text-slate-500">Ref: {w.affiliate_profiles?.referral_code}</p>
                         </td>
-                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">₦{w.amount.toLocaleString()}</td>
+                        <td className="px-6 py-4 font-bold text-slate-900 dark:text-white">₦{formatAmount(w.amount)}</td>
                         <td className="px-6 py-4 text-xs">
                           <p>{w.bank_name}</p>
                           <p className="font-mono text-slate-500">{w.account_number}</p>
