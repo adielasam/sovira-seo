@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { PlaySquare, Download, Volume2, VolumeX, Mic, Settings, Play, Square, Loader2, Pause } from 'lucide-react'
 import toast from 'react-hot-toast'
 
-const humanizeVoiceName = (name: string) => {
+const humanizeVoiceName = (name: string, isAlgorithmicNG = false) => {
   let cleanName = name
     .replace(/Microsoft |Google |Apple /gi, '')
     .replace(/ - English \([^)]+\)/gi, '')
@@ -12,6 +12,17 @@ const humanizeVoiceName = (name: string) => {
     .replace(/Desktop|Online \(Natural\)/gi, '')
     .trim();
   
+  if (isAlgorithmicNG) {
+    if (cleanName.includes('Arthur') || name.includes('Male')) return 'Chinedu (Professional Nigerian Male)'
+    if (cleanName.includes('Emma') || name.includes('Female')) return 'Ngozi (Professional Nigerian Female)'
+    return `${cleanName} (Nigerian Professional)`
+  }
+
+  // Native Nigerian voices if they exist
+  if (name.includes('Abeo')) return 'Abeo (Premium Nigerian Male)'
+  if (name.includes('Nneka')) return 'Nneka (Premium Nigerian Female)'
+  if (name.toLowerCase().includes('nigeria')) return `${cleanName} (Premium Nigerian)`
+
   if (cleanName.includes('Zira')) return 'Zira (Warm Female)'
   if (cleanName.includes('David')) return 'David (Professional Male)'
   if (cleanName.includes('Mark')) return 'Mark (Friendly Male)'
@@ -25,6 +36,12 @@ const humanizeVoiceName = (name: string) => {
   return cleanName || name;
 }
 
+export type VoiceOption = {
+  voice: SpeechSynthesisVoice;
+  isAlgorithmicNG: boolean;
+  id: string;
+};
+
 export default function TextToSpeechPage() {
   const [mounted, setMounted] = useState(false)
   const [script, setScript] = useState('')
@@ -33,8 +50,8 @@ export default function TextToSpeechPage() {
   const [isPlaying, setIsPlaying] = useState(false)
   const [isPaused, setIsPaused] = useState(false)
   const [isMuted, setIsMuted] = useState(false)
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([])
-  const [selectedVoiceIndex, setSelectedVoiceIndex] = useState(0)
+  const [voiceOptions, setVoiceOptions] = useState<VoiceOption[]>([])
+  const [selectedVoiceId, setSelectedVoiceId] = useState<string>('')
   const [rate, setRate] = useState(1)
   const [pitch, setPitch] = useState(1)
   const [hasGenerated, setHasGenerated] = useState(false)
@@ -46,23 +63,40 @@ export default function TextToSpeechPage() {
     setMounted(true)
   }, [])
 
-  // Load browser voices
+  // Load browser voices and generate Nigerian algorithmic voices
   useEffect(() => {
     if (!mounted || typeof window === 'undefined' || !window.speechSynthesis) return
 
     const loadVoices = () => {
       const allVoices = window.speechSynthesis.getVoices()
-      // Filter to English voices
       const englishVoices = allVoices.filter(v => v.lang.startsWith('en'))
+      
+      let options: VoiceOption[] = []
+      
       if (englishVoices.length > 0) {
-        setVoices(englishVoices)
-        // Pick a default preferred voice
-        const preferred = englishVoices.findIndex(v => 
-          v.name.includes('Google US') || v.name.includes('Microsoft David') || v.name.includes('Daniel')
-        )
-        if (preferred !== -1) setSelectedVoiceIndex(preferred)
+        // Native voices
+        options = englishVoices.map(v => ({ voice: v, isAlgorithmicNG: false, id: v.name }))
+        
+        // Generate Algorithmic Nigerian Voices from British voices (en-GB)
+        // Nigerian professional accents are structurally close to British, but usually spoken with a distinct cadence and resonance.
+        const gbVoices = englishVoices.filter(v => v.lang === 'en-GB')
+        gbVoices.forEach(v => {
+          options.push({
+            voice: v,
+            isAlgorithmicNG: true,
+            id: `algo-ng-${v.name}`
+          })
+        })
+        
+        setVoiceOptions(options)
+        
+        // Default to the first Nigerian algorithmic voice, or native fallback
+        const preferred = options.find(o => o.isAlgorithmicNG) || options[0]
+        if (preferred) setSelectedVoiceId(preferred.id)
       } else if (allVoices.length > 0) {
-        setVoices(allVoices)
+        options = allVoices.map(v => ({ voice: v, isAlgorithmicNG: false, id: v.name }))
+        setVoiceOptions(options)
+        setSelectedVoiceId(options[0].id)
       }
     }
     
@@ -85,10 +119,13 @@ export default function TextToSpeechPage() {
       toast.error('Please enter a script to generate speech.')
       return
     }
-    if (voices.length === 0) {
+    if (voiceOptions.length === 0) {
       toast.error('No voices available in your browser.')
       return
     }
+
+    const selectedOption = voiceOptions.find(o => o.id === selectedVoiceId)
+    if (!selectedOption) return;
 
     // Reset synthesis
     window.speechSynthesis.cancel()
@@ -100,9 +137,18 @@ export default function TextToSpeechPage() {
 
     setTimeout(() => {
       const utterance = new SpeechSynthesisUtterance(script)
-      utterance.voice = voices[selectedVoiceIndex]
-      utterance.rate = rate
-      utterance.pitch = pitch
+      utterance.voice = selectedOption.voice
+      
+      // ALGORITHMIC NIGERIAN ACCENT TWEAKS
+      if (selectedOption.isAlgorithmicNG) {
+        // Professional Nigerian English is often spoken at a more measured pace and lower, steadier pitch than standard British
+        utterance.rate = rate * 0.85; // 15% slower for deliberate, clear enunciation
+        utterance.pitch = pitch * 0.90; // 10% deeper resonance
+      } else {
+        utterance.rate = rate
+        utterance.pitch = pitch
+      }
+      
       utterance.volume = isMuted ? 0 : 1
 
       utterance.onstart = () => {
@@ -162,11 +208,19 @@ export default function TextToSpeechPage() {
     // so we re-speak if currently playing, or let the next speak be muted/unmuted.
     if (isPlaying) {
       window.speechSynthesis.cancel()
+      const selectedOption = voiceOptions.find(o => o.id === selectedVoiceId)
+      if (!selectedOption) return;
+
       setTimeout(() => {
         const utterance = new SpeechSynthesisUtterance(script)
-        utterance.voice = voices[selectedVoiceIndex]
-        utterance.rate = rate
-        utterance.pitch = pitch
+        utterance.voice = selectedOption.voice
+        if (selectedOption.isAlgorithmicNG) {
+          utterance.rate = rate * 0.85
+          utterance.pitch = pitch * 0.90
+        } else {
+          utterance.rate = rate
+          utterance.pitch = pitch
+        }
         utterance.volume = nextMuted ? 0 : 1
         
         utterance.onstart = () => {
@@ -256,10 +310,14 @@ export default function TextToSpeechPage() {
     )
   }
 
-  // Group voices by region
-  const usVoices = voices.map((v, i) => ({ voice: v, index: i })).filter(v => v.voice.lang === 'en-US')
-  const gbVoices = voices.map((v, i) => ({ voice: v, index: i })).filter(v => v.voice.lang === 'en-GB')
-  const otherVoices = voices.map((v, i) => ({ voice: v, index: i })).filter(v => !['en-US', 'en-GB'].includes(v.voice.lang))
+  // Group voices by region and premium status
+  const ngPremiumVoices = voiceOptions.filter(o => o.isAlgorithmicNG || o.voice.name.includes('Abeo') || o.voice.name.includes('Nneka') || o.voice.name.toLowerCase().includes('nigeria'))
+  
+  // Standard voices (excluding the ones already in Premium NG)
+  const standardVoices = voiceOptions.filter(o => !ngPremiumVoices.includes(o))
+  const usVoices = standardVoices.filter(o => o.voice.lang === 'en-US')
+  const gbVoices = standardVoices.filter(o => o.voice.lang === 'en-GB')
+  const otherVoices = standardVoices.filter(o => !['en-US', 'en-GB'].includes(o.voice.lang))
 
   return (
     <div className="space-y-8">
@@ -283,33 +341,42 @@ export default function TextToSpeechPage() {
             </label>
             <div className="relative">
               <select
-                value={selectedVoiceIndex}
-                onChange={(e) => setSelectedVoiceIndex(Number(e.target.value))}
+                value={selectedVoiceId}
+                onChange={(e) => setSelectedVoiceId(e.target.value)}
                 className="block w-full appearance-none pl-4 pr-10 py-3 bg-slate-50 dark:bg-[#0F172A] border border-slate-300 dark:border-slate-700 rounded-lg text-sm font-medium text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500 transition-all cursor-pointer"
               >
+                {ngPremiumVoices.length > 0 && (
+                  <optgroup label="🇳🇬 Nigerian (Premium)">
+                    {ngPremiumVoices.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {humanizeVoiceName(opt.voice.name, opt.isAlgorithmicNG)}
+                      </option>
+                    ))}
+                  </optgroup>
+                )}
                 {usVoices.length > 0 && (
                   <optgroup label="🇺🇸 United States">
-                    {usVoices.map(({ voice, index }) => (
-                      <option key={index} value={index}>
-                        {humanizeVoiceName(voice.name)}
+                    {usVoices.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {humanizeVoiceName(opt.voice.name)}
                       </option>
                     ))}
                   </optgroup>
                 )}
                 {gbVoices.length > 0 && (
                   <optgroup label="🇬🇧 United Kingdom">
-                    {gbVoices.map(({ voice, index }) => (
-                      <option key={index} value={index}>
-                        {humanizeVoiceName(voice.name)}
+                    {gbVoices.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {humanizeVoiceName(opt.voice.name)}
                       </option>
                     ))}
                   </optgroup>
                 )}
                 {otherVoices.length > 0 && (
                   <optgroup label="🌍 Other English">
-                    {otherVoices.map(({ voice, index }) => (
-                      <option key={index} value={index}>
-                        {humanizeVoiceName(voice.name)} ({voice.lang})
+                    {otherVoices.map((opt) => (
+                      <option key={opt.id} value={opt.id}>
+                        {humanizeVoiceName(opt.voice.name)} ({opt.voice.lang})
                       </option>
                     ))}
                   </optgroup>
@@ -435,7 +502,9 @@ export default function TextToSpeechPage() {
           <div className="h-16 sm:h-20 bg-blue-600 text-white flex items-center px-4 sm:px-6 justify-between shadow-[0_-4px_20px_rgba(37,99,235,0.15)] shrink-0 z-10 relative">
             <div className="hidden sm:flex items-center gap-4 w-1/3">
               <span className="text-xs font-mono font-medium opacity-90 truncate max-w-full">
-                {voices[selectedVoiceIndex] ? humanizeVoiceName(voices[selectedVoiceIndex].name) : 'No voice'}
+                {voiceOptions.find(o => o.id === selectedVoiceId) 
+                  ? humanizeVoiceName(voiceOptions.find(o => o.id === selectedVoiceId)!.voice.name, voiceOptions.find(o => o.id === selectedVoiceId)!.isAlgorithmicNG) 
+                  : 'No voice'}
               </span>
             </div>
             
