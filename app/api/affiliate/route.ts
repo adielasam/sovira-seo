@@ -43,7 +43,12 @@ export async function GET() {
         .select()
         .single()
         
-      if (insertError) throw insertError
+      if (insertError) {
+        return NextResponse.json({ 
+          error: 'Failed to create profile', 
+          details: insertError 
+        }, { status: 500 })
+      }
       profile = newProfile
     }
 

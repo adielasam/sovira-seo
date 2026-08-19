@@ -17,9 +17,12 @@ export default function AffiliateDashboard() {
   const fetchData = async () => {
     try {
       const res = await fetch('/api/affiliate')
+      const json = await res.json()
       if (res.ok) {
-        const json = await res.json()
         setData(json)
+      } else {
+        toast.error(json.error + (json.details ? ': ' + JSON.stringify(json.details) : ''))
+        console.error('API Error:', json)
       }
     } catch (e) {
       console.error(e)
