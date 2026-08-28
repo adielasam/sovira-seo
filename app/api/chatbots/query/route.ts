@@ -84,7 +84,7 @@ IMPORTANT INSTRUCTIONS:
 
     // 7. Stream response using Gemini
     const result = await streamText({
-      model: google('gemini-3.6-flash'),
+      model: google('gemini-3.7-flash'),
       system: systemPrompt,
       messages: messages,
       onFinish: async ({ text }) => {

@@ -43,7 +43,7 @@ const summary = {
 async function test() {
   try {
     const result = await generateObject({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-3.7-flash'),
       mode: 'json',
       schema: dashboardSpecSchema,
       system: 'You are Sovira AI, an expert Business Intelligence consultant. Generate the dashboard spec based on this summary.',

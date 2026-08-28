@@ -61,7 +61,7 @@ export async function generateSlideDeck(topic: string, slideCount: number, theme
 
   const aiClient = new GoogleGenerativeAI(apiKey)
   const model = aiClient.getGenerativeModel({ 
-    model: 'gemini-2.5-flash',
+    model: 'gemini-3.7-flash',
     generationConfig: { responseMimeType: "application/json" }
   })
 
