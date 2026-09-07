@@ -61,6 +61,10 @@ export default function HtmlHostPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         setUser(data.user)
+        supabase.from('user_profiles').select('plan').eq('id', data.user.id).single()
+          .then(({ data: profile }) => {
+            setIsPro(['pro', 'agency'].includes(profile?.plan || 'free'))
+          })
       }
     })
 
@@ -112,6 +116,12 @@ export default function HtmlHostPage() {
   
   const [customSlug, setCustomSlug] = useState('')
   const [isRenaming, setIsRenaming] = useState(false)
+
+  // Clone URL States
+  const [isPro, setIsPro] = useState(false)
+  const [showClonePrompt, setShowClonePrompt] = useState(false)
+  const [cloneUrl, setCloneUrl] = useState('')
+  const [isCloning, setIsCloning] = useState(false)
 
   // AI Edit States
   const [showAiPrompt, setShowAiPrompt] = useState(false)
@@ -637,6 +647,37 @@ export default function HtmlHostPage() {
     });
   };
 
+  const handleClone = async () => {
+    if (!cloneUrl.trim()) return
+    if (!isPro) {
+      window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: 'URL Cloning requires a Pro plan.' } }))
+      return
+    }
+    
+    setIsCloning(true)
+    try {
+      const res = await fetch('/api/html-host/clone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: cloneUrl })
+      })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed to clone')
+      
+      if (data.html) {
+        setHtmlContent(data.html)
+        setMode('editor')
+        setShowClonePrompt(false)
+        setCloneUrl('')
+      }
+    } catch(err: any) {
+      console.error(err)
+      alert(err.message)
+    } finally {
+      setIsCloning(false)
+    }
+  }
+
   const lineCount = useMemo(() => htmlContent.split('\n').length, [htmlContent])
 
   if (mode === 'landing') {
@@ -716,13 +757,20 @@ export default function HtmlHostPage() {
               <span className="font-semibold pr-2">Upload folder</span>
             </button>
             <button 
-              className="flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-slate-800 opacity-60 cursor-not-allowed"
+              onClick={() => {
+                if (!isPro) {
+                  window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: 'URL Cloning requires a Pro plan.' } }))
+                  return
+                }
+                setShowClonePrompt(true)
+              }}
+              className={`flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] border border-slate-200 dark:border-slate-800 transition-all duration-300 group ${isPro ? 'hover:border-blue-500 hover:shadow-blue-500/10 cursor-pointer shadow-lg shadow-slate-200/50 dark:shadow-none' : 'opacity-80 cursor-pointer hover:border-slate-300'}`}
             >
-              <div className="p-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl">
-                <Globe className="w-5 h-5 text-slate-400" />
+              <div className={`p-2.5 rounded-xl transition-colors ${isPro ? 'bg-slate-50 dark:bg-slate-800 group-hover:bg-blue-50 dark:group-hover:bg-blue-900/30' : 'bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100'}`}>
+                <Globe className={`w-5 h-5 ${isPro ? 'text-slate-600 dark:text-slate-400 group-hover:text-blue-600 dark:group-hover:text-blue-400' : 'text-slate-400'}`} />
               </div>
               <div className="flex flex-col items-start leading-tight pr-2">
-                <span className="font-semibold text-slate-500">Clone URL</span>
+                <span className={`font-semibold ${isPro ? 'text-slate-700 dark:text-slate-300' : 'text-slate-500'}`}>Clone URL</span>
                 <span className="text-[10px] font-bold text-blue-500 tracking-wider">PRO FEATURE</span>
               </div>
             </button>
@@ -735,6 +783,53 @@ export default function HtmlHostPage() {
             </p>
           </div>
         </div>
+
+        {/* Clone Prompt Modal */}
+        {showClonePrompt && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+            <div className="bg-white dark:bg-[#111] rounded-2xl p-6 w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-800 transform animate-in zoom-in-95 duration-200">
+              <h3 className="text-xl font-bold mb-4 flex items-center gap-2 text-slate-800 dark:text-slate-200">
+                <Globe className="w-6 h-6 text-blue-500" />
+                Clone URL
+              </h3>
+              <p className="text-slate-500 dark:text-slate-400 mb-6 text-sm">
+                Enter the full URL of the website you want to clone. We'll extract its HTML layout and make it editable.
+              </p>
+              
+              <div className="mb-6">
+                <input
+                  type="url"
+                  placeholder="https://example.com"
+                  value={cloneUrl}
+                  onChange={e => setCloneUrl(e.target.value)}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') handleClone()
+                    if (e.key === 'Escape') setShowClonePrompt(false)
+                  }}
+                  className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none transition-all dark:text-white"
+                  autoFocus
+                />
+              </div>
+
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowClonePrompt(false)}
+                  className="px-4 py-2 text-slate-600 dark:text-slate-400 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleClone}
+                  disabled={isCloning || !cloneUrl.trim()}
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 shadow-lg shadow-blue-500/20"
+                >
+                  {isCloning ? <Loader2 className="w-4 h-4 animate-spin" /> : <Code className="w-4 h-4" />}
+                  {isCloning ? 'Cloning...' : 'Clone Site'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     )
   }
