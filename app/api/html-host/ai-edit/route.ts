@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       .insert([{
         user_id: currentUser.id,
         action: 'HTML AI Edit',
-        details: { prompt: prompt, model: 'mistral-large', ip: ip, slug: slug || 'new' }
+        details: { prompt: prompt, model: 'deepseek-v4-pro', ip: ip, slug: slug || 'new' }
       }])
 
     const naraKey = process.env.NARA_API_KEY
@@ -75,7 +75,7 @@ Return the updated HTML code:`
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        model: 'mistral-large',
+        model: 'deepseek-v4-pro',
         messages: [systemPrompt, userMessage],
         temperature: 0.2, // Low temperature for more deterministic code generation
         max_tokens: 4000
