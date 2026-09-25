@@ -38,7 +38,7 @@ export async function GET(req: Request) {
           prompt: `Analyze real-time data and generate the top 6 most viral, trending topics and discussions currently dominating Facebook feeds in the country code "${geo}" for ${promptContext}.`
         })
 
-        trendingList = object.topics.map((t: any, i: number) => ({
+        trendingList = (object as any).topics.map((t: any, i: number) => ({
           id: `fb-${i}`,
           title: t.title,
           entityNames: ['Facebook Trend', niche],
@@ -68,7 +68,7 @@ export async function GET(req: Request) {
           prompt: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".`
         })
 
-        trendingList = object.topics.map((t: any, i: number) => ({
+        trendingList = (object as any).topics.map((t: any, i: number) => ({
           id: `gemini-${i}`,
           title: t.title,
           entityNames: [niche],
