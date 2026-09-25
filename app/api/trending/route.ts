@@ -1,6 +1,16 @@
 import { NextResponse } from 'next/server'
 import googleTrends from 'google-trends-api'
 import { createClient } from '@/lib/supabase/server'
+import { google } from '@ai-sdk/google'
+import { generateObject } from 'ai'
+import { z } from 'zod'
+
+const trendingSchema = z.object({
+  topics: z.array(z.object({
+    title: z.string().describe("Topic or Viral Meme Name"),
+    snippet: z.string().describe("A one sentence summary of why this is going viral or trending right now.")
+  }))
+})
 
 export async function GET(req: Request) {
   try {
@@ -21,36 +31,14 @@ export async function GET(req: Request) {
     if (platform === 'facebook') {
       try {
         const promptContext = niche === 'All Niches' ? 'all niches and general topics' : `the "${niche}" niche`
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'system', content: 'You are a social media trend analyzer expert at identifying viral content on Facebook.' },
-              { role: 'user', content: `Analyze real-time data and generate the top 6 most viral, trending topics and discussions currently dominating Facebook feeds in the country code "${geo}" for ${promptContext}.
-Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
-Format strictly like this:
-[
-  {
-    "title": "Topic or Viral Meme Name",
-    "snippet": "A one sentence summary of why this is going viral on Facebook right now."
-  }
-]` }
-            ],
-            temperature: 0.8,
-            max_tokens: 1000,
-          })
+        
+        const { object } = await generateObject({
+          model: google('gemini-3.7-flash'),
+          schema: trendingSchema,
+          prompt: `Analyze real-time data and generate the top 6 most viral, trending topics and discussions currently dominating Facebook feeds in the country code "${geo}" for ${promptContext}.`
         })
 
-        const groqData = await groqRes.json()
-        const rawText = (groqData.choices?.[0]?.message?.content || '').trim().replace(/```json/gi, '').replace(/```/g, '')
-        const topics = JSON.parse(rawText)
-
-        trendingList = topics.map((t: any, i: number) => ({
+        trendingList = object.topics.map((t: any, i: number) => ({
           id: `fb-${i}`,
           title: t.title,
           entityNames: ['Facebook Trend', niche],
@@ -67,43 +55,21 @@ Format strictly like this:
         
         return NextResponse.json({ trending: trendingList })
       } catch (aiError) {
-        console.error('Facebook Groq Trending error:', aiError)
+        console.error('Facebook Gemini Trending error:', aiError)
         return NextResponse.json({ error: 'Failed to fetch Facebook trends' }, { status: 500 })
       }
     }
 
     if (niche !== 'All Niches') {
       try {
-        const groqRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${process.env.GROQ_API_KEY}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            model: 'llama-3.3-70b-versatile',
-            messages: [
-              { role: 'user', content: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".
-Return ONLY a raw JSON array of objects. Do not include any markdown formatting, backticks, or code blocks.
-Format strictly like this:
-[
-  {
-    "title": "Topic Keyword",
-    "snippet": "A one sentence summary of why this is trending right now."
-  }
-]` }
-            ],
-            temperature: 0.8,
-            max_tokens: 1000,
-          })
+        const { object } = await generateObject({
+          model: google('gemini-3.7-flash'),
+          schema: trendingSchema,
+          prompt: `Generate 6 current, highly viral and trending topics/keywords in the "${niche}" niche for the country code "${geo}".`
         })
 
-        const groqData = await groqRes.json()
-        const rawText = (groqData.choices?.[0]?.message?.content || '').trim().replace(/```json/gi, '').replace(/```/g, '')
-        const topics = JSON.parse(rawText)
-
-        trendingList = topics.map((t: any, i: number) => ({
-          id: `groq-${i}`,
+        trendingList = object.topics.map((t: any, i: number) => ({
+          id: `gemini-${i}`,
           title: t.title,
           entityNames: [niche],
           articles: [{
@@ -119,8 +85,8 @@ Format strictly like this:
         
         return NextResponse.json({ trending: trendingList })
       } catch (aiError) {
-        console.error('Groq Trending error:', aiError)
-        // Fallthrough to Hacker News if Groq fails
+        console.error('Gemini Trending error:', aiError)
+        // Fallthrough to Hacker News if Gemini fails
       }
     }
 
