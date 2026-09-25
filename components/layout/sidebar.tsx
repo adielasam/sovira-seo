@@ -7,7 +7,7 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles, Mic,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft, User, CreditCard, HelpCircle, Moon, Sun
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft, User, CreditCard, HelpCircle, Moon, Sun, Calendar
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
@@ -46,6 +46,7 @@ const navigationGroups = [
     items: [
       { name: 'YouTube SEO', href: '/youtube-seo', icon: PlaySquare },
       { name: 'Trending Topics', href: '/trending', icon: Flame },
+      { name: 'Social Scheduler', href: '/social-scheduler', icon: Calendar },
       { name: 'Competitors', href: '/competitors', icon: Users },
       { name: 'AI Video', href: '/ai-video', icon: Video },
       { name: 'Affiliates', href: '/affiliate', icon: TrendingUp },
