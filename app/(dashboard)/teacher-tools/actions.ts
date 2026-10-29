@@ -64,7 +64,7 @@ RULES:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Subject: ${subject}\nClass: ${classLevel}\nTerm: ${term}\n\nScheme of Work Text:\n${rawText}` }
@@ -256,7 +256,7 @@ RULES:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Generate a detailed lesson note for:\n\nTopic: ${topic}\nObjectives from SOW: ${objectives}\nContent Summary from SOW: ${contentSummary}\nSuggested Activities: ${activities}\nResources: ${resources}` }
@@ -446,7 +446,7 @@ RULES:
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: `Topic: ${topic}\n\nLesson Note:\n${lessonNoteText}` }

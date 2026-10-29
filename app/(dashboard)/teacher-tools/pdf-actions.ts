@@ -1,7 +1,5 @@
 'use server'
 
-
-
 export async function identifySOWsInChunk(textChunk: string) {
   try {
     const prompt = `
@@ -34,41 +32,50 @@ Text Chunk:
 ${textChunk}
 `
 
-    const apiKey = (process.env.NARA_API_KEY || '').trim()
+    const apiKey = (process.env.GROQ_API_KEY || '').trim()
 
     if (!apiKey) {
-      throw new Error('NARA_API_KEY is missing in Vercel environment variables.')
+      throw new Error('GROQ_API_KEY is missing in environment variables.')
     }
     
-    const response = await fetch('https://router.bynara.id/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'mistral-large',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.1
-      }),
-    })
+    const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
+    let parsed: any = null
 
-    const data = await response.json()
-    
-    if (data.error) {
-      throw new Error(data.error.message || 'Unknown Groq API Error')
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
+          }),
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          let text = data.choices?.[0]?.message?.content || ''
+          text = text.replace(/```json/gi, '').replace(/```/g, '').trim()
+          parsed = JSON.parse(text)
+          if (parsed && Array.isArray(parsed.data)) {
+            break
+          }
+        }
+      } catch (e) {}
     }
 
-    const resultText = data.choices?.[0]?.message?.content || '{"data": []}'
-    // To ensure the array is returned, we should instruct the model to return { "data": [...] }
-    const parsed = JSON.parse(resultText)
-    
-    // Handle both { data: [] } and direct array (fallback)
-    const arrayResult = Array.isArray(parsed) ? parsed : (parsed.data || parsed.schemes || [])
+    if (!parsed) {
+      throw new Error('Failed to extract curriculum data from AI.')
+    }
 
-    return { data: arrayResult }
+    return parsed
   } catch (error: any) {
-    console.error('Groq PDF Chunk Error:', error)
-    return { error: error.message || 'Failed to analyze text chunk' }
+    console.error('Extraction Error:', error)
+    return { data: [], error: error.message }
   }
 }

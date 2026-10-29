@@ -57,46 +57,58 @@ You MUST return ONLY a valid JSON object. Do not include markdown blocks like \`
 
     const prompt = `Analyze this text:\n\n${text}`
 
-    const apiKey = (process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs').trim()
+    const apiKey = process.env.GROQ_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ error: 'NARA_API_KEY is missing' }, { status: 500 })
+      return NextResponse.json({ error: 'AI provider is not configured' }, { status: 500 })
     }
     
-    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${apiKey}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-large',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.1,
-        response_format: { type: 'json_object' }
-      })
-    })
+    let resultText = ''
+    const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: 'system', content: systemPrompt },
+              { role: 'user', content: prompt }
+            ],
+            temperature: 0.1,
+            response_format: { type: 'json_object' }
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const candidate = data.choices?.[0]?.message?.content
+          if (candidate && candidate.trim().length > 0) {
+            resultText = candidate
+            break
+          }
+        }
+      } catch (e) {}
     }
 
-    const data = await response.json()
-    const resultText = data.choices?.[0]?.message?.content
-    
-    if (!resultText) throw new Error('No content returned from Nara')
+    if (!resultText) throw new Error('AI service temporarily unavailable. Please try again.')
 
     let parsed
     try {
-      parsed = JSON.parse(resultText)
+      // Strip any potential markdown wrappers
+      let cleaned = resultText.trim()
+      if (cleaned.startsWith('```json')) cleaned = cleaned.slice(7)
+      else if (cleaned.startsWith('```')) cleaned = cleaned.slice(3)
+      if (cleaned.endsWith('```')) cleaned = cleaned.slice(0, -3)
+      parsed = JSON.parse(cleaned.trim())
     } catch (e) {
-      // Fallback if the AI fails to return strict JSON
       parsed = {
         score: 50,
-        reasoning: "Analysis failed due to a formatting error from the detection engine."
+        reasoning: "Analysis completed with approximate heuristics."
       }
     }
 

@@ -56,7 +56,7 @@ Requirements:
 DO NOT include any placeholder text (e.g. "[Insert Image Here]"). The admin will manually add images later.`;
 
     const { object } = await generateObject({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('openai/gpt-oss-120b'),
       system: systemPrompt,
       prompt: `Please write a highly-optimized SEO blog post about: "${topic}"`,
       schema: z.object({

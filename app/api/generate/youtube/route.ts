@@ -73,34 +73,43 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid generation type' }, { status: 400 })
     }
 
-    const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
-    
-    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${NARA_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-large',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: prompt }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    })
+    const apiKey = process.env.GROQ_API_KEY
+    let text = ''
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
+    if (apiKey) {
+      const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
+      for (const model of candidateModels) {
+        try {
+          const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${apiKey}`
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: prompt }
+              ],
+              temperature: 0.7,
+              max_tokens: 3000
+            })
+          })
+
+          if (response.ok) {
+            const data = await response.json()
+            const candidate = data.choices?.[0]?.message?.content
+            if (candidate && candidate.trim().length > 0) {
+              text = candidate
+              break
+            }
+          }
+        } catch (e) {}
+      }
     }
 
-    const data = await response.json()
-    const text = data.choices?.[0]?.message?.content
-
-    if (!text) throw new Error('No content returned from Nara')
+    if (!text) throw new Error('AI service temporarily unavailable. Please try again.')
 
     // Log the AI usage
     await supabase.from('activity_logs').insert([{

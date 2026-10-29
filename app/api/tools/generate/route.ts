@@ -167,36 +167,44 @@ Rules:
         return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
     }
 
-    const apiKey = (process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs').trim()
+    const groqKey = process.env.GROQ_API_KEY
+    let generatedText = ''
 
-    // Direct NaraRouter API call for superior instruction following and bypassing free-tier rate limits
-    const aiRes = await fetch('https://router.bynara.id/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'mistral-large',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: `Topic / Text to process: ${text}\n\nAdditional Context: ${context || 'None'}` }
-        ],
-        temperature: action === 'humanize' ? 0.95 : 0.7,
-      })
-    })
+    if (groqKey) {
+      const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
+      for (const model of candidateModels) {
+        try {
+          const aiRes = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${groqKey}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: `Topic / Text to process: ${text}\n\nAdditional Context: ${context || 'None'}` }
+              ],
+              temperature: action === 'humanize' ? 0.95 : 0.7,
+              max_tokens: 3000
+            })
+          })
 
-    const data = await aiRes.json()
-
-    if (!aiRes.ok) {
-      console.error('AI Generation Error:', data)
-      throw new Error(data?.error?.message || 'Generation API failed')
+          if (aiRes.ok) {
+            const data = await aiRes.json()
+            const content = data.choices?.[0]?.message?.content
+            if (content && content.trim().length > 0) {
+              generatedText = content
+              break
+            }
+          }
+        } catch (e) {}
+      }
     }
 
-    const generatedText = data.choices?.[0]?.message?.content || ''
-
     if (!generatedText) {
-      throw new Error('No output was generated. Please try again.')
+      throw new Error('AI service temporarily unavailable. Please try again.')
     }
 
     // Log the usage for Free Tools

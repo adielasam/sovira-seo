@@ -54,7 +54,7 @@ Based ONLY on the provided aggregated data (Top KPIs and Breakdowns), generate a
 Do not hallucinate numbers. Use the data provided.`;
 
     const result = await generateObject({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('openai/gpt-oss-120b'),
       mode: 'json',
       schema: z.object({
         headline: z.string(),
@@ -114,7 +114,7 @@ Example format:
 }`
 
     const result = await generateObject({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('openai/gpt-oss-120b'),
       mode: 'json',
       schema: dashboardSpecSchema,
       system: systemPrompt,

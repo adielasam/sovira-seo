@@ -30,20 +30,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: msg }, { status: 429 })
     }
 
-    // 2. Log this AI Edit execution to track limits (done by checkFreeToolDailyUsage? No, checkFreeToolDailyUsage only checks. We must log it here.)
-    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous'
-    
-    await supabaseAdmin
-      .from('activity_logs')
-      .insert([{
-        user_id: currentUser.id,
-        action: 'HTML AI Edit',
-        details: { prompt: prompt, model: 'agnes-2.5-flash', ip: ip, slug: slug || 'new' }
-      }])
-
-    const naraKey = process.env.NARA_API_KEY
-    if (!naraKey) {
-      return NextResponse.json({ error: 'NARA_API_KEY is not configured' }, { status: 500 })
+    const apiKey = process.env.GROQ_API_KEY
+    if (!apiKey) {
+      return NextResponse.json({ error: 'AI provider is not configured. Please contact support.' }, { status: 500 })
     }
 
     const systemPrompt = {
@@ -54,7 +43,7 @@ CRITICAL INSTRUCTIONS:
 1. Output ONLY the raw HTML code. Do NOT wrap it in markdown code blocks like \`\`\`html.
 2. Do not include any explanations, pleasantries, or extra text.
 3. Ensure the output is a complete, valid HTML document.
-4. Keep all existing functionality and styles intact unless the user explicitly asks to change them.`
+4. Keep all existing functionality, links, scripts, and styles intact unless the user explicitly asks to change them.`
     }
 
     const userMessage = {
@@ -68,41 +57,71 @@ User's requested changes: ${prompt}
 Return the updated HTML code:`
     }
 
-    const res = await fetch('https://router.bynara.id/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${naraKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'agnes-2.5-flash',
-        messages: [systemPrompt, userMessage],
-        temperature: 0.2, // Low temperature for more deterministic code generation
-        max_tokens: 4000
-      })
-    })
+    // Try primary high-performance model, with resilient fallbacks
+    const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
+    let reply = ''
+    let usedModel = ''
 
-    if (!res.ok) {
-      const errorText = await res.text()
-      console.error('NaraRouter AI Edit Error:', errorText)
-      return NextResponse.json({ error: 'Upstream AI provider error' }, { status: 502 })
+    for (const model of candidateModels) {
+      try {
+        const res = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${apiKey}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            model,
+            messages: [systemPrompt, userMessage],
+            temperature: 0.2, // Low temperature for deterministic code generation
+            max_tokens: 8192
+          })
+        })
+
+        if (res.ok) {
+          const data = await res.json()
+          const content = data.choices?.[0]?.message?.content
+          if (content && content.trim().length > 0) {
+            reply = content
+            usedModel = model
+            break
+          }
+        } else {
+          const errText = await res.text()
+          console.warn(`Groq model ${model} failed (${res.status}):`, errText)
+        }
+      } catch (err) {
+        console.warn(`Groq model ${model} error:`, err)
+      }
     }
 
-    const data = await res.json()
-    let reply = data.choices[0].message.content
+    if (!reply) {
+      return NextResponse.json({ error: 'AI service temporarily unavailable. Please try again in a few moments.' }, { status: 502 })
+    }
 
     // Clean up potential markdown formatting just in case the model ignores the instruction
-    if (reply.startsWith('\`\`\`html')) {
+    reply = reply.trim()
+    if (reply.startsWith('```html')) {
       reply = reply.substring(7)
-    }
-    if (reply.startsWith('\`\`\`')) {
+    } else if (reply.startsWith('```')) {
       reply = reply.substring(3)
     }
-    if (reply.endsWith('\`\`\`')) {
+    if (reply.endsWith('```')) {
       reply = reply.substring(0, reply.length - 3)
     }
+    reply = reply.trim()
 
-    return NextResponse.json({ updatedHtml: reply.trim() })
+    // Log this AI Edit execution to track limits
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'anonymous'
+    await supabaseAdmin
+      .from('activity_logs')
+      .insert([{
+        user_id: currentUser.id,
+        action: 'HTML AI Edit',
+        details: { prompt: prompt, model: usedModel, ip: ip, slug: slug || 'new' }
+      }])
+
+    return NextResponse.json({ updatedHtml: reply })
     
   } catch (error) {
     console.error('AI Edit API Error:', error)

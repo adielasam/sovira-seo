@@ -2,13 +2,12 @@
 
 import { createClient } from '@/lib/supabase/server'
 import { revalidatePath } from 'next/cache'
-import { GoogleGenerativeAI } from '@google/generative-ai'
 import { checkUsageLimit } from '@/lib/usage'
 
 export async function generateContentAction(topic: string, type: string, tone: string, length: string) {
-  const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
-  if (!NARA_API_KEY) {
-    return { error: 'Nara API key is not configured' }
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) {
+    return { error: 'AI service is not configured' }
   }
 
   const supabase = await createClient()
@@ -51,31 +50,39 @@ export async function generateContentAction(topic: string, type: string, tone: s
     3. Vary sentence length and structure — mix short punchy sentences with longer ones, rather than uniform sentence lengths throughout.
     4. Sound like a knowledgeable person writing conversationally.`
 
-    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${NARA_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mistral-large',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
-        max_tokens: 2000
-      })
-    })
+    const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
+    let text = ''
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.7,
+            max_tokens: 3000
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const candidate = data.choices?.[0]?.message?.content
+          if (candidate && candidate.trim().length > 0) {
+            text = candidate
+            break
+          }
+        }
+      } catch (e) {}
     }
 
-    const data = await response.json()
-    const text = data.choices?.[0]?.message?.content
+    if (!text) throw new Error('AI service temporarily unavailable. Please try again.')
 
-    if (!text) throw new Error('No content returned from Nara')
-
-    return { content: text }
+    return { content: text.trim() }
   } catch (error: any) {
     console.error('Error generating content:', error)
     return { error: error.message || 'Failed to generate content' }
@@ -174,9 +181,9 @@ export async function updateGeneration(id: string, content: string) {
 }
 
 export async function generateBriefAction(topic: string) {
-  const NARA_API_KEY = process.env.NARA_API_KEY || 'sk-nry-6B9r9RkKfP3tjv7PGx8sLdq8z7x0htWoDVEuHsFy0rs'
-  if (!NARA_API_KEY) {
-    return { error: 'Nara API key is not configured' }
+  const apiKey = process.env.GROQ_API_KEY
+  if (!apiKey) {
+    return { error: 'AI service is not configured' }
   }
 
   const supabase = await createClient()
@@ -204,36 +211,45 @@ export async function generateBriefAction(topic: string) {
       "targetWordCount": Number (e.g. 1500)
     }`
 
-    const response = await fetch(`https://router.bynara.id/v1/chat/completions`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${NARA_API_KEY}`
-      },
-      body: JSON.stringify({
-        model: 'mimo-2.5-hermes',
-        messages: [{ role: 'user', content: prompt }],
-        temperature: 0.2
-      })
-    })
+    const candidateModels = ['openai/gpt-oss-120b', 'qwen/qwen3.8-27b', 'openai/gpt-oss-20b']
+    let text = ''
 
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Nara API Error: ${response.status} - ${errorText}`)
+    for (const model of candidateModels) {
+      try {
+        const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${apiKey}`
+          },
+          body: JSON.stringify({
+            model,
+            messages: [{ role: 'user', content: prompt }],
+            temperature: 0.2,
+            response_format: { type: 'json_object' }
+          })
+        })
+
+        if (response.ok) {
+          const data = await response.json()
+          const candidate = data.choices?.[0]?.message?.content
+          if (candidate && candidate.trim().length > 0) {
+            text = candidate
+            break
+          }
+        }
+      } catch (e) {}
     }
 
-    const data = await response.json()
-    let text = data.choices?.[0]?.message?.content
+    if (!text) throw new Error('AI service temporarily unavailable. Please try again.')
     
-    if (!text) throw new Error('No brief returned from Nara')
-    
-    // Clean up any potential markdown formatting the AI might still add
+    // Clean up any potential markdown formatting
     text = text.replace(/```json/gi, '').replace(/```/g, '').trim()
     
     const parsedJson = JSON.parse(text)
     return { data: parsedJson }
   } catch (error: any) {
-    console.error('Gemini error:', error)
+    console.error('Brief generation error:', error)
     return { error: error.message || 'Failed to generate brief' }
   }
 }

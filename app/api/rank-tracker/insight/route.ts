@@ -54,7 +54,7 @@ Do not use markdown formatting. Do not hallucinate data.`
 
     const { text } = await generateText({
       // @ts-ignore
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('openai/gpt-oss-120b'),
       system: 'You are an expert SEO analyst.',
       prompt: promptText
     })

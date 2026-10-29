@@ -95,7 +95,7 @@ If they ask for contact information, support, or a human agent, give them this W
 Current Context: The user is currently viewing this page on our website: \${pathname}.`;
 
     const result = await streamText({
-      model: groq('llama-3.3-70b-versatile'),
+      model: groq('openai/gpt-oss-120b'),
       system: systemPrompt,
       messages,
     });
