@@ -26,8 +26,9 @@ export async function POST(req: Request) {
 
     const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
     const plan = profile?.plan || 'free'
+    const isOwner = user.email?.toLowerCase().includes('adielasam2015') || user.email === 'microsoftportharcourt@gmail.com'
     
-    if (!['pro', 'agency'].includes(plan)) {
+    if (!isOwner && !['pro', 'agency'].includes(plan)) {
        // Allow limited insight generation on starter/free? 
        // The prompt says "use Groq to generate a 2-3 sentence... to control API usage"
        // I'll gate it to pro/agency, or maybe free gets 1 per month via usage tracking. 

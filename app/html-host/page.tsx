@@ -61,9 +61,14 @@ export default function HtmlHostPage() {
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) {
         setUser(data.user)
-        supabase.from('user_profiles').select('plan').eq('id', data.user.id).single()
+        const isOwner = data.user.email?.toLowerCase().includes('adielasam2015') || data.user.email === 'microsoftportharcourt@gmail.com'
+        if (isOwner) {
+          setIsPro(true)
+        }
+        supabase.from('user_profiles').select('plan, role').eq('id', data.user.id).single()
           .then(({ data: profile }) => {
-            setIsPro(['pro', 'agency'].includes(profile?.plan || 'free'))
+            const hasProPlan = ['pro', 'agency'].includes(profile?.plan || 'free') || profile?.role === 'admin'
+            setIsPro(isOwner || hasProPlan)
           })
       }
     })
@@ -649,7 +654,8 @@ export default function HtmlHostPage() {
 
   const handleClone = async () => {
     if (!cloneUrl.trim()) return
-    if (!isPro) {
+    const isOwner = user?.email?.toLowerCase().includes('adielasam2015') || user?.email === 'microsoftportharcourt@gmail.com'
+    if (!isPro && !isOwner) {
       window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: 'URL Cloning requires a Pro plan.' } }))
       return
     }
@@ -762,7 +768,8 @@ export default function HtmlHostPage() {
                   setShowAuthModal(true)
                   return
                 }
-                if (!isPro) {
+                const isOwner = user?.email?.toLowerCase().includes('adielasam2015') || user?.email === 'microsoftportharcourt@gmail.com'
+                if (!isPro && !isOwner) {
                   window.dispatchEvent(new CustomEvent('show-upgrade-modal', { detail: { message: 'URL Cloning requires a Pro plan.' } }))
                   // Fallback if modal isn't mounted on this layout
                   toast.error('URL Cloning requires a Pro plan. Please upgrade in your dashboard.')
@@ -770,13 +777,13 @@ export default function HtmlHostPage() {
                 }
                 setShowClonePrompt(true)
               }}
-              className={`flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] border transition-all duration-300 group cursor-pointer shadow-sm hover:-translate-y-0.5 ${isPro ? 'border-blue-200 dark:border-blue-900/50 hover:border-blue-500 hover:shadow-blue-500/10' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'}`}
+              className={`flex items-center gap-4 px-6 py-4 rounded-2xl bg-white dark:bg-[#111] border transition-all duration-300 group cursor-pointer shadow-sm hover:-translate-y-0.5 ${(isPro || user?.email?.toLowerCase().includes('adielasam2015') || user?.email === 'microsoftportharcourt@gmail.com') ? 'border-blue-200 dark:border-blue-900/50 hover:border-blue-500 hover:shadow-blue-500/10' : 'border-slate-200 dark:border-slate-800 hover:border-slate-300'}`}
             >
-              <div className={`p-2.5 rounded-xl transition-colors ${isPro ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100'}`}>
-                <Globe className={`w-5 h-5 ${isPro ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`} />
+              <div className={`p-2.5 rounded-xl transition-colors ${(isPro || user?.email?.toLowerCase().includes('adielasam2015') || user?.email === 'microsoftportharcourt@gmail.com') ? 'bg-blue-50 dark:bg-blue-900/30' : 'bg-slate-50 dark:bg-slate-800 group-hover:bg-slate-100'}`}>
+                <Globe className={`w-5 h-5 ${(isPro || user?.email?.toLowerCase().includes('adielasam2015') || user?.email === 'microsoftportharcourt@gmail.com') ? 'text-blue-600 dark:text-blue-400' : 'text-slate-500 dark:text-slate-400'}`} />
               </div>
               <div className="flex flex-col items-start leading-tight pr-2">
-                <span className={`font-semibold ${isPro ? 'text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-300'}`}>Clone URL</span>
+                <span className={`font-semibold ${(isPro || user?.email?.toLowerCase().includes('adielasam2015') || user?.email === 'microsoftportharcourt@gmail.com') ? 'text-slate-800 dark:text-slate-200' : 'text-slate-600 dark:text-slate-300'}`}>Clone URL</span>
                 <span className="text-[10px] font-bold text-blue-500 tracking-wider">PRO FEATURE</span>
               </div>
             </button>

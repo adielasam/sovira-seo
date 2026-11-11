@@ -2,20 +2,34 @@
 
 import { useState, useEffect } from 'react'
 import { Rocket, Check, X } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 export function UpgradeModal() {
   const [isOpen, setIsOpen] = useState(false)
   const [message, setMessage] = useState('You have reached your Free plan limit.')
+  const [isOwner, setIsOwner] = useState(false)
 
   useEffect(() => {
+    const supabase = createClient()
+    supabase.auth.getUser().then(({ data }) => {
+      if (
+        data?.user?.email?.toLowerCase().includes('adielasam2015') || 
+        data?.user?.email === 'microsoftportharcourt@gmail.com'
+      ) {
+        setIsOwner(true)
+      }
+    })
+
     const handleShow = (e: any) => {
+      // Never show upgrade modal to owner
+      if (isOwner) return
       setMessage(e.detail?.message || 'You have reached your Free plan limit.')
       setIsOpen(true)
     }
     
     window.addEventListener('show-upgrade-modal', handleShow)
     return () => window.removeEventListener('show-upgrade-modal', handleShow)
-  }, [])
+  }, [isOwner])
 
   if (!isOpen) return null
 

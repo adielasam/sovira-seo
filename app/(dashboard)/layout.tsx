@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation'
-import { createClient } from '@/lib/supabase/server'
+import { createClient, createAdminClient } from '@/lib/supabase/server'
 import { Sidebar } from '@/components/layout/sidebar'
 import { Topbar } from '@/components/layout/topbar'
 import { BottomNav } from '@/components/layout/bottom-nav'
@@ -23,15 +23,36 @@ export default async function DashboardLayout({
     redirect('/verify-email')
   }
 
-  // FORCE ADMIN REDIRECT
+  const isAdiela = user.email?.toLowerCase().includes('adielasam2015')
+
+  // Auto-heal owner account: permanently enforce agency plan
+  if (isAdiela) {
+    try {
+      const adminClient = createAdminClient()
+      const { data: prof } = await adminClient.from('user_profiles').select('plan').eq('id', user.id).single()
+      if (prof?.plan !== 'agency') {
+        await adminClient.from('user_profiles').update({ plan: 'agency' }).eq('id', user.id)
+        await adminClient.from('subscriptions').upsert({
+          user_id: user.id,
+          plan_name: 'agency',
+          paystack_reference: 'forever_free_admin',
+          status: 'active',
+          expires_at: new Date(Date.now() + 100 * 365 * 24 * 60 * 60 * 1000).toISOString()
+        }, { onConflict: 'user_id' })
+      }
+    } catch (e) {
+      console.error('Owner plan auto-heal error:', e)
+    }
+  }
+
+  // FORCE ADMIN REDIRECT (only for dedicated admin accounts, not adielasam)
   const { data: profile } = await supabase.from('user_profiles').select('role, plan').eq('id', user.id).single()
-  if (profile?.role === 'admin' || user.email === 'microsoftportharcourt@gmail.com') {
+  if ((profile?.role === 'admin' || user.email === 'microsoftportharcourt@gmail.com') && !isAdiela) {
     redirect('/admin')
   }
 
-  // 3-Month Free Trial Expiration Check
+  // 3-Month Free Trial Expiration Check (never applies to adielasam)
   const plan = profile?.plan || 'free'
-  const isAdiela = user.email?.toLowerCase().includes('adielasam2015')
   
   if (plan === 'free' && !isAdiela) {
     const signupDate = new Date(user.created_at).getTime()

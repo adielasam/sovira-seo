@@ -124,8 +124,9 @@ export default function AuditPage() {
       if (user) {
         const { data: profile } = await supabase.from('user_profiles').select('plan').eq('id', user.id).single()
         const plan = profile?.plan || 'free'
-        setIsPro(['pro', 'agency'].includes(plan))
-        setIsAgency(plan === 'agency')
+        const isAdiela = user.email?.toLowerCase().includes('adielasam2015') || user.email === 'microsoftportharcourt@gmail.com'
+        setIsPro(isAdiela || ['pro', 'agency'].includes(plan))
+        setIsAgency(isAdiela || plan === 'agency')
       }
     }
     checkPlan()
