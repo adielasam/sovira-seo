@@ -53,6 +53,7 @@ export async function sendVerificationEmail(email: string, actionLink: string) {
 }
 
 export async function sendWelcomeEmail(email: string) {
+  const unsubscribeUrl = `https://sovira.com.ng/api/unsubscribe?email=${encodeURIComponent(email)}`
   const html = `
   <!DOCTYPE html>
   <html>
@@ -81,7 +82,8 @@ export async function sendWelcomeEmail(email: string) {
         </p>
         <a href="https://sovira.com.ng/dashboard" class="button">Go to Dashboard</a>
         <div class="footer">
-          &copy; ${new Date().getFullYear()} Sovira. All rights reserved.
+          &copy; ${new Date().getFullYear()} Sovira. All rights reserved.<br>
+          <a href="${unsubscribeUrl}" style="color: #64748b; text-decoration: underline; font-size: 12px;">Unsubscribe from automated emails</a>
         </div>
       </div>
     </body>
@@ -93,5 +95,9 @@ export async function sendWelcomeEmail(email: string) {
     to: email,
     subject: 'Welcome to Sovira!',
     html,
+    headers: {
+      'List-Unsubscribe': `<${unsubscribeUrl}>`,
+      'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+    },
   })
 }

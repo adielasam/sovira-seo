@@ -13,10 +13,12 @@ import * as React from 'react'
 
 interface AdvantagesEmailProps {
   name?: string
+  unsubscribeUrl?: string
 }
 
 export const AdvantagesEmail = ({
   name = 'Creator',
+  unsubscribeUrl = 'https://sovira.com.ng/settings?tab=notifications',
 }: AdvantagesEmailProps) => {
   const previewText = `Unlock the full potential of Sovira SEO for your business.`
 
@@ -80,7 +82,7 @@ export const AdvantagesEmail = ({
               &copy; {new Date().getFullYear()} Sovira SEO. All rights reserved.
             </Text>
             <Text style={footerText}>
-              <Link href="https://sovira.com.ng/settings" style={unsubscribeLink}>
+              <Link href={unsubscribeUrl} style={unsubscribeLink}>
                 Unsubscribe from these emails
               </Link>
             </Text>

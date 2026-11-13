@@ -1,11 +1,15 @@
-import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr } from '@react-email/components';
+import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr, Link } from '@react-email/components';
 import * as React from 'react';
 
 interface ProjectDeletionEmailProps {
   projectName: string;
+  unsubscribeUrl?: string;
 }
 
-export const ProjectDeletionEmail = ({ projectName = 'My Site' }: ProjectDeletionEmailProps) => {
+export const ProjectDeletionEmail = ({
+  projectName = 'My Site',
+  unsubscribeUrl = 'https://sovira.com.ng/settings?tab=notifications',
+}: ProjectDeletionEmailProps) => {
   return (
     <Html>
       <Head />
@@ -51,6 +55,8 @@ export const ProjectDeletionEmail = ({ projectName = 'My Site' }: ProjectDeletio
             
             <Text style={footer}>
               If this was a mistake or you have questions, please reach out to support.
+              <br />
+              To stop receiving automated project reminders, <Link href={unsubscribeUrl} style={{ color: '#64748b', textDecoration: 'underline' }}>unsubscribe here</Link>.
               <br />
               &copy; {new Date().getFullYear()} Sovira Technologies. All rights reserved.
             </Text>

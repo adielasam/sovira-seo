@@ -11,16 +11,36 @@ import SeoAlertEmail from '@/emails/SeoAlertEmail'
 
 const resend = new Resend(process.env.RESEND_API_KEY || 're_dummy')
 const fromEmail = 'Sovira SEO <onboarding@resend.dev>'
+const appBaseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://sovira.com.ng'
+
+export function buildUnsubscribeUrl(userId?: string, email?: string) {
+  if (userId) {
+    return `${appBaseUrl}/api/unsubscribe?userId=${encodeURIComponent(userId)}`
+  }
+  if (email) {
+    return `${appBaseUrl}/api/unsubscribe?email=${encodeURIComponent(email)}`
+  }
+  return `${appBaseUrl}/settings?tab=notifications`
+}
+
+function getUnsubscribeHeaders(unsubscribeUrl: string) {
+  return {
+    'List-Unsubscribe': `<${unsubscribeUrl}>`,
+    'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+  }
+}
 
 export async function sendWelcomeEmail(email: string, name: string, userId: string) {
   try {
-    const html = await render(React.createElement(WelcomeEmail, { name: name || 'User' }))
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
+    const html = await render(React.createElement(WelcomeEmail, { name: name || 'User', unsubscribeUrl }))
     
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [email],
       subject: 'Welcome to Sovira SEO!',
       html: html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     })
 
     if (error) {
@@ -37,7 +57,7 @@ export async function sendWelcomeEmail(email: string, name: string, userId: stri
 
 export async function sendReengagementEmail(email: string, daysInactive: number, userId: string) {
   try {
-    const unsubscribeUrl = `https://sovira.com.ng/api/unsubscribe?userId=${encodeURIComponent(userId)}`
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
     const html = await render(React.createElement(ReengagementEmail, { daysInactive, unsubscribeUrl }))
 
     let subject = "We miss you! Come see what's new"
@@ -49,6 +69,7 @@ export async function sendReengagementEmail(email: string, daysInactive: number,
       to: [email],
       subject: subject,
       html: html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     })
 
     if (error) {
@@ -98,15 +119,17 @@ export async function sendLoginAlertEmail(email: string, name: string, ip: strin
   }
 }
 
-export async function sendTrialEndingWarning(email: string, name: string) {
+export async function sendTrialEndingWarning(email: string, name: string, userId?: string) {
   try {
-    const html = await render(React.createElement(TrialEndingEmail, { name }));
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
+    const html = await render(React.createElement(TrialEndingEmail, { name, unsubscribeUrl }));
     
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [email],
       subject: 'Action Required: Your Sovira Free Trial is Ending Soon',
       html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     });
 
     if (error) {
@@ -121,12 +144,14 @@ export async function sendTrialEndingWarning(email: string, name: string) {
   }
 }
 
-export async function sendTrialExpiredEmail(email: string, name: string) {
+export async function sendTrialExpiredEmail(email: string, name: string, userId?: string) {
   try {
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [email],
       subject: 'Your Sovira SEO Trial Has Expired',
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
       html: `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);">
           <!-- Header -->
@@ -160,6 +185,16 @@ export async function sendTrialExpiredEmail(email: string, name: string) {
               </a>
             </div>
           </div>
+
+          <!-- Footer -->
+          <div style="background-color: #F8FAFC; padding: 24px; text-align: center; border-top: 1px solid #E2E8F0;">
+            <p style="font-size: 12px; color: #64748B; margin: 0 0 8px 0;">
+              &copy; ${new Date().getFullYear()} Sovira SEO. All rights reserved.
+            </p>
+            <p style="font-size: 12px; color: #64748B; margin: 0;">
+              <a href="${unsubscribeUrl}" style="color: #94A3B8; text-decoration: underline;">Unsubscribe from these emails</a>
+            </p>
+          </div>
         </div>
       `,
     })
@@ -176,15 +211,17 @@ export async function sendTrialExpiredEmail(email: string, name: string) {
   }
 }
 
-export async function sendBeforeDeletionWarning(email: string, projectName: string) {
+export async function sendBeforeDeletionWarning(email: string, projectName: string, userId?: string) {
   try {
-    const html = await render(React.createElement(ProjectDeletionEmail, { projectName }));
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
+    const html = await render(React.createElement(ProjectDeletionEmail, { projectName, unsubscribeUrl }));
     
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [email],
       subject: `Important: Your project "${projectName}" is scheduled for deletion`,
       html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     });
 
     if (error) {
@@ -199,15 +236,17 @@ export async function sendBeforeDeletionWarning(email: string, projectName: stri
   }
 }
 
-export async function sendAdvantagesEmail(email: string, name: string) {
+export async function sendAdvantagesEmail(email: string, name: string, userId?: string) {
   try {
-    const html = await render(React.createElement(AdvantagesEmail, { name }));
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
+    const html = await render(React.createElement(AdvantagesEmail, { name, unsubscribeUrl }));
     
     const { data, error } = await resend.emails.send({
       from: fromEmail,
       to: [email],
       subject: 'Unlock the Full Power of Sovira SEO 🚀',
       html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     });
 
     if (error) {
@@ -224,7 +263,7 @@ export async function sendAdvantagesEmail(email: string, name: string) {
 
 export async function sendRecurringPromoEmail(email: string, name: string, userId: string) {
   try {
-    const unsubscribeUrl = `https://sovira.com.ng/api/unsubscribe?userId=${encodeURIComponent(userId)}`
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
     const html = await render(React.createElement(RecurringPromoEmail, { name, unsubscribeUrl }))
     
     const { data, error } = await resend.emails.send({
@@ -232,6 +271,7 @@ export async function sendRecurringPromoEmail(email: string, name: string, userI
       to: [email],
       subject: 'Boost your growth this week with Sovira SEO! 🚀',
       html: html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     })
 
     if (error) {
@@ -246,15 +286,17 @@ export async function sendRecurringPromoEmail(email: string, name: string, userI
   }
 }
 
-export async function sendSeoDropAlert(email: string, name: string, pointsDropped: number) {
+export async function sendSeoDropAlert(email: string, name: string, pointsDropped: number, userId?: string) {
   try {
-    const html = await render(React.createElement(SeoAlertEmail, { name, pointsDropped }))
+    const unsubscribeUrl = buildUnsubscribeUrl(userId, email)
+    const html = await render(React.createElement(SeoAlertEmail, { name, pointsDropped, unsubscribeUrl }))
     
     const { data, error } = await resend.emails.send({
       from: 'Sovira Scanner <onboarding@resend.dev>',
       to: [email],
       subject: `🚨 URGENT: SEO Score dropped by ${pointsDropped} points`,
       html: html,
+      headers: getUnsubscribeHeaders(unsubscribeUrl),
     })
 
     if (error) {

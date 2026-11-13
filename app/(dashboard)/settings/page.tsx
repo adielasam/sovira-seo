@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react'
 import { User, CreditCard, Bell, Key, Settings as SettingsIcon, Save, Eye, EyeOff } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useRouter } from 'next/navigation'
-import { getUserProfile, updateUserPlan, deleteAccountAction } from './actions'
+import { getUserProfile, updateUserPlan, deleteAccountAction, updateEmailPreferencesAction } from './actions'
 
 export default function SettingsPage() {
   const router = useRouter()
@@ -294,13 +294,51 @@ export default function SettingsPage() {
           )}
 
           {activeTab === 'notifications' && (
-            <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800 p-6 flex flex-col items-center justify-center text-center min-h-[400px]">
-              <Bell className="w-12 h-12 text-slate-400 mb-4" />
-              <h3 className="text-lg font-medium text-slate-900 dark:text-white mb-2">Notification Preferences</h3>
-              <p className="text-slate-500 max-w-sm">Manage how you receive alerts for ranking changes, audits, and billing updates.</p>
-              <button className="mt-6 px-4 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-500 transition-colors">
-                Configure Alerts
-              </button>
+            <div className="bg-white dark:bg-[#1E293B] rounded-xl shadow-sm ring-1 ring-slate-200 dark:ring-slate-800">
+              <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center gap-2">
+                <Bell className="w-5 h-5 text-slate-500" />
+                <h3 className="font-semibold text-slate-900 dark:text-white">Notification Preferences</h3>
+              </div>
+              <div className="p-6 space-y-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-4 rounded-xl bg-slate-50 dark:bg-slate-800/40 border border-slate-200 dark:border-slate-700/60">
+                  <div>
+                    <h4 className="font-medium text-slate-900 dark:text-white">Automated & Marketing Emails</h4>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                      Receive weekly SEO growth tips, trial reminders, inactive project warnings, and automated report alerts.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isSaving}
+                    onClick={async () => {
+                      const nextOptOut = !Boolean(profile?.marketing_emails_opt_out)
+                      setIsSaving(true)
+                      const res = await updateEmailPreferencesAction(nextOptOut)
+                      setIsSaving(false)
+                      if (res.error) {
+                        toast.error(res.error)
+                      } else {
+                        setProfile({ ...profile, marketing_emails_opt_out: nextOptOut })
+                        toast.success(
+                          nextOptOut
+                            ? 'You have unsubscribed from automated emails.'
+                            : 'You are now subscribed to automated emails.'
+                        )
+                      }
+                    }}
+                    className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors whitespace-nowrap ${
+                      profile?.marketing_emails_opt_out
+                        ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                        : 'bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 dark:bg-red-900/20 dark:text-red-400 dark:border-red-900/50'
+                    }`}
+                  >
+                    {profile?.marketing_emails_opt_out ? 'Re-subscribe to Emails' : 'Unsubscribe from Emails'}
+                  </button>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Note: Essential transactional and security emails (such as password resets and login alerts) will still be sent regardless of this setting.
+                </p>
+              </div>
             </div>
           )}
 

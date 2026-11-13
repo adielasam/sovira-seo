@@ -111,6 +111,25 @@ export async function updateUserPlan(reference: string, planName: string) {
   }
 }
 
+export async function updateEmailPreferencesAction(optOut: boolean) {
+  const supabase = await createClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return { error: 'Not authenticated' }
+
+  const { error } = await supabase
+    .from('user_profiles')
+    .update({ marketing_emails_opt_out: optOut })
+    .eq('id', user.id)
+
+  if (error) {
+    console.error('Error updating email preferences:', error)
+    return { error: 'Failed to update email preferences' }
+  }
+
+  revalidatePath('/settings')
+  return { success: true }
+}
+
 export async function deleteAccountAction() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()

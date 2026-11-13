@@ -29,12 +29,12 @@ export async function GET(request: Request) {
       const targetDateEnd = new Date(now.getTime() - daysSinceSignup * 24 * 60 * 60 * 1000)
       const targetDateStart = new Date(now.getTime() - (daysSinceSignup + 1) * 24 * 60 * 60 * 1000)
 
-      // Only target free users
+      // Only target free users who have not opted out
       const { data: profiles, error } = await supabaseAdmin
         .from('user_profiles')
         .select('id, plan, marketing_emails_opt_out, email, full_name')
         .eq('plan', 'free')
-        .is('marketing_emails_opt_out', false)
+        .not('marketing_emails_opt_out', 'is', true)
 
       if (error || !profiles) {
         console.error(`Error fetching profiles for ${daysSinceSignup} days:`, error)
@@ -44,8 +44,8 @@ export async function GET(request: Request) {
       let emailsSent = 0;
 
       for (const profile of profiles) {
-        // Ensure we only process free tier emails
-        if (profile.plan !== 'free') continue
+        // Ensure we only process free tier emails and skip opted-out users
+        if (profile.plan !== 'free' || profile.marketing_emails_opt_out) continue
 
         // Re-verify they haven't received this email type yet
         const { data: existingEmail } = await supabaseAdmin
@@ -69,11 +69,11 @@ export async function GET(request: Request) {
           let result = { success: false }
           
           if (emailType === 'features') {
-            result = await sendAdvantagesEmail(profile.email || '', profile.full_name || 'Creator')
+            result = await sendAdvantagesEmail(profile.email || '', profile.full_name || 'Creator', profile.id)
           } else if (emailType === 'trial_warning') {
-            result = await sendTrialEndingWarning(profile.email || '', profile.full_name || 'Creator')
+            result = await sendTrialEndingWarning(profile.email || '', profile.full_name || 'Creator', profile.id)
           } else if (emailType === 'trial_expired') {
-            result = await sendTrialExpiredEmail(profile.email || '', profile.full_name || 'Creator')
+            result = await sendTrialExpiredEmail(profile.email || '', profile.full_name || 'Creator', profile.id)
           }
 
           if (result.success) {
@@ -91,14 +91,15 @@ export async function GET(request: Request) {
     const processRecurringPromo = async () => {
       const { data: profiles, error } = await supabaseAdmin
         .from('user_profiles')
-        .select('id, email, full_name')
-        .is('marketing_emails_opt_out', false)
+        .select('id, email, full_name, marketing_emails_opt_out')
+        .not('marketing_emails_opt_out', 'is', true)
 
       if (error || !profiles) return 0
 
       let emailsSent = 0;
 
       for (const profile of profiles) {
+        if (profile.marketing_emails_opt_out) continue
         const { data: userResponse, error: userError } = await supabaseAdmin.auth.admin.getUserById(profile.id)
         if (userError || !userResponse?.user) continue
 

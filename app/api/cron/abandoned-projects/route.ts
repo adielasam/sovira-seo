@@ -34,23 +34,37 @@ export async function GET(request: Request) {
 
     let emailsSent = 0;
 
-    // 2. Loop through and check if the user is on a free plan
+    // 2. Loop through and check if the user is on a free plan and hasn't opted out
     for (const project of abandonedProjects) {
       if (!project.user_id) continue;
 
       // Get user profile
       const { data: profile } = await supabase
         .from('user_profiles')
-        .select('plan, email')
+        .select('plan, email, marketing_emails_opt_out')
         .eq('id', project.user_id)
         .single();
 
-      if (profile && profile.plan === 'free' && profile.email) {
+      if (profile && profile.plan === 'free' && profile.email && !profile.marketing_emails_opt_out) {
+        const emailType = `abandoned_project_${project.id}`;
+        const { data: existingEmail } = await supabase
+          .from('emails_sent')
+          .select('id')
+          .eq('user_id', project.user_id)
+          .eq('email_type', emailType)
+          .single();
+
+        if (existingEmail) continue;
+
         // Send email
         const projectName = (project.topic || 'Untitled').split('|')[0] || 'My Site';
-        const result = await sendBeforeDeletionWarning(profile.email, projectName);
+        const result = await sendBeforeDeletionWarning(profile.email, projectName, project.user_id);
         if (result.success) {
           emailsSent++;
+          await supabase.from('emails_sent').insert({
+            user_id: project.user_id,
+            email_type: emailType,
+          });
         }
       }
     }

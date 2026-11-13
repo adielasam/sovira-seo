@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { Resend } from 'resend'
-import { sendSeoDropAlert } from '@/lib/mailer'
+import { sendSeoDropAlert, buildUnsubscribeUrl } from '@/lib/mailer'
 
 export async function GET(request: Request) {
   try {
@@ -27,10 +27,24 @@ export async function GET(request: Request) {
 
     // 2. Loop through schedules and send emails
     for (const schedule of schedules) {
+      // Check if the schedule owner has opted out of automated emails
+      if (schedule.user_id) {
+        const { data: ownerProfile } = await supabase
+          .from('user_profiles')
+          .select('marketing_emails_opt_out')
+          .eq('id', schedule.user_id)
+          .single()
+
+        if (ownerProfile?.marketing_emails_opt_out) {
+          continue
+        }
+      }
+
       // In a real production app, we would query their specific keywords/audits here to compile the data.
       // For this SaaS MVP, we generate realistic dynamic data to prove the pipeline works.
       const totalKeywords = Math.floor(Math.random() * 5000) + 1000
       const healthScore = Math.floor(Math.random() * 30) + 70
+      const unsubscribeUrl = buildUnsubscribeUrl(schedule.user_id, schedule.emails?.split(',')[0]?.trim())
 
       const emailHtml = `
         <div style="font-family: Arial, sans-serif; padding: 40px 20px; max-w: 600px; margin: 0 auto; background-color: #f8fafc; border-radius: 12px;">
@@ -66,7 +80,8 @@ export async function GET(request: Request) {
           
           <p style="color: #94a3b8; font-size: 12px; text-align: center; margin-top: 30px;">
             Sent automatically by Sovira SEO<br>
-            You are receiving this because you set up an automated report schedule.
+            You are receiving this because you set up an automated report schedule.<br>
+            <a href="${unsubscribeUrl}" style="color: #64748b; text-decoration: underline;">Unsubscribe from automated reports</a>
           </p>
         </div>
       `
@@ -80,6 +95,10 @@ export async function GET(request: Request) {
         to: emailRecipients,
         subject: `Your ${schedule.frequency} SEO Report: ${schedule.type}`,
         html: emailHtml,
+        headers: {
+          'List-Unsubscribe': `<${unsubscribeUrl}>`,
+          'List-Unsubscribe-Post': 'List-Unsubscribe=One-Click',
+        },
       })
 
       if (sendError) {
@@ -91,7 +110,7 @@ export async function GET(request: Request) {
         if (Math.random() < 0.20) {
           const dropPoints = Math.floor(Math.random() * 15) + 5
           for (const recipientEmail of emailRecipients) {
-            await sendSeoDropAlert(recipientEmail, 'Creator', dropPoints)
+            await sendSeoDropAlert(recipientEmail, 'Creator', dropPoints, schedule.user_id)
           }
         }
       }

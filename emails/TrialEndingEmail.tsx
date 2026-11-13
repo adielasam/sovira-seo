@@ -1,11 +1,15 @@
-import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr } from '@react-email/components';
+import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr, Link } from '@react-email/components';
 import * as React from 'react';
 
 interface TrialEndingEmailProps {
   name: string;
+  unsubscribeUrl?: string;
 }
 
-export const TrialEndingEmail = ({ name = 'User' }: TrialEndingEmailProps) => {
+export const TrialEndingEmail = ({
+  name = 'User',
+  unsubscribeUrl = 'https://sovira.com.ng/settings?tab=notifications',
+}: TrialEndingEmailProps) => {
   return (
     <Html>
       <Head />
@@ -47,6 +51,8 @@ export const TrialEndingEmail = ({ name = 'User' }: TrialEndingEmailProps) => {
             
             <Text style={footer}>
               If you have any questions about our plans, just reply to this email.
+              <br />
+              Don't want to receive trial reminders? <Link href={unsubscribeUrl} style={{ color: '#64748b', textDecoration: 'underline' }}>Unsubscribe here</Link>.
               <br />
               &copy; {new Date().getFullYear()} Sovira Technologies. All rights reserved.
             </Text>

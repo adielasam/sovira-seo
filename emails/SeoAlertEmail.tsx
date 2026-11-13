@@ -14,11 +14,13 @@ import * as React from 'react'
 interface SeoAlertEmailProps {
   name: string
   pointsDropped: number
+  unsubscribeUrl?: string
 }
 
 export const SeoAlertEmail = ({
   name,
-  pointsDropped = 12
+  pointsDropped = 12,
+  unsubscribeUrl = 'https://sovira.com.ng/settings?tab=notifications',
 }: SeoAlertEmailProps) => {
   return (
     <Html>
@@ -55,7 +57,10 @@ export const SeoAlertEmail = ({
 
           <Text style={footer}>
             Sent automatically by Sovira SEO Scanners. <br />
-            You are receiving this because you have automated monitoring enabled.
+            You are receiving this because you have automated monitoring enabled. <br />
+            <Link href={unsubscribeUrl} style={{ color: '#64748b', textDecoration: 'underline' }}>
+              Unsubscribe from automated alerts
+            </Link>
           </Text>
         </Container>
       </Body>

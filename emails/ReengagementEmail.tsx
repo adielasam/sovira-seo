@@ -54,7 +54,7 @@ export const ReengagementEmail = ({
           <Text style={text}>{message2}</Text>
           
           <Section style={buttonContainer}>
-            <Button style={button} href="https://soviraseo.com/dashboard">
+            <Button style={button} href="https://sovira.com.ng/dashboard">
               Return to Dashboard
             </Button>
           </Section>

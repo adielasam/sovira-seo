@@ -1,11 +1,15 @@
-import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr, Img } from '@react-email/components';
+import { Html, Head, Preview, Body, Container, Section, Heading, Text, Button, Hr, Img, Link } from '@react-email/components';
 import * as React from 'react';
 
 interface WelcomeEmailProps {
   name: string;
+  unsubscribeUrl?: string;
 }
 
-export const WelcomeEmail = ({ name = 'User' }: WelcomeEmailProps) => {
+export const WelcomeEmail = ({
+  name = 'User',
+  unsubscribeUrl = 'https://sovira.com.ng/settings?tab=notifications',
+}: WelcomeEmailProps) => {
   return (
     <Html>
       <Head />
@@ -39,6 +43,8 @@ export const WelcomeEmail = ({ name = 'User' }: WelcomeEmailProps) => {
             
             <Text style={footer}>
               If you have any questions, simply reply to this email. We're here to help!
+              <br />
+              To opt out of future tips and updates, <Link href={unsubscribeUrl} style={{ color: '#64748b', textDecoration: 'underline' }}>unsubscribe here</Link>.
               <br />
               &copy; {new Date().getFullYear()} Sovira Technologies. All rights reserved.
             </Text>
