@@ -49,9 +49,9 @@ async function loadPlaywright(): Promise<any> {
   }
 }
 
-async function detectAuthOrCaptchaChallenge(page: any): Promise<string | null> {
+async function detectAuthOrCaptchaChallenge(page: any, allowPasswordForm = false): Promise<string | null> {
   try {
-    const check = await page.evaluate(() => {
+    const check = await page.evaluate((skipPasswordCheck: boolean) => {
       const url = window.location.href.toLowerCase()
       const title = (document.title || '').toLowerCase()
       const text = (document.body?.innerText || '').slice(0, 8000).toLowerCase()
@@ -83,13 +83,15 @@ async function detectAuthOrCaptchaChallenge(page: any): Promise<string | null> {
         return 'Detected MFA / 2FA verification prompt.'
       }
 
-      const hasPasswordField = Boolean(document.querySelector('input[type="password"]'))
-      if (hasPasswordField && (url.includes('login') || url.includes('signin') || text.includes('sign in'))) {
-        return 'Detected login authentication form requiring manual verification.'
+      if (!skipPasswordCheck) {
+        const hasPasswordField = Boolean(document.querySelector('input[type="password"]'))
+        if (hasPasswordField && (url.includes('login') || url.includes('signin') || text.includes('sign in'))) {
+          return 'Detected login authentication form requiring manual verification.'
+        }
       }
 
       return null
-    })
+    }, allowPasswordForm)
     return check
   } catch {
     return null
@@ -154,8 +156,10 @@ export async function runIsolatedBrowserTask(opts: BrowserRunOptions): Promise<B
     await page.goto(opts.url, { waitUntil: 'domcontentloaded', timeout: 30000 })
     await page.waitForTimeout(1200)
 
+    const hasFillActions = Boolean(opts.actions?.some((a) => a.type === 'fill'))
+
     if (opts.pauseOnAuthOrCaptcha !== false) {
-      const challenge = await detectAuthOrCaptchaChallenge(page)
+      const challenge = await detectAuthOrCaptchaChallenge(page, hasFillActions)
       if (challenge) {
         screenshotPath = path.join(taskArtifactDir, `step_${opts.stepOrder}_human_verify.png`)
         await page.screenshot({ path: screenshotPath, fullPage: false }).catch(() => {})
@@ -247,7 +251,7 @@ export async function runIsolatedBrowserTask(opts: BrowserRunOptions): Promise<B
       }
 
       if (opts.pauseOnAuthOrCaptcha !== false) {
-        const challengeAfter = await detectAuthOrCaptchaChallenge(page)
+        const challengeAfter = await detectAuthOrCaptchaChallenge(page, hasFillActions)
         if (challengeAfter) {
           screenshotPath = path.join(taskArtifactDir, `step_${opts.stepOrder}_human_verify.png`)
           await page.screenshot({ path: screenshotPath, fullPage: false }).catch(() => {})

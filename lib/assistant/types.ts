@@ -67,21 +67,51 @@ export type AIProviderErrorType =
   | 'NOT_CONFIGURED'
 
 export const taskStepPlanSchema = z.object({
-  stepOrder: z.number().int().min(1).max(20),
+  stepOrder: z.preprocess(
+    (v) => (v === null || v === undefined ? 1 : Number(v)),
+    z.number().int().min(1).max(20)
+  ),
   title: z.string().min(2).max(200),
-  description: z.string().min(2).max(1000),
+  description: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim().length >= 2 ? v.trim() : 'Execute planned assistant step'),
+    z.string().min(2).max(1000)
+  ),
   toolName: z.enum(TOOL_NAMES),
-  parameters: z.record(z.string(), z.unknown()).default({}),
-  requiresApproval: z.boolean().default(true),
+  parameters: z.preprocess(
+    (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}),
+    z.record(z.string(), z.unknown())
+  ),
+  requiresApproval: z.preprocess(
+    (v) => (v === null || v === undefined ? true : Boolean(v)),
+    z.boolean()
+  ),
 })
 
 export const taskPlanSchema = z.object({
   summary: z.string().min(4).max(1000),
-  category: z.enum(TASK_CATEGORIES).default('general'),
-  riskLevel: z.enum(['low', 'medium', 'high']).default('medium'),
-  approvalRequired: z.boolean().default(true),
-  expectedOutputs: z.array(z.string()).default([]),
-  requiredIntegrations: z.array(z.enum(INTEGRATION_PROVIDERS)).default([]),
+  category: z.preprocess(
+    (v) => (typeof v === 'string' && (TASK_CATEGORIES as readonly string[]).includes(v) ? v : 'general'),
+    z.enum(TASK_CATEGORIES)
+  ),
+  riskLevel: z.preprocess(
+    (v) => (typeof v === 'string' && ['low', 'medium', 'high'].includes(v) ? v : 'medium'),
+    z.enum(['low', 'medium', 'high'])
+  ),
+  approvalRequired: z.preprocess(
+    (v) => (v === null || v === undefined ? true : Boolean(v)),
+    z.boolean()
+  ),
+  expectedOutputs: z.preprocess(
+    (v) => (Array.isArray(v) ? v.filter((x) => x !== null && x !== undefined).map(String) : []),
+    z.array(z.string())
+  ),
+  requiredIntegrations: z.preprocess(
+    (v) =>
+      Array.isArray(v)
+        ? v.filter((x) => typeof x === 'string' && (INTEGRATION_PROVIDERS as readonly string[]).includes(x))
+        : [],
+    z.array(z.enum(INTEGRATION_PROVIDERS))
+  ),
   steps: z.array(taskStepPlanSchema).min(1).max(12),
 })
 

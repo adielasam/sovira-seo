@@ -236,6 +236,35 @@ async function runTests() {
       })
       assert.equal(valid.steps.length, 1)
 
+      const validBrowser = registry.validateTaskPlan({
+        summary: 'Login to portal and capture dashboard.',
+        category: 'browser_automation',
+        riskLevel: 'high',
+        approvalRequired: true,
+        expectedOutputs: null,
+        requiredIntegrations: null,
+        steps: [
+          {
+            stepOrder: 1,
+            title: 'Login and inspect dashboard',
+            description: 'Open URL, fill form, wait, and capture screenshot',
+            toolName: 'browser_interactive_action',
+            parameters: {
+              url: 'https://example.com/login',
+              actions: [
+                { type: 'fill', selector: '#email', value: 'user@example.com' },
+                { type: 'wait', selector: null, value: 3000 },
+                { type: 'screenshot', selector: null, value: null },
+              ],
+            },
+          },
+        ],
+      })
+      assert.equal(validBrowser.steps.length, 1)
+      assert.equal(validBrowser.steps[0].parameters.actions[1].selector, undefined)
+      assert.equal(validBrowser.steps[0].parameters.actions[1].value, '3000')
+      assert.equal(validBrowser.steps[0].parameters.actions[2].selector, undefined)
+
       assert.throws(() =>
         registry.validateTaskPlan({
           summary: 'Bad tool',

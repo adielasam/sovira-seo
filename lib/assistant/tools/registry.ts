@@ -7,50 +7,105 @@ import {
   TOOL_NAMES,
 } from '../types'
 
+const nullableOptionalString = (maxLen: number) =>
+  z.preprocess(
+    (v) => (v === null || v === undefined || v === '' ? undefined : String(v).slice(0, maxLen)),
+    z.string().max(maxLen).optional()
+  )
+
+const nullableBooleanDefault = (defaultVal: boolean) =>
+  z.preprocess(
+    (v) => (v === null || v === undefined ? defaultVal : Boolean(v)),
+    z.boolean()
+  )
+
+const nullableProfileId = z.preprocess(
+  (v) => (typeof v === 'string' && v.trim().length > 0 ? v.trim() : 'default'),
+  z.string().regex(/^[a-zA-Z0-9_-]{1,40}$/)
+)
+
+const normalizeBrowserActionType = (v: unknown) => {
+  if (typeof v !== 'string') return 'wait'
+  const lower = v.toLowerCase().trim()
+  if (['navigate', 'click', 'fill', 'select', 'wait', 'screenshot', 'download'].includes(lower)) {
+    return lower
+  }
+  if (['type', 'input', 'enter', 'write'].includes(lower)) return 'fill'
+  if (['submit', 'press', 'tap'].includes(lower)) return 'click'
+  if (['goto', 'open', 'visit'].includes(lower)) return 'navigate'
+  return 'wait'
+}
+
 export const aiResearchAnalysisParamsSchema = z.object({
   topic: z.string().min(2).max(500),
-  focusAreas: z.array(z.string().max(200)).max(10).default([]),
-  outputFormat: z.enum(['report', 'comparison_table', 'action_checklist', 'summary']).default('report'),
+  focusAreas: z.preprocess(
+    (v) => (Array.isArray(v) ? v.filter((x) => x !== null && x !== undefined).map((x) => String(x).slice(0, 200)) : []),
+    z.array(z.string().max(200)).max(10)
+  ),
+  outputFormat: z.preprocess(
+    (v) => (typeof v === 'string' && ['report', 'comparison_table', 'action_checklist', 'summary'].includes(v) ? v : 'report'),
+    z.enum(['report', 'comparison_table', 'action_checklist', 'summary'])
+  ),
 })
 
 export const browserNavigateExtractParamsSchema = z.object({
   url: z.string().url().refine((u) => /^https?:\/\//i.test(u), 'Only http/https URLs allowed'),
-  extractSelector: z.string().max(200).optional(),
-  captureScreenshot: z.boolean().default(true),
-  profileId: z.string().regex(/^[a-zA-Z0-9_-]{1,40}$/).default('default'),
+  extractSelector: nullableOptionalString(200),
+  captureScreenshot: nullableBooleanDefault(true),
+  profileId: nullableProfileId,
 })
 
 export const browserInteractiveActionParamsSchema = z.object({
   url: z.string().url().refine((u) => /^https?:\/\//i.test(u), 'Only http/https URLs allowed'),
-  actions: z
-    .array(
-      z.object({
-        type: z.enum(['navigate', 'click', 'fill', 'select', 'wait', 'screenshot', 'download']),
-        selector: z.string().max(250).optional(),
-        valueKey: z.string().max(100).optional(),
-        value: z.string().max(2000).optional(),
-      })
-    )
-    .max(25)
-    .default([]),
-  profileId: z.string().regex(/^[a-zA-Z0-9_-]{1,40}$/).default('default'),
-  pauseOnAuthOrCaptcha: z.boolean().default(true),
+  actions: z.preprocess(
+    (v) => (Array.isArray(v) ? v : []),
+    z
+      .array(
+        z.object({
+          type: z.preprocess(
+            normalizeBrowserActionType,
+            z.enum(['navigate', 'click', 'fill', 'select', 'wait', 'screenshot', 'download'])
+          ),
+          selector: nullableOptionalString(250),
+          valueKey: nullableOptionalString(100),
+          value: nullableOptionalString(2000),
+        })
+      )
+      .max(25)
+  ),
+  profileId: nullableProfileId,
+  pauseOnAuthOrCaptcha: nullableBooleanDefault(true),
 })
 
 export const makeWebhookDispatchParamsSchema = z.object({
   scenarioName: z.string().min(2).max(150),
-  eventType: z.string().min(2).max(100).default('assistant_task'),
-  payload: z.record(z.string(), z.unknown()).default({}),
-  waitForCallback: z.boolean().default(false),
+  eventType: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim().length >= 2 ? v.trim() : 'assistant_task'),
+    z.string().min(2).max(100)
+  ),
+  payload: z.preprocess(
+    (v) => (v && typeof v === 'object' && !Array.isArray(v) ? v : {}),
+    z.record(z.string(), z.unknown())
+  ),
+  waitForCallback: nullableBooleanDefault(false),
 })
 
 export const notionRecordSyncParamsSchema = z.object({
   title: z.string().min(2).max(300),
-  status: z.string().max(60).default('In Progress'),
-  category: z.string().max(60).default('Assistant Task'),
-  summary: z.string().max(2000).optional(),
-  resultUrl: z.string().url().optional(),
-  pageId: z.string().max(100).optional(),
+  status: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim().length > 0 ? v.trim() : 'In Progress'),
+    z.string().max(60)
+  ),
+  category: z.preprocess(
+    (v) => (typeof v === 'string' && v.trim().length > 0 ? v.trim() : 'Assistant Task'),
+    z.string().max(60)
+  ),
+  summary: nullableOptionalString(2000),
+  resultUrl: z.preprocess(
+    (v) => (typeof v === 'string' && /^https?:\/\//i.test(v.trim()) ? v.trim() : undefined),
+    z.string().url().optional()
+  ),
+  pageId: nullableOptionalString(100),
 })
 
 export const contentStoryPipelineParamsSchema = z.object({

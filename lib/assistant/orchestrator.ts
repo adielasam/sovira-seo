@@ -9,6 +9,7 @@ import { runContentAutomationPipeline } from './integrations/content-pipeline'
 import { sendTelegramMessage } from './integrations/telegram'
 import { getIntegrationStatusList, resolveAICredentials } from './integrations/vault'
 import { CONTROLLED_TOOL_REGISTRY } from './tools/registry'
+import { runServerlessWebSession } from './web-session-runner'
 import {
   AssistantTaskLogRecord,
   AssistantTaskRecord,
@@ -167,6 +168,28 @@ export async function createPlannedTask(opts: {
     message: `Task created from ${opts.source || 'web'}; generating structured plan via AI planner.`,
   })
 
+  const planned = await generateAndSaveTaskPlan({
+    taskId: createdTask.id,
+    userId: opts.userId,
+    instruction: cleanInstruction,
+    attachments: opts.attachments,
+  })
+
+  return {
+    task: planned.task || (createdTask as AssistantTaskRecord),
+    steps: planned.steps,
+    deduplicated: false,
+  }
+}
+
+async function generateAndSaveTaskPlan(opts: {
+  taskId: string
+  userId: string
+  instruction: string
+  attachments?: Array<{ name: string; type?: string; size?: number; summary?: string }>
+}): Promise<{ task: AssistantTaskRecord; steps: AssistantTaskStepRecord[] }> {
+  const admin = createAdminClient()
+
   try {
     const [aiCreds, integrationStatuses] = await Promise.all([
       resolveAICredentials(opts.userId),
@@ -178,7 +201,7 @@ export async function createPlannedTask(opts: {
         ? `User attached files:\n${opts.attachments.map((a) => `- ${a.name}${a.summary ? `: ${a.summary}` : ''}`).join('\n')}`
         : undefined
 
-    const { plan, plannerMeta } = await generateStructuredTaskPlan(cleanInstruction, {
+    const { plan, plannerMeta } = await generateStructuredTaskPlan(opts.instruction, {
       context: attachmentContext,
       credentials: aiCreds,
     })
@@ -194,7 +217,7 @@ export async function createPlannedTask(opts: {
           status: st.status,
           message:
             reqProvider === 'browser_worker'
-              ? 'Playwright background worker is currently offline; approved job will wait in queue until worker starts.'
+              ? 'Desktop Playwright worker is offline; approved browser step will run via serverless HTTP session unless worker starts.'
               : `${st.label} is currently ${st.status}. Supply or verify credentials in Integrations before execution.`,
         })
       }
@@ -202,7 +225,7 @@ export async function createPlannedTask(opts: {
 
     // Persist validated steps
     const stepRows = plan.steps.map((s) => ({
-      task_id: createdTask.id,
+      task_id: opts.taskId,
       user_id: opts.userId,
       step_order: s.stepOrder,
       title: s.title,
@@ -237,8 +260,10 @@ export async function createPlannedTask(opts: {
         approval_required: true,
         approval_status: 'pending',
         plan: fullPlan,
+        error_code: null,
+        error_message: null,
       })
-      .eq('id', createdTask.id)
+      .eq('id', opts.taskId)
       .eq('user_id', opts.userId)
       .select('*')
       .single()
@@ -248,7 +273,7 @@ export async function createPlannedTask(opts: {
     }
 
     await appendTaskLog({
-      taskId: createdTask.id,
+      taskId: opts.taskId,
       userId: opts.userId,
       level: 'info',
       message: `Plan prepared using ${plannerMeta.provider} (${plannerMeta.model}) in ${plannerMeta.latencyMs}ms with ${plan.steps.length} step(s). Awaiting human approval.`,
@@ -258,7 +283,6 @@ export async function createPlannedTask(opts: {
     return {
       task: updatedTask as AssistantTaskRecord,
       steps: (insertedSteps || []) as AssistantTaskStepRecord[],
-      deduplicated: false,
     }
   } catch (err: any) {
     const safeError = redactSecretsInText(err?.message || 'Planning failed')
@@ -270,22 +294,21 @@ export async function createPlannedTask(opts: {
         error_message: safeError,
         completed_at: new Date().toISOString(),
       })
-      .eq('id', createdTask.id)
+      .eq('id', opts.taskId)
       .eq('user_id', opts.userId)
       .select('*')
       .single()
 
     await appendTaskLog({
-      taskId: createdTask.id,
+      taskId: opts.taskId,
       userId: opts.userId,
       level: 'error',
       message: `Task planning failed: ${safeError}`,
     })
 
     return {
-      task: (failedTask || createdTask) as AssistantTaskRecord,
+      task: failedTask as AssistantTaskRecord,
       steps: [],
-      deduplicated: false,
     }
   }
 }
@@ -384,15 +407,14 @@ export async function approveTask(opts: {
     throw new Error(`Failed to enqueue durable job: ${jobErr.message}`)
   }
 
-  // Browser automation always waits for persistent Playwright worker; when worker is online it handles all jobs
-  if (requiresPlaywright || workerOnline) {
+  // When the persistent desktop Playwright worker is online, delegate execution to it;
+  // otherwise run immediately inside Next.js (using serverless HTTP session fallback for browser tools).
+  if (workerOnline) {
     await appendTaskLog({
       taskId: opts.taskId,
       userId: opts.userId,
       level: 'info',
-      message: workerOnline
-        ? `Job ${jobRow.id} queued for active background worker (${beats![0].worker_id}).`
-        : `Long-running job ${jobRow.id} durably queued. Start the background worker daemon to execute browser/video steps.`,
+      message: `Job ${jobRow.id} queued for active background worker (${beats![0].worker_id}).`,
     })
     return { task: approvedTask as AssistantTaskRecord, alreadyProcessed: false, workerQueued: true }
   }
@@ -578,6 +600,85 @@ Produce a detailed, well-structured Markdown report with comparisons, pros/cons,
             completed_at: new Date().toISOString(),
           })
           .eq('id', step.id)
+      } else if (step.tool_name === 'browser_navigate_extract' || step.tool_name === 'browser_interactive_action') {
+        const params = step.parameters || {}
+        const webRes = await runServerlessWebSession({
+          url: String(params.url || 'https://example.com'),
+          actions: Array.isArray(params.actions) ? (params.actions as any) : undefined,
+          extractSelector: typeof params.extractSelector === 'string' ? params.extractSelector : undefined,
+          pauseOnAuthOrCaptcha: params.pauseOnAuthOrCaptcha !== false,
+          onLog: async (msg, level) => {
+            await appendTaskLog({
+              taskId: opts.task.id,
+              userId: opts.userId,
+              level: level || 'info',
+              stepOrder: step.step_order,
+              message: msg,
+            })
+          },
+        })
+        stepOutputs.push({ step: step.step_order, tool: step.tool_name, ...webRes })
+
+        if (webRes.pausedForHumanVerification) {
+          await admin
+            .from('assistant_task_steps')
+            .update({
+              status: 'waiting_human_verification',
+              output: webRes as unknown as Record<string, unknown>,
+              error_message: webRes.pauseReason || 'Manual verification required',
+            })
+            .eq('id', step.id)
+
+          await admin
+            .from('assistant_jobs')
+            .update({ status: 'waiting_human_verification', last_error: webRes.pauseReason || null })
+            .eq('id', opts.jobId)
+
+          const { data: pausedTask } = await admin
+            .from('assistant_tasks')
+            .update({
+              status: 'waiting_human_verification',
+              result: {
+                summary: webRes.pauseReason || 'Paused cleanly for CAPTCHA / MFA verification.',
+                stepOutputs,
+              },
+            })
+            .eq('id', opts.task.id)
+            .eq('user_id', opts.userId)
+            .select('*')
+            .single()
+
+          return pausedTask as AssistantTaskRecord
+        }
+
+        await admin
+          .from('assistant_task_steps')
+          .update({
+            status: 'completed',
+            output: webRes as unknown as Record<string, unknown>,
+            completed_at: new Date().toISOString(),
+          })
+          .eq('id', step.id)
+      }
+    }
+
+    if (!reportMarkdown && stepOutputs.length > 0) {
+      try {
+        const synth = await completeWithFailover({
+          systemPrompt: `You are Sovira AI Task Assistant. Summarize what the execution steps observed accurately using ONLY facts present in the step outputs (finalUrl, pageTitle, authenticatedLikely, loginErrors, headings, navigationLinks, dashboardCardsAndMetrics, extractedText). Never fabricate dashboard data that was not observed. If login failed, hit a JavaScript SPA shell, or encountered a verification gate, state that clearly and explain what was seen.`,
+          prompt: `User Instruction: ${opts.task.instruction}\n\nCaptured Execution Outputs:\n${JSON.stringify(stepOutputs).slice(0, 9000)}`,
+          temperature: 0.2,
+          maxTokens: 2500,
+          credentials: aiCreds,
+        })
+        reportMarkdown = synth.text
+      } catch (synthErr: any) {
+        await appendTaskLog({
+          taskId: opts.task.id,
+          userId: opts.userId,
+          level: 'warn',
+          message: `Could not synthesize AI Markdown report: ${redactSecretsInText(synthErr?.message || 'error')}`,
+        })
       }
     }
 
@@ -796,6 +897,54 @@ export async function retryTask(opts: {
     .eq('task_id', opts.taskId)
     .in('status', ['queued', 'running', 'waiting_external', 'waiting_human_verification'])
 
+  // Check whether planning previously succeeded (steps exist) or failed during planning (0 steps)
+  const { data: existingSteps } = await admin
+    .from('assistant_task_steps')
+    .select('id')
+    .eq('task_id', opts.taskId)
+    .eq('user_id', opts.userId)
+
+  const nextRetryCount = current.retry_count + 1
+
+  if (!existingSteps || existingSteps.length === 0) {
+    const { error: resetErr } = await admin
+      .from('assistant_tasks')
+      .update({
+        status: 'planning',
+        approval_status: 'pending',
+        cancel_requested: false,
+        retry_count: nextRetryCount,
+        error_code: null,
+        error_message: null,
+        completed_at: null,
+      })
+      .eq('id', opts.taskId)
+      .eq('user_id', opts.userId)
+
+    if (resetErr) throw new Error(resetErr.message)
+
+    await appendTaskLog({
+      taskId: opts.taskId,
+      userId: opts.userId,
+      level: 'audit',
+      message: `Retrying planning phase (attempt ${nextRetryCount}/${current.max_retries}) after previous error.`,
+    })
+
+    const planned = await generateAndSaveTaskPlan({
+      taskId: opts.taskId,
+      userId: opts.userId,
+      instruction: current.instruction,
+      attachments: (current.attachments as any) || [],
+    })
+
+    if (planned.steps.length === 0) {
+      return planned.task
+    }
+
+    const approved = await approveTask({ userId: opts.userId, taskId: opts.taskId })
+    return approved.task
+  }
+
   // Reset non-completed steps back to pending
   await admin
     .from('assistant_task_steps')
@@ -803,7 +952,6 @@ export async function retryTask(opts: {
     .eq('task_id', opts.taskId)
     .in('status', ['failed', 'cancelled', 'running', 'waiting_human_verification'])
 
-  const nextRetryCount = current.retry_count + 1
   const { data: retriedTask, error: updErr } = await admin
     .from('assistant_tasks')
     .update({
@@ -826,7 +974,7 @@ export async function retryTask(opts: {
     taskId: opts.taskId,
     userId: opts.userId,
     level: 'audit',
-    message: `Task reset for retry attempt ${nextRetryCount}/${current.max_retries}; awaiting approval confirmation.`,
+    message: `Task reset for retry attempt ${nextRetryCount}/${current.max_retries}; dispatching execution.`,
   })
 
   // Automatically re-approve & dispatch since retry was explicitly triggered by the owner

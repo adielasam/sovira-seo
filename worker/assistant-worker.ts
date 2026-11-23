@@ -381,6 +381,24 @@ async function processClaimedJob(
       return
     }
 
+    if (!reportMarkdown && stepOutputs.length > 0) {
+      try {
+        const aiCreds = await resolveAICredentials(ownerId)
+        const synth = await completeWithFailover({
+          systemPrompt:
+            'You are Sovira AI Task Assistant. Summarize what the execution steps observed accurately using only facts present in the step outputs. If login failed, hit a human verification gate, or requires interactive follow-up, state that clearly.',
+          prompt: `User Instruction: ${task.instruction}\n\nCaptured Execution Outputs:\n${JSON.stringify(stepOutputs).slice(0, 9000)}`,
+          temperature: 0.2,
+          maxTokens: 2500,
+          abortSignal: abortController.signal,
+          credentials: aiCreds,
+        })
+        reportMarkdown = synth.text
+      } catch {
+        // Non-fatal; raw stepOutputs are still persisted
+      }
+    }
+
     await supabase.from('assistant_jobs').update({ status: 'completed' }).eq('id', job.id)
     await supabase
       .from('assistant_tasks')
