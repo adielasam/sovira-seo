@@ -7,10 +7,21 @@ import { useState, useMemo, useRef, useEffect } from 'react'
 import { useTheme } from 'next-themes'
 import {
   LayoutDashboard, Search, Tag, Users, Sparkles, Mic,
-  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft, User, CreditCard, HelpCircle, Moon, Sun, Calendar
+  TrendingUp, Link as LinkIcon, FileText, Settings, LogOut, Menu, X, Plug, PlaySquare, Bot, Video, Flame, Shield, GraduationCap, Radar, BarChart2, Presentation, Code, Globe, ChevronLeft, User, CreditCard, HelpCircle, Moon, Sun, Calendar, Cpu, History
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+
+const assistantNavigationGroup = {
+  name: 'Executive Assistant',
+  items: [
+    { name: 'AI Task Assistant', href: '/assistant', icon: Cpu },
+    { name: 'Connected Accounts', href: '/assistant/integrations', icon: Plug },
+    { name: 'Automation History', href: '/assistant/history', icon: History },
+    { name: 'Assistant Settings', href: '/assistant/settings', icon: Settings },
+  ]
+}
+
 const navigationGroups = [
   {
     name: 'AI Search',
@@ -71,15 +82,16 @@ const navigationGroups = [
   }
 ]
 
-function NavItems({ pathname, onNav, isCollapsed = false, searchQuery = '' }: { pathname: string; onNav?: () => void; isCollapsed?: boolean; searchQuery?: string }) {
+function NavItems({ pathname, onNav, isCollapsed = false, searchQuery = '', isAssistantOwner = false }: { pathname: string; onNav?: () => void; isCollapsed?: boolean; searchQuery?: string; isAssistantOwner?: boolean }) {
   const filteredGroups = useMemo(() => {
-    if (!searchQuery.trim()) return navigationGroups
+    const groups = isAssistantOwner ? [assistantNavigationGroup, ...navigationGroups] : navigationGroups
+    if (!searchQuery.trim()) return groups
     const lowerQuery = searchQuery.toLowerCase()
-    return navigationGroups.map(group => ({
+    return groups.map(group => ({
       ...group,
       items: group.items.filter(item => item.name.toLowerCase().includes(lowerQuery))
     })).filter(group => group.items.length > 0)
-  }, [searchQuery])
+  }, [searchQuery, isAssistantOwner])
 
   if (filteredGroups.length === 0) {
     return (
@@ -209,7 +221,7 @@ function ProfileDropdown({ userEmail, isCollapsed = false, handleLogout }: { use
   )
 }
 
-export function Sidebar({ userEmail }: { userEmail?: string }) {
+export function Sidebar({ userEmail, isAssistantOwner = false }: { userEmail?: string; isAssistantOwner?: boolean }) {
   const pathname = usePathname()
   const router = useRouter()
   const [mobileOpen, setMobileOpen] = useState(false)
@@ -310,7 +322,7 @@ export function Sidebar({ userEmail }: { userEmail?: string }) {
         <nav className="flex flex-1 flex-col mt-4 overflow-y-auto overflow-x-hidden pb-8">
           <ul role="list" className="flex flex-1 flex-col gap-y-7">
             <li>
-              <NavItems pathname={pathname} onNav={() => setMobileOpen(false)} searchQuery={searchQuery} />
+              <NavItems pathname={pathname} onNav={() => setMobileOpen(false)} searchQuery={searchQuery} isAssistantOwner={isAssistantOwner} />
             </li>
             <li className="mt-auto pt-4">
               <ProfileDropdown userEmail={userEmail} handleLogout={handleLogout} />
@@ -363,7 +375,7 @@ export function Sidebar({ userEmail }: { userEmail?: string }) {
           <nav className="flex flex-1 flex-col mt-2">
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
-                <NavItems pathname={pathname} isCollapsed={isCollapsed} searchQuery={searchQuery} />
+                <NavItems pathname={pathname} isCollapsed={isCollapsed} searchQuery={searchQuery} isAssistantOwner={isAssistantOwner} />
               </li>
               <li className="mt-auto">
                 <ProfileDropdown userEmail={userEmail} isCollapsed={isCollapsed} handleLogout={handleLogout} />
