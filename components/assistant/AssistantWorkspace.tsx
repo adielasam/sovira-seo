@@ -13,6 +13,7 @@ import {
   Copy,
   FileText,
   Loader2,
+  Monitor,
   Paperclip,
   Play,
   Plus,
@@ -28,6 +29,7 @@ import {
   XCircle,
 } from 'lucide-react'
 import { AssistantNav } from './AssistantNav'
+import { LiveBrowserPanel } from './LiveBrowserPanel'
 
 interface ConversationMessage {
   id: string
@@ -183,9 +185,11 @@ export function AssistantWorkspace() {
   const [actionLoading, setActionLoading] = useState<string | null>(null)
   const [loadingInitial, setLoadingInitial] = useState(true)
   const [workerOnline, setWorkerOnline] = useState<boolean>(false)
+  const [showLiveBrowser, setShowLiveBrowser] = useState<boolean>(false)
   const [showRawJson, setShowRawJson] = useState(false)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const userToggledBrowserRef = useRef(false)
 
   const loadWorkspace = useCallback(async () => {
     try {
@@ -255,10 +259,17 @@ export function AssistantWorkspace() {
     [conversations, activeConversationId]
   )
 
-  // Live polling ONLY while selected task is actively running or waiting
+  // Live polling ONLY while selected task is actively running or waiting (including human control)
   useEffect(() => {
     if (!selectedTask) return
-    const activeStates = ['planning', 'queued', 'running', 'waiting_external', 'cancelling']
+    const activeStates = [
+      'planning',
+      'queued',
+      'running',
+      'waiting_external',
+      'waiting_human_verification',
+      'cancelling',
+    ]
     if (!activeStates.includes(selectedTask.status)) return
 
     const timer = setInterval(() => {
@@ -267,6 +278,23 @@ export function AssistantWorkspace() {
 
     return () => clearInterval(timer)
   }, [selectedTask, loadTaskDetail])
+
+  // Auto-open Live Browser Preview when a browser task is running or awaiting human control
+  useEffect(() => {
+    if (userToggledBrowserRef.current) return
+    const isBrowserTask =
+      selectedTask?.category === 'browser_automation' ||
+      taskSteps.some(
+        (s) => s.tool_name === 'browser_navigate_extract' || s.tool_name === 'browser_interactive_action'
+      )
+    if (
+      isBrowserTask &&
+      selectedTask &&
+      ['running', 'waiting_human_verification', 'queued'].includes(selectedTask.status)
+    ) {
+      setShowLiveBrowser(true)
+    }
+  }, [selectedTask, taskSteps])
 
   const filteredTasks = useMemo(() => {
     if (taskFilter === 'all') return tasks
@@ -350,7 +378,10 @@ export function AssistantWorkspace() {
       await loadWorkspace()
 
       if (action === 'approve') {
-        toast.success(data.workerQueued ? 'Approved & queued for durable background worker.' : 'Approved & executed cleanly.')
+        if (data.workerQueued && !userToggledBrowserRef.current) {
+          setShowLiveBrowser(true)
+        }
+        toast.success(data.workerQueued ? 'Approved & dispatched to Live Browser / Worker.' : 'Approved & executed cleanly.')
       } else if (action === 'reject') {
         toast.success('Task plan rejected.')
       } else if (action === 'cancel') {
@@ -396,13 +427,19 @@ export function AssistantWorkspace() {
     }
   }
 
-  return (
-    <div>
-      <AssistantNav workerOnline={workerOnline} />
+  const latestScreenshot = useMemo(() => {
+    const outputs = selectedTask?.result?.stepOutputs || []
+    for (let i = outputs.length - 1; i >= 0; i--) {
+      const shot = outputs[i]?.screenshotBase64
+      if (typeof shot === 'string' && shot.startsWith('data:image/')) {
+        return shot
+      }
+    }
+    return null
+  }, [selectedTask])
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-        {/* Left Sidebar: New Task, Conversations & Task Queue */}
-        <div className="lg:col-span-4 space-y-5">
+  const queueSidebarContent = (
+    <div className="space-y-5">
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4 shadow-sm">
             <button
               type="button"
@@ -533,10 +570,11 @@ export function AssistantWorkspace() {
               </div>
             )}
           </div>
-        </div>
+    </div>
+  )
 
-        {/* Right Main Column: Chat Composer + Plan Approval + Execution Progress + Results */}
-        <div className="lg:col-span-8 space-y-6">
+  const mainColumnContent = (
+    <div className="space-y-6">
           {/* Instruction Composer */}
           <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm">
             <div className="flex items-center gap-2 mb-3">
@@ -839,6 +877,13 @@ export function AssistantWorkspace() {
                     </div>
                   </div>
 
+                  {!showRawJson && latestScreenshot && (
+                    <div className="mb-4 overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-950">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={latestScreenshot} alt="Captured Cloud Browser Screenshot" className="w-full h-auto" />
+                    </div>
+                  )}
+
                   {showRawJson ? (
                     <pre className="max-h-96 overflow-auto rounded-xl bg-slate-950 p-4 text-xs text-emerald-300">
                       {JSON.stringify(selectedTask.result, null, 2)}
@@ -905,8 +950,65 @@ export function AssistantWorkspace() {
               </p>
             </div>
           )}
+    </div>
+  )
+
+  return (
+    <div>
+      <AssistantNav workerOnline={workerOnline} />
+
+      {/* Live Cloud Browser Toggle Strip */}
+      <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 px-4 py-2.5 shadow-sm">
+        <div className="flex items-center gap-2 text-xs text-slate-600 dark:text-slate-300">
+          <Monitor className="h-4 w-4 text-blue-600 dark:text-blue-400 shrink-0" />
+          <span>
+            {workerOnline
+              ? 'Cloud Chromium Browser connected — watch tasks execute live or click "Take control of the browser" anytime.'
+              : 'Open Live Browser Preview to connect your Nobus Ubuntu VPS Chromium worker for interactive login & human takeover.'}
+          </span>
         </div>
+        <button
+          type="button"
+          onClick={() => {
+            userToggledBrowserRef.current = true
+            setShowLiveBrowser((v) => !v)
+          }}
+          className={`inline-flex items-center gap-1.5 rounded-xl px-3.5 py-1.5 text-xs font-semibold transition-colors ${
+            showLiveBrowser
+              ? 'bg-slate-900 text-white dark:bg-slate-800 hover:bg-slate-700'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          }`}
+        >
+          <Monitor className="h-3.5 w-3.5" />
+          {showLiveBrowser ? 'Hide Live Browser Preview' : 'Open Live Browser Preview'}
+        </button>
       </div>
+
+      {showLiveBrowser ? (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-6 space-y-6">
+            {mainColumnContent}
+            {queueSidebarContent}
+          </div>
+          <div className="lg:col-span-6 lg:sticky lg:top-4 self-start">
+            <LiveBrowserPanel
+              activeTaskId={selectedTaskId}
+              activeTaskStatus={selectedTask?.status}
+              onControlChanged={() => {
+                if (selectedTaskId) {
+                  loadTaskDetail(selectedTaskId)
+                }
+              }}
+              onWorkerStatusChange={setWorkerOnline}
+            />
+          </div>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+          <div className="lg:col-span-4">{queueSidebarContent}</div>
+          <div className="lg:col-span-8">{mainColumnContent}</div>
+        </div>
+      )}
     </div>
   )
 }

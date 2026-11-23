@@ -8,6 +8,12 @@ import { syncTaskToNotion } from './integrations/notion'
 import { runContentAutomationPipeline } from './integrations/content-pipeline'
 import { sendTelegramMessage } from './integrations/telegram'
 import { getIntegrationStatusList, resolveAICredentials } from './integrations/vault'
+import {
+  cancelRemoteBrowserRun,
+  checkLiveBrowserHealth,
+  getRemoteBrowserRunStatus,
+  startRemoteBrowserRun,
+} from './live-browser-client'
 import { CONTROLLED_TOOL_REGISTRY } from './tools/registry'
 import { runServerlessWebSession } from './web-session-runner'
 import {
@@ -68,11 +74,209 @@ export async function getTaskDetail(
 
   if (!task) return null
 
+  const typedTask = task as AssistantTaskRecord
+  if (
+    typedTask.external_execution_id &&
+    ['running', 'waiting_human_verification', 'queued'].includes(typedTask.status)
+  ) {
+    const didMutate = await syncRemoteBrowserTask(userId, typedTask).catch(() => false)
+    if (didMutate) {
+      const [{ data: freshTask }, { data: freshSteps }, { data: freshLogs }] = await Promise.all([
+        admin.from('assistant_tasks').select('*').eq('id', taskId).eq('user_id', userId).maybeSingle(),
+        admin
+          .from('assistant_task_steps')
+          .select('*')
+          .eq('task_id', taskId)
+          .eq('user_id', userId)
+          .order('step_order', { ascending: true }),
+        admin
+          .from('assistant_task_logs')
+          .select('*')
+          .eq('task_id', taskId)
+          .eq('user_id', userId)
+          .order('created_at', { ascending: true }),
+      ])
+      if (freshTask) {
+        return {
+          task: freshTask as AssistantTaskRecord,
+          steps: (freshSteps || []) as AssistantTaskStepRecord[],
+          logs: (freshLogs || []) as AssistantTaskLogRecord[],
+        }
+      }
+    }
+  }
+
   return {
-    task: task as AssistantTaskRecord,
+    task: typedTask,
     steps: (steps || []) as AssistantTaskStepRecord[],
     logs: (logs || []) as AssistantTaskLogRecord[],
   }
+}
+
+async function syncRemoteBrowserTask(userId: string, task: AssistantTaskRecord): Promise<boolean> {
+  if (!task.external_execution_id) return false
+
+  const remoteRes = await getRemoteBrowserRunStatus(userId, task.external_execution_id).catch(() => null)
+  if (!remoteRes?.ok || !remoteRes.run) return false
+
+  const admin = createAdminClient()
+  const run = remoteRes.run
+  let mutated = false
+
+  // Append only newly added remote log lines without duplicating across polls
+  const remoteLogs = Array.isArray(run.logs) ? run.logs : []
+  if (remoteLogs.length > 0) {
+    const { count } = await admin
+      .from('assistant_task_logs')
+      .select('id', { count: 'exact', head: true })
+      .eq('task_id', task.id)
+      .eq('user_id', userId)
+      .contains('metadata', { remoteRunId: run.runId })
+
+    const syncedCount = count || 0
+    if (remoteLogs.length > syncedCount) {
+      const newRows = remoteLogs.slice(syncedCount).map((entry, idx) => ({
+        task_id: task.id,
+        user_id: userId,
+        level: entry.level || 'info',
+        step_order: entry.stepOrder ?? null,
+        message: redactSecretsInText(entry.message),
+        metadata: { remoteRunId: run.runId, remoteLogIndex: syncedCount + idx },
+      }))
+      await admin.from('assistant_task_logs').insert(newRows)
+      mutated = true
+    }
+  }
+
+  if (run.status === 'running') {
+    const desiredStatus = remoteRes.controlMode === 'human_control' ? 'waiting_human_verification' : 'running'
+    if (task.status !== desiredStatus) {
+      await admin
+        .from('assistant_tasks')
+        .update({ status: desiredStatus })
+        .eq('id', task.id)
+        .eq('user_id', userId)
+      mutated = true
+    }
+    return mutated
+  }
+
+  if (run.status === 'completed') {
+    // Claim transition atomically on assistant_jobs so concurrent polls never synthesize twice
+    const { data: claimedJob } = await admin
+      .from('assistant_jobs')
+      .update({ status: 'completed' })
+      .eq('id', task.external_execution_id)
+      .eq('user_id', userId)
+      .eq('status', 'running')
+      .select('id')
+      .maybeSingle()
+
+    if (!claimedJob) {
+      return mutated
+    }
+
+    const stepResults = Array.isArray(run.stepResults) ? run.stepResults : []
+    for (const stepOut of stepResults) {
+      const stepOrder = Number(stepOut.step || 1)
+      await admin
+        .from('assistant_task_steps')
+        .update({
+          status: 'completed',
+          output: stepOut,
+          completed_at: new Date().toISOString(),
+        })
+        .eq('task_id', task.id)
+        .eq('user_id', userId)
+        .eq('step_order', stepOrder)
+    }
+
+    // Remove bulky base64 screenshot strings from AI synthesis prompt payload
+    const sanitizedForPrompt = stepResults.map((s) => {
+      const clone = { ...s }
+      delete clone.screenshotBase64
+      return clone
+    })
+
+    let reportMarkdown = ''
+    try {
+      const aiCreds = await resolveAICredentials(userId)
+      const synth = await completeWithFailover({
+        systemPrompt:
+          'You are Sovira AI Task Assistant. Summarize what the live Chromium browser observed accurately using ONLY facts present in the step outputs (finalUrl, pageTitle, authenticatedLikely, loginErrors, headings, navigationLinks, dashboardCardsAndMetrics, extractedText). Never fabricate dashboard data that was not observed.',
+        prompt: `User Instruction: ${task.instruction}\n\nLive Chromium Browser Outputs:\n${JSON.stringify(sanitizedForPrompt).slice(0, 9000)}`,
+        temperature: 0.2,
+        maxTokens: 2500,
+        credentials: aiCreds,
+      })
+      reportMarkdown = synth.text
+    } catch {
+      reportMarkdown = ''
+    }
+
+    // Mark any leftover planned synthesis step completed too
+    await admin
+      .from('assistant_task_steps')
+      .update({
+        status: 'completed',
+        output: { reportMarkdown },
+        completed_at: new Date().toISOString(),
+      })
+      .eq('task_id', task.id)
+      .eq('user_id', userId)
+      .eq('tool_name', 'ai_research_analysis')
+      .eq('status', 'pending')
+
+    await admin
+      .from('assistant_tasks')
+      .update({
+        status: 'completed',
+        result: {
+          summary: task.plan?.summary || 'Live cloud browser task completed cleanly.',
+          reportMarkdown: reportMarkdown || undefined,
+          stepOutputs: stepResults,
+        },
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', task.id)
+      .eq('user_id', userId)
+
+    await appendTaskLog({
+      taskId: task.id,
+      userId,
+      level: 'audit',
+      message: 'Live cloud browser run completed cleanly.',
+    })
+
+    return true
+  }
+
+  if (run.status === 'failed' || run.status === 'cancelled') {
+    const isCancel = run.status === 'cancelled'
+    const safeError = redactSecretsInText(run.error || (isCancel ? 'Cancelled by owner.' : 'Remote browser task failed.'))
+
+    await admin
+      .from('assistant_jobs')
+      .update({ status: isCancel ? 'cancelled' : 'failed', last_error: safeError })
+      .eq('id', task.external_execution_id)
+      .eq('user_id', userId)
+
+    await admin
+      .from('assistant_tasks')
+      .update({
+        status: isCancel ? 'cancelled' : 'failed',
+        error_code: isCancel ? 'CANCELLED' : 'REMOTE_BROWSER_ERROR',
+        error_message: safeError,
+        completed_at: new Date().toISOString(),
+      })
+      .eq('id', task.id)
+      .eq('user_id', userId)
+      .in('status', ['running', 'waiting_human_verification', 'queued', 'cancelling'])
+
+    return true
+  }
+
+  return mutated
 }
 
 export async function listTasks(opts: {
@@ -405,6 +609,72 @@ export async function approveTask(opts: {
 
   if (jobErr) {
     throw new Error(`Failed to enqueue durable job: ${jobErr.message}`)
+  }
+
+  // Prefer persistent Live Cloud Browser VPS (Nobus) when browser steps are needed and VPS is reachable
+  if (requiresPlaywright) {
+    const remoteBrowser = await checkLiveBrowserHealth(opts.userId).catch(() => null)
+    if (remoteBrowser?.online && remoteBrowser.liveBrowser) {
+      const browserSteps = stepList.filter(
+        (s) => s.tool_name === 'browser_navigate_extract' || s.tool_name === 'browser_interactive_action'
+      )
+      try {
+        await startRemoteBrowserRun(opts.userId, {
+          runId: jobRow.id,
+          taskId: opts.taskId,
+          steps: browserSteps.map((s) => ({
+            stepOrder: s.step_order,
+            toolName: s.tool_name,
+            parameters: s.parameters,
+          })),
+        })
+
+        const nowIso = new Date().toISOString()
+        await admin
+          .from('assistant_jobs')
+          .update({
+            status: 'running',
+            locked_by: 'nobus-live-browser-vps',
+            locked_at: nowIso,
+            lease_expires_at: new Date(Date.now() + 15 * 60_000).toISOString(),
+            attempt_count: 1,
+          })
+          .eq('id', jobRow.id)
+          .eq('user_id', opts.userId)
+
+        const { data: runningTask } = await admin
+          .from('assistant_tasks')
+          .update({
+            status: 'running',
+            external_execution_id: jobRow.id,
+            started_at: nowIso,
+          })
+          .eq('id', opts.taskId)
+          .eq('user_id', opts.userId)
+          .select('*')
+          .single()
+
+        await appendTaskLog({
+          taskId: opts.taskId,
+          userId: opts.userId,
+          level: 'audit',
+          message: `Started live cloud browser execution on ${remoteBrowser.workerHost} (run ${jobRow.id}). Open Live Browser Preview or click "Take control of the browser" anytime.`,
+        })
+
+        return {
+          task: (runningTask || approvedTask) as AssistantTaskRecord,
+          alreadyProcessed: false,
+          workerQueued: true,
+        }
+      } catch (remoteErr: any) {
+        await appendTaskLog({
+          taskId: opts.taskId,
+          userId: opts.userId,
+          level: 'warn',
+          message: `Live cloud browser dispatch failed (${redactSecretsInText(remoteErr?.message || 'error')}); falling back cleanly.`,
+        })
+      }
+    }
   }
 
   // When the persistent desktop Playwright worker is online, delegate execution to it;
@@ -821,10 +1091,14 @@ export async function cancelTask(opts: {
     return current as AssistantTaskRecord
   }
 
-  // If task has not started running in a worker yet, cancel immediately
-  const immediateCancel = ['planning', 'waiting_approval', 'queued', 'waiting_human_verification'].includes(
-    current.status
-  )
+  if (current.external_execution_id) {
+    await cancelRemoteBrowserRun(opts.userId, current.external_execution_id)
+  }
+
+  // If task has not started running in a worker yet (or is a remote VPS live browser run), cancel immediately
+  const immediateCancel =
+    Boolean(current.external_execution_id) ||
+    ['planning', 'waiting_approval', 'queued', 'waiting_human_verification'].includes(current.status)
   const nextStatus = immediateCancel ? 'cancelled' : 'cancelling'
 
   await admin

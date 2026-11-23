@@ -132,11 +132,25 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   browser_worker: {
     provider: 'browser_worker',
-    tier: 'optional',
-    label: 'Playwright Browser Worker (Optional)',
-    description: 'Persistent background daemon executing isolated browser navigation, uploads, and captures.',
-    envKeys: ['ASSISTANT_WORKER_ID'],
-    credentialFields: [],
+    tier: 'core',
+    label: 'Live Cloud Browser Worker (Nobus VPS / Playwright)',
+    description:
+      'Persistent cloud Chromium browser with live visual preview and Take Control / Done human handoff.',
+    envKeys: ['SOVIRA_BROWSER_WORKER_URL', 'SOVIRA_BROWSER_WORKER_TOKEN'],
+    credentialFields: [
+      {
+        key: 'workerUrl',
+        label: 'Cloud Browser Worker Base URL',
+        placeholder: 'http://102.209.46.229:8080',
+        secret: false,
+      },
+      {
+        key: 'workerToken',
+        label: 'Worker Bearer Token (/opt/sovira-worker/token.txt)',
+        placeholder: 'Paste WORKER_TOKEN',
+        secret: true,
+      },
+    ],
   },
 }
 
@@ -195,7 +209,10 @@ function getEnvCredentialsForProvider(provider: IntegrationProviderId): Record<s
         ...(process.env.YOUTUBE_REFRESH_TOKEN ? { refreshToken: process.env.YOUTUBE_REFRESH_TOKEN } : {}),
       }
     case 'browser_worker':
-      return {}
+      return {
+        ...(process.env.SOVIRA_BROWSER_WORKER_URL ? { workerUrl: process.env.SOVIRA_BROWSER_WORKER_URL } : {}),
+        ...(process.env.SOVIRA_BROWSER_WORKER_TOKEN ? { workerToken: process.env.SOVIRA_BROWSER_WORKER_TOKEN } : {}),
+      }
   }
 }
 
@@ -377,6 +394,41 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
     Boolean(latestBeat?.last_heartbeat_at) &&
     Date.now() - new Date(latestBeat.last_heartbeat_at).getTime() <= 45_000
 
+  const bwRow = rowMap.get('browser_worker')
+  const bwEnvCreds = getEnvCredentialsForProvider('browser_worker')
+  let remoteWorkerUrl = String(
+    bwEnvCreds.workerUrl || (bwRow?.config_metadata as Record<string, unknown> | undefined)?.workerUrl || ''
+  )
+    .trim()
+    .replace(/\/+$/, '')
+
+  if (!remoteWorkerUrl && bwRow?.encrypted_credentials && bwRow.enabled !== false) {
+    try {
+      const resolvedBw = await resolveProviderCredentials(userId, 'browser_worker')
+      remoteWorkerUrl = String(resolvedBw.credentials.workerUrl || resolvedBw.metadata?.workerUrl || '')
+        .trim()
+        .replace(/\/+$/, '')
+    } catch {
+      // ignore decrypt error here
+    }
+  }
+
+  let remoteHealth: Record<string, unknown> | null = null
+  if (bwRow?.enabled !== false && /^https?:\/\//i.test(remoteWorkerUrl)) {
+    try {
+      const res = await fetch(`${remoteWorkerUrl}/health`, {
+        signal: AbortSignal.timeout(3500),
+        cache: 'no-store',
+      })
+      if (res.ok) {
+        const parsed = (await res.json().catch(() => null)) as Record<string, unknown> | null
+        if (parsed?.ok) remoteHealth = parsed
+      }
+    } catch {
+      remoteHealth = null
+    }
+  }
+
   return INTEGRATION_PROVIDERS.map((providerId) => {
     const def = INTEGRATION_CATALOG[providerId]
     const dbRow = rowMap.get(providerId)
@@ -385,6 +437,40 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
     const hasVault = Boolean(dbRow?.encrypted_credentials)
 
     if (providerId === 'browser_worker') {
+      const configuredVia: IntegrationStatusSummary['configuredVia'] =
+        hasEnv && hasVault ? 'both' : hasVault ? 'encrypted_vault' : hasEnv ? 'env' : 'none'
+
+      if (remoteWorkerUrl && /^https?:\/\//i.test(remoteWorkerUrl)) {
+        const host = new URL(remoteWorkerUrl).host
+        const remoteOk = dbRow?.enabled !== false && Boolean(remoteHealth?.ok)
+        return {
+          provider: 'browser_worker',
+          tier: def.tier,
+          label: def.label,
+          description: def.description,
+          enabled: dbRow?.enabled ?? true,
+          status: dbRow?.enabled === false ? 'disconnected' : remoteOk ? 'connected' : 'disconnected',
+          configuredVia,
+          verificationMode: remoteOk ? 'live_verified' : 'worker_offline',
+          lastTestedAt: remoteOk ? new Date().toISOString() : dbRow?.last_tested_at || null,
+          lastError:
+            dbRow?.enabled === false
+              ? 'Cloud browser worker is disabled.'
+              : remoteOk
+              ? null
+              : `Cloud browser worker at ${host} is unreachable on /health.`,
+          secretPreview: remoteOk ? `Live Browser Ready (${host})` : `Configured (${host}) - Offline`,
+          credentialFields: def.credentialFields,
+          metadata: {
+            ...((dbRow?.config_metadata as Record<string, unknown>) || {}),
+            workerUrl: remoteWorkerUrl,
+            liveBrowser: Boolean(remoteHealth?.liveBrowser),
+            controlMode: remoteHealth?.controlMode || 'idle',
+            activeRunId: remoteHealth?.activeRunId || null,
+          },
+        }
+      }
+
       return {
         provider: 'browser_worker',
         tier: def.tier,
@@ -392,13 +478,13 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
         description: def.description,
         enabled: dbRow?.enabled ?? true,
         status: workerOnline ? 'connected' : 'disconnected',
-        configuredVia: 'none',
+        configuredVia,
         verificationMode: workerOnline ? 'live_verified' : 'worker_offline',
         lastTestedAt: latestBeat?.last_heartbeat_at || dbRow?.last_tested_at || null,
         lastError: workerOnline
           ? null
-          : 'No active background worker heartbeat in the last 45 seconds. Start worker/assistant-worker.ts when browser automation is needed.',
-        secretPreview: workerOnline ? `Worker ${latestBeat.worker_id} Online` : 'Worker Offline',
+          : 'No cloud worker URL configured and no local worker heartbeat detected. Connect your Nobus VPS URL & Bearer Token.',
+        secretPreview: workerOnline ? `Worker ${latestBeat.worker_id} Online` : 'Not Connected',
         credentialFields: def.credentialFields,
         metadata: latestBeat
           ? {
@@ -471,6 +557,95 @@ export async function testIntegrationConnection(
   const admin = createAdminClient()
 
   if (provider === 'browser_worker') {
+    const bwResolved = await resolveProviderCredentials(userId, 'browser_worker').catch(() => ({
+      enabled: true,
+      credentials: {} as Record<string, string>,
+      metadata: {} as Record<string, unknown>,
+    }))
+
+    if (!bwResolved.enabled) {
+      return { ok: false, provider, status: 'disconnected', message: 'Cloud Browser Worker is disabled by owner.' }
+    }
+
+    const remoteUrl = String(
+      bwResolved.credentials.workerUrl ||
+        bwResolved.metadata?.workerUrl ||
+        process.env.SOVIRA_BROWSER_WORKER_URL ||
+        ''
+    )
+      .trim()
+      .replace(/\/+$/, '')
+    const remoteToken = String(
+      bwResolved.credentials.workerToken || process.env.SOVIRA_BROWSER_WORKER_TOKEN || ''
+    ).trim()
+
+    if (remoteUrl) {
+      if (!/^https?:\/\//i.test(remoteUrl)) {
+        return await persistTestResult(userId, provider, 'error', 'Worker Base URL must start with http:// or https://.')
+      }
+      try {
+        const healthRes = await fetch(`${remoteUrl}/health`, { signal: AbortSignal.timeout(4500), cache: 'no-store' })
+        const healthJson = (await healthRes.json().catch(() => null)) as Record<string, unknown> | null
+        if (!healthRes.ok || !healthJson?.ok) {
+          return await persistTestResult(
+            userId,
+            provider,
+            'error',
+            `Cloud worker /health returned HTTP ${healthRes.status}.`
+          )
+        }
+
+        if (!remoteToken) {
+          return await persistTestResult(
+            userId,
+            provider,
+            'error',
+            'Worker /health is reachable, but Bearer Token is missing. Paste WORKER_TOKEN to authorize browser control.',
+            { health: healthJson }
+          )
+        }
+
+        if (healthJson.liveBrowser) {
+          const stateRes = await fetch(`${remoteUrl}/session/state`, {
+            headers: { Authorization: `Bearer ${remoteToken}` },
+            signal: AbortSignal.timeout(6500),
+            cache: 'no-store',
+          })
+          if (!stateRes.ok) {
+            return await persistTestResult(
+              userId,
+              provider,
+              'error',
+              `Worker /health is OK, but authenticated /session/state returned HTTP ${stateRes.status}. Check WORKER_TOKEN.`
+            )
+          }
+          const stateJson = (await stateRes.json().catch(() => ({}))) as Record<string, unknown>
+          return await persistTestResult(
+            userId,
+            provider,
+            'connected',
+            `Live Cloud Browser ready at ${new URL(remoteUrl).host} (controlMode=${String(stateJson.controlMode || 'idle')}).`,
+            { health: healthJson, tabsCount: Array.isArray(stateJson.tabs) ? stateJson.tabs.length : 1 }
+          )
+        }
+
+        return await persistTestResult(
+          userId,
+          provider,
+          'connected',
+          `Worker reachable at ${new URL(remoteUrl).host} (/health OK). Upgrade worker script to enable live preview frames.`,
+          { health: healthJson }
+        )
+      } catch (err: any) {
+        return await persistTestResult(
+          userId,
+          provider,
+          'error',
+          redactSecretsInText(`Could not reach ${remoteUrl}/health: ${err?.message || 'timeout/network error'}`)
+        )
+      }
+    }
+
     const { data: beats } = await admin
       .from('assistant_worker_heartbeats')
       .select('*')
@@ -489,7 +664,7 @@ export async function testIntegrationConnection(
         provider,
         status: online ? 'connected' : 'disconnected',
         last_tested_at: new Date().toISOString(),
-        last_error: online ? null : 'Background worker heartbeat not detected within 45 seconds.',
+        last_error: online ? null : 'No cloud worker URL configured and no local worker heartbeat detected.',
       },
       { onConflict: 'user_id,provider' }
     )
@@ -500,7 +675,7 @@ export async function testIntegrationConnection(
       status: online ? 'connected' : 'disconnected',
       message: online
         ? `Worker "${beat.worker_id}" is online (last heartbeat ${beat.last_heartbeat_at}).`
-        : 'Background worker is offline. Start it via scripts/run-assistant-worker.ps1 or PM2.',
+        : 'No Cloud Browser Worker URL or local heartbeat configured yet.',
       details: beat || {},
     }
   }
