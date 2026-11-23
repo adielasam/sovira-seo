@@ -51,14 +51,33 @@ export function getActiveKeyVersion(): string {
 }
 
 /**
+ * Resolves the active raw AES-256-GCM key string from ASSISTANT_ENCRYPTION_KEY,
+ * or derives a deterministic 32-byte hex key via HMAC-SHA256 from SUPABASE_SERVICE_ROLE_KEY
+ * in server memory so the UI Vault works out-of-the-box on Vercel without storing keys in the DB.
+ */
+export function getEffectiveRawEncryptionKey(): string | undefined {
+  if (process.env.ASSISTANT_ENCRYPTION_KEY && process.env.ASSISTANT_ENCRYPTION_KEY.trim().length > 0) {
+    return process.env.ASSISTANT_ENCRYPTION_KEY.trim()
+  }
+  if (process.env.SUPABASE_SERVICE_ROLE_KEY && process.env.SUPABASE_SERVICE_ROLE_KEY.trim().length > 0) {
+    return crypto
+      .createHmac('sha256', process.env.SUPABASE_SERVICE_ROLE_KEY.trim())
+      .update('sovira-assistant-vault-aes256gcm-v1', 'utf8')
+      .digest('hex')
+  }
+  return undefined
+}
+
+/**
  * Builds an in-memory keyring from environment variables only (never from the database).
  */
 export function loadEncryptionKeyring(): Map<string, Buffer> {
   const ring = new Map<string, Buffer>()
   const activeVersion = getActiveKeyVersion()
 
-  if (process.env.ASSISTANT_ENCRYPTION_KEY) {
-    ring.set(activeVersion, parseAes256Key(process.env.ASSISTANT_ENCRYPTION_KEY, 'ASSISTANT_ENCRYPTION_KEY'))
+  const effectiveKey = getEffectiveRawEncryptionKey()
+  if (effectiveKey) {
+    ring.set(activeVersion, parseAes256Key(effectiveKey, 'ASSISTANT_ENCRYPTION_KEY'))
   }
 
   const previousRaw = process.env.ASSISTANT_ENCRYPTION_KEY_PREVIOUS
@@ -81,8 +100,9 @@ export function loadEncryptionKeyring(): Map<string, Buffer> {
 
 export function isEncryptionConfigured(): boolean {
   try {
-    if (!process.env.ASSISTANT_ENCRYPTION_KEY) return false
-    parseAes256Key(process.env.ASSISTANT_ENCRYPTION_KEY, 'ASSISTANT_ENCRYPTION_KEY')
+    const effectiveKey = getEffectiveRawEncryptionKey()
+    if (!effectiveKey) return false
+    parseAes256Key(effectiveKey, 'ASSISTANT_ENCRYPTION_KEY')
     return true
   } catch {
     return false
@@ -109,7 +129,7 @@ export function encryptSecret(plaintext: string): { envelope: string; keyVersion
   assertUnmaskedPlaintextSecret(plaintext)
 
   const keyVersion = getActiveKeyVersion()
-  const key = parseAes256Key(process.env.ASSISTANT_ENCRYPTION_KEY || '', 'ASSISTANT_ENCRYPTION_KEY')
+  const key = parseAes256Key(getEffectiveRawEncryptionKey() || '', 'ASSISTANT_ENCRYPTION_KEY')
   const iv = crypto.randomBytes(IV_BYTE_LENGTH)
 
   const cipher = crypto.createCipheriv(AES_ALGORITHM, key, iv)

@@ -120,13 +120,14 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   google_oauth: {
     provider: 'google_oauth',
     tier: 'optional',
-    label: 'Google OAuth / YouTube Data API v3 (Optional)',
-    description: 'Official OAuth2 credentials for publishing approved video content as private/unlisted drafts.',
-    envKeys: ['YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REFRESH_TOKEN'],
+    label: 'YouTube Data API v3 & Google OAuth (Optional)',
+    description: 'YouTube Data API v3 key (AIza...) for channel/video analytics & search, plus optional OAuth2 for video uploads.',
+    envKeys: ['YOUTUBE_API_KEY', 'YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REFRESH_TOKEN'],
     credentialFields: [
-      { key: 'clientId', label: 'Google OAuth Client ID', placeholder: 'xxx.apps.googleusercontent.com', secret: false },
-      { key: 'clientSecret', label: 'Google OAuth Client Secret', placeholder: 'GOCSPX-...', secret: true },
-      { key: 'refreshToken', label: 'YouTube Refresh Token', placeholder: '1//0g...', secret: true },
+      { key: 'apiKey', label: 'YouTube Data API v3 Key (AIza...)', placeholder: 'AIzaSy...', secret: true },
+      { key: 'clientId', label: 'Google OAuth Client ID (Optional - for uploads)', placeholder: 'xxx.apps.googleusercontent.com', secret: false },
+      { key: 'clientSecret', label: 'Google OAuth Client Secret (Optional - for uploads)', placeholder: 'GOCSPX-...', secret: true },
+      { key: 'refreshToken', label: 'YouTube Refresh Token (Optional - for uploads)', placeholder: '1//0g...', secret: true },
     ],
   },
   browser_worker: {
@@ -184,6 +185,7 @@ function getEnvCredentialsForProvider(provider: IntegrationProviderId): Record<s
       }
     case 'google_oauth':
       return {
+        ...(process.env.YOUTUBE_API_KEY ? { apiKey: process.env.YOUTUBE_API_KEY } : {}),
         ...(process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID
           ? { clientId: (process.env.YOUTUBE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID)! }
           : {}),
@@ -633,29 +635,43 @@ export async function testIntegrationConnection(
         break
       }
       case 'google_oauth': {
-        if (!creds.clientId || !creds.clientSecret || !creds.refreshToken) {
+        const hasOAuth = Boolean(creds.clientId && creds.clientSecret && creds.refreshToken)
+        const hasApiKey = Boolean(creds.apiKey)
+        if (!hasOAuth && !hasApiKey) {
           return await persistTestResult(
             userId,
             provider,
             'unconfigured',
-            'YouTube Client ID, Client Secret, and Refresh Token are required for automated YouTube uploads.'
+            'Supply a YouTube Data API v3 Key (AIza...) for analytics/search, or OAuth credentials for direct uploads.'
           )
         }
-        const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-          body: new URLSearchParams({
-            client_id: creds.clientId,
-            client_secret: creds.clientSecret,
-            refresh_token: creds.refreshToken,
-            grant_type: 'refresh_token',
-          }),
-          signal: AbortSignal.timeout(10000),
-        })
-        ok = tokenRes.ok
-        message = tokenRes.ok
-          ? 'Google OAuth / YouTube token exchange verified.'
-          : `Google OAuth returned HTTP ${tokenRes.status}`
+        if (hasOAuth) {
+          const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+              client_id: creds.clientId,
+              client_secret: creds.clientSecret,
+              refresh_token: creds.refreshToken,
+              grant_type: 'refresh_token',
+            }),
+            signal: AbortSignal.timeout(10000),
+          })
+          ok = tokenRes.ok
+          message = tokenRes.ok
+            ? 'Google OAuth / YouTube upload token exchange verified.'
+            : `Google OAuth returned HTTP ${tokenRes.status}`
+          break
+        }
+        const ytRes = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?part=id&chart=mostPopular&maxResults=1&key=${encodeURIComponent(creds.apiKey)}`,
+          { signal: AbortSignal.timeout(10000) }
+        )
+        const ytData = await ytRes.json().catch(() => null)
+        ok = ytRes.ok
+        message = ytRes.ok
+          ? 'YouTube Data API v3 Key verified (Analytics & Video Search Ready).'
+          : `YouTube Data API v3 returned HTTP ${ytRes.status}: ${ytData?.error?.message || 'Check if YouTube Data API v3 is enabled in Google Cloud Console.'}`
         break
       }
     }

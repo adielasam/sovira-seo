@@ -66,8 +66,10 @@
     "@types/react-pivottable": "^0.11.6",
     "eslint": "^9",
     "eslint-config-next": "16.2.9",
+    "playwright": "^1.65.1",
     "react-email": "^6.9.2",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }
