@@ -5,6 +5,7 @@ import { completeWithFailover, generateStructuredTaskPlan } from './ai-provider'
 import { redactSecretsInText } from './crypto'
 import { dispatchToMakeWebhook } from './integrations/make'
 import { syncTaskToNotion } from './integrations/notion'
+import { runContentAutomationPipeline } from './integrations/content-pipeline'
 import { sendTelegramMessage } from './integrations/telegram'
 import { getIntegrationStatusList, resolveAICredentials } from './integrations/vault'
 import { CONTROLLED_TOOL_REGISTRY } from './tools/registry'
@@ -103,7 +104,7 @@ export async function createPlannedTask(opts: {
   instruction: string
   conversationId?: string | null
   idempotencyKey?: string | null
-  source?: 'web' | 'telegram' | 'webhook'
+  source?: 'web' | 'telegram' | 'webhook' | 'mcp' | 'chatgpt'
   attachments?: Array<{ name: string; type?: string; size?: number; summary?: string }>
 }): Promise<{
   task: AssistantTaskRecord
@@ -349,7 +350,9 @@ export async function approveTask(opts: {
     .order('step_order', { ascending: true })
 
   const stepList = (steps || []) as AssistantTaskStepRecord[]
-  const requiresWorker = stepList.some((s) => CONTROLLED_TOOL_REGISTRY[s.tool_name]?.longRunning)
+  const requiresPlaywright = stepList.some(
+    (s) => s.tool_name === 'browser_navigate_extract' || s.tool_name === 'browser_interactive_action'
+  )
 
   // Check if persistent worker is online
   const { data: beats } = await admin
@@ -370,7 +373,7 @@ export async function approveTask(opts: {
       task_id: opts.taskId,
       user_id: opts.userId,
       job_type: 'execute_task',
-      payload: { source: approvedTask.source, requiresWorker },
+      payload: { source: approvedTask.source, requiresPlaywright },
       status: 'queued',
       max_attempts: approvedTask.max_retries || 3,
     })
@@ -381,8 +384,8 @@ export async function approveTask(opts: {
     throw new Error(`Failed to enqueue durable job: ${jobErr.message}`)
   }
 
-  // If task requires persistent worker OR worker is online to handle it asynchronously, return queued state immediately
-  if (requiresWorker || workerOnline) {
+  // Browser automation always waits for persistent Playwright worker; when worker is online it handles all jobs
+  if (requiresPlaywright || workerOnline) {
     await appendTaskLog({
       taskId: opts.taskId,
       userId: opts.userId,
@@ -541,6 +544,38 @@ Produce a detailed, well-structured Markdown report with comparisons, pros/cons,
             status: dispatchRes.waitingExternal ? 'waiting_external' : 'completed',
             output: dispatchRes as unknown as Record<string, unknown>,
             completed_at: dispatchRes.waitingExternal ? null : new Date().toISOString(),
+          })
+          .eq('id', step.id)
+      } else if (step.tool_name === 'content_story_pipeline') {
+        const params = step.parameters || {}
+        const contentRes = await runContentAutomationPipeline({
+          userId: opts.userId,
+          taskId: opts.task.id,
+          topic: String(params.topic || opts.task.instruction),
+          targetAudience: String(params.targetAudience || 'General audience'),
+          style: String(params.style || 'African storytelling documentary'),
+          durationSeconds: Number(params.durationSeconds || 60),
+          includeSubtitles: params.includeSubtitles !== false,
+          watermarkText: String(params.watermarkText || 'Sovira Studio'),
+          publishMode: (params.publishMode as any) || 'await_publish_approval',
+          onStageLog: async (msg, meta) => {
+            await appendTaskLog({
+              taskId: opts.task.id,
+              userId: opts.userId,
+              stepOrder: step.step_order,
+              message: msg,
+              metadata: meta,
+            })
+          },
+        })
+        reportMarkdown = `# ${contentRes.story.title}\n\n${contentRes.story.script}`
+        stepOutputs.push({ step: step.step_order, tool: step.tool_name, ...contentRes })
+        await admin
+          .from('assistant_task_steps')
+          .update({
+            status: 'completed',
+            output: contentRes as unknown as Record<string, unknown>,
+            completed_at: new Date().toISOString(),
           })
           .eq('id', step.id)
       }
@@ -797,4 +832,117 @@ export async function retryTask(opts: {
   // Automatically re-approve & dispatch since retry was explicitly triggered by the owner
   const approved = await approveTask({ userId: opts.userId, taskId: retriedTask.id })
   return approved.task
+}
+
+/**
+ * Recovers stale leases and atomically claims and processes the next queued non-browser job.
+ * Called by cron, HTTP queue processor, or UI dashboard recovery trigger.
+ */
+export async function processNextQueuedJob(opts: {
+  userId: string
+}): Promise<{
+  processed: boolean
+  recoveredCount: number
+  jobId?: string
+  taskId?: string
+  status?: string
+  message: string
+}> {
+  if (!isExactAssistantOwnerId(opts.userId)) {
+    throw new Error('Unauthorized owner UUID')
+  }
+
+  const admin = createAdminClient()
+
+  // 1. Recover any stalled jobs whose worker lease expired
+  const { data: recRows } = await admin.rpc('recover_stale_assistant_jobs', {
+    p_owner_id: opts.userId,
+  })
+  const rec = Array.isArray(recRows) ? recRows[0] : recRows
+  const recoveredCount = Number(rec?.recovered_count || 0)
+
+  // 2. Claim next eligible queued job atomically using FOR UPDATE SKIP LOCKED
+  const { data: claimed, error: claimErr } = await admin.rpc('claim_next_assistant_job', {
+    p_worker_id: 'sovira-http-queue-processor',
+    p_lease_seconds: 60,
+    p_owner_id: opts.userId,
+  })
+
+  if (claimErr) {
+    throw new Error(`Failed claiming job: ${claimErr.message}`)
+  }
+
+  const job = Array.isArray(claimed) ? claimed[0] : claimed
+  if (!job) {
+    return {
+      processed: false,
+      recoveredCount,
+      message: recoveredCount > 0 ? `Recovered ${recoveredCount} stale job(s); no ready jobs remain.` : 'Queue is empty.',
+    }
+  }
+
+  const detail = await getTaskDetail(opts.userId, job.task_id)
+  if (!detail) {
+    await admin
+      .from('assistant_jobs')
+      .update({ status: 'failed', last_error: 'Parent task record missing' })
+      .eq('id', job.id)
+    return {
+      processed: false,
+      recoveredCount,
+      jobId: job.id,
+      message: 'Claimed orphan job without parent task; marked failed.',
+    }
+  }
+
+  const requiresPlaywright = detail.steps.some(
+    (s) => s.tool_name === 'browser_navigate_extract' || s.tool_name === 'browser_interactive_action'
+  )
+
+  if (requiresPlaywright) {
+    // Release lease back cleanly without consuming retry count so persistent Playwright worker picks it up
+    await admin
+      .from('assistant_jobs')
+      .update({
+        status: 'queued',
+        locked_by: null,
+        locked_at: null,
+        lease_expires_at: null,
+        attempt_count: Math.max(0, Number(job.attempt_count || 1) - 1),
+      })
+      .eq('id', job.id)
+
+    await appendTaskLog({
+      taskId: detail.task.id,
+      userId: opts.userId,
+      level: 'info',
+      message: 'Job requires Playwright browser runner; kept in durable queue for worker/assistant-worker.ts.',
+    })
+
+    return {
+      processed: false,
+      recoveredCount,
+      jobId: job.id,
+      taskId: detail.task.id,
+      status: 'queued',
+      message: 'Task requires persistent Playwright worker process.',
+    }
+  }
+
+  const finalTask = await executeLightweightTaskSteps({
+    userId: opts.userId,
+    task: detail.task,
+    steps: detail.steps,
+    jobId: job.id,
+    notifyTelegram: detail.task.source === 'telegram',
+  })
+
+  return {
+    processed: true,
+    recoveredCount,
+    jobId: job.id,
+    taskId: finalTask.id,
+    status: finalTask.status,
+    message: `Processed queued job ${job.id} (${finalTask.status}).`,
+  }
 }

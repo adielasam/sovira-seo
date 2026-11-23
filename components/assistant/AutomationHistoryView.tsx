@@ -87,6 +87,24 @@ export function AutomationHistoryView() {
     }
   }
 
+  const [processingQueue, setProcessingQueue] = useState(false)
+  const hasQueued = useMemo(() => tasks.some((t) => t.status === 'queued'), [tasks])
+
+  const processQueuedJobs = async () => {
+    setProcessingQueue(true)
+    try {
+      const res = await fetch('/api/assistant/jobs/process', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Failed processing queue')
+      toast.success(data.message || 'Queue processed.')
+      await loadHistory()
+    } catch (err: any) {
+      toast.error(err?.message || 'Failed processing queue')
+    } finally {
+      setProcessingQueue(false)
+    }
+  }
+
   return (
     <div>
       <AssistantNav workerOnline={workerOnline} />
@@ -105,7 +123,18 @@ export function AutomationHistoryView() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {['all', 'waiting_approval', 'running', 'completed', 'failed', 'cancelled'].map((s) => (
+            {hasQueued && (
+              <button
+                type="button"
+                disabled={processingQueue}
+                onClick={processQueuedJobs}
+                className="inline-flex items-center gap-1 rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+              >
+                <Play className="h-3.5 w-3.5" />
+                {processingQueue ? 'Processing...' : 'Process Queued Jobs'}
+              </button>
+            )}
+            {['all', 'waiting_approval', 'queued', 'running', 'completed', 'failed', 'cancelled'].map((s) => (
               <button
                 key={s}
                 type="button"

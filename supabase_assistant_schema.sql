@@ -85,7 +85,7 @@ CREATE TABLE IF NOT EXISTS public.assistant_tasks (
   error_code TEXT,
   error_message TEXT,
   execution_logs JSONB NOT NULL DEFAULT '[]'::jsonb,
-  source TEXT NOT NULL DEFAULT 'web' CHECK (source IN ('web', 'telegram', 'webhook')),
+  source TEXT NOT NULL DEFAULT 'web' CHECK (source IN ('web', 'telegram', 'webhook', 'mcp', 'chatgpt')),
   external_execution_id TEXT,
   attachments JSONB NOT NULL DEFAULT '[]'::jsonb,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
@@ -203,7 +203,7 @@ CREATE TABLE IF NOT EXISTS public.assistant_integrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
   provider TEXT NOT NULL CHECK (
-    provider IN ('openrouter', 'gemini', 'telegram', 'make', 'notion', 'elevenlabs', 'creatomate', 'google_oauth', 'browser_worker')
+    provider IN ('gemini', 'groq', 'chatgpt_mcp', 'openrouter', 'telegram', 'make', 'notion', 'elevenlabs', 'creatomate', 'google_oauth', 'browser_worker')
   ),
   enabled BOOLEAN NOT NULL DEFAULT true,
   status TEXT NOT NULL DEFAULT 'unconfigured' CHECK (

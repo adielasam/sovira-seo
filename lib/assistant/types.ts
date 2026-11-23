@@ -31,8 +31,10 @@ export const TASK_CATEGORIES = [
 export type TaskCategory = (typeof TASK_CATEGORIES)[number]
 
 export const INTEGRATION_PROVIDERS = [
-  'openrouter',
   'gemini',
+  'groq',
+  'chatgpt_mcp',
+  'openrouter',
   'telegram',
   'make',
   'notion',
@@ -149,7 +151,7 @@ export interface AssistantTaskRecord {
   error_code: string | null
   error_message: string | null
   execution_logs: Array<{ timestamp: string; message: string; level?: string }>
-  source: 'web' | 'telegram' | 'webhook'
+  source: 'web' | 'telegram' | 'webhook' | 'mcp' | 'chatgpt'
   external_execution_id: string | null
   attachments: Array<{ name: string; type?: string; size?: number; summary?: string }>
   created_at: string
@@ -160,6 +162,7 @@ export interface AssistantTaskRecord {
 
 export interface IntegrationStatusSummary {
   provider: IntegrationProviderId
+  tier: 'core' | 'optional'
   label: string
   description: string
   enabled: boolean

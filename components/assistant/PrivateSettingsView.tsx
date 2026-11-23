@@ -103,20 +103,32 @@ export function PrivateSettingsView({
         <div className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm space-y-3">
           <div className="flex items-center gap-2 text-slate-900 dark:text-white font-bold">
             <Webhook className="h-5 w-5 text-purple-500" />
-            Authenticated Webhook Endpoints
+            ChatGPT Apps SDK, MCP &amp; Webhook Endpoints
           </div>
           <p className="text-xs text-slate-600 dark:text-slate-400">
-            Register these endpoints once external credentials are configured; both enforce constant-time signature/secret checks and PostgreSQL event deduplication.
+            Shared backend endpoints ready for ChatGPT Apps SDK / Actions and optional external callbacks. Protected by owner UUID auth, bearer tokens, and event deduplication.
           </p>
           <div className="space-y-2 text-xs">
             <div className="rounded-xl bg-slate-50 dark:bg-slate-950 p-3 border border-slate-200 dark:border-slate-800">
-              <p className="font-semibold text-slate-700 dark:text-slate-300">Telegram Webhook URL</p>
+              <p className="font-semibold text-slate-700 dark:text-slate-300">Shared MCP Server (JSON-RPC 2.0)</p>
+              <code className="block mt-1 font-mono text-[11px] text-blue-600 dark:text-blue-400 break-all">
+                {appUrl}/api/assistant/mcp
+              </code>
+            </div>
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-950 p-3 border border-slate-200 dark:border-slate-800">
+              <p className="font-semibold text-slate-700 dark:text-slate-300">ChatGPT Apps SDK OpenAPI 3.1 Schema</p>
+              <code className="block mt-1 font-mono text-[11px] text-blue-600 dark:text-blue-400 break-all">
+                {appUrl}/api/assistant/mcp?format=openapi
+              </code>
+            </div>
+            <div className="rounded-xl bg-slate-50 dark:bg-slate-950 p-3 border border-slate-200 dark:border-slate-800">
+              <p className="font-semibold text-slate-700 dark:text-slate-300">Telegram Webhook URL (Optional)</p>
               <code className="block mt-1 font-mono text-[11px] text-blue-600 dark:text-blue-400 break-all">
                 {appUrl}/api/assistant/telegram/webhook
               </code>
             </div>
             <div className="rounded-xl bg-slate-50 dark:bg-slate-950 p-3 border border-slate-200 dark:border-slate-800">
-              <p className="font-semibold text-slate-700 dark:text-slate-300">Make.com Callback URL</p>
+              <p className="font-semibold text-slate-700 dark:text-slate-300">Make.com Callback URL (Optional)</p>
               <code className="block mt-1 font-mono text-[11px] text-blue-600 dark:text-blue-400 break-all">
                 {appUrl}/api/assistant/webhooks/make
               </code>

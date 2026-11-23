@@ -377,6 +377,25 @@ export function AssistantWorkspace() {
     toast.success('Report copied to clipboard.')
   }
 
+  const hasQueuedTasks = useMemo(() => tasks.some((t) => t.status === 'queued'), [tasks])
+  const [processingQueue, setProcessingQueue] = useState(false)
+
+  const handleProcessQueue = async () => {
+    setProcessingQueue(true)
+    try {
+      const res = await fetch('/api/assistant/jobs/process', { method: 'POST' })
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Queue processing failed')
+      toast.success(data.message || 'Queue check completed.')
+      await loadWorkspace()
+      if (data.taskId) await loadTaskDetail(data.taskId)
+    } catch (err: any) {
+      toast.error(err?.message || 'Queue processing error')
+    } finally {
+      setProcessingQueue(false)
+    }
+  }
+
   return (
     <div>
       <AssistantNav workerOnline={workerOnline} />
@@ -399,14 +418,27 @@ export function AssistantWorkspace() {
                 <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                   Task Queue ({filteredTasks.length})
                 </h2>
-                <button
-                  type="button"
-                  onClick={() => loadWorkspace()}
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
-                  title="Refresh queue"
-                >
-                  <RefreshCw className="h-3.5 w-3.5" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {hasQueuedTasks && (
+                    <button
+                      type="button"
+                      disabled={processingQueue}
+                      onClick={handleProcessQueue}
+                      className="inline-flex items-center gap-1 rounded-md bg-blue-600 px-2 py-0.5 text-[11px] font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      <Play className="h-3 w-3" />
+                      {processingQueue ? 'Running...' : 'Process Queued'}
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => loadWorkspace()}
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                    title="Refresh queue"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                </div>
               </div>
 
               <div className="flex flex-wrap gap-1 mb-3">

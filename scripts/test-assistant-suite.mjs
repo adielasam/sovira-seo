@@ -43,6 +43,7 @@ function compileAssistantModules() {
           'lib/assistant/types.ts',
           'lib/assistant/tools/registry.ts',
           'lib/assistant/ai-provider.ts',
+          'lib/assistant/mcp-adapter.ts',
         ],
       },
       null,
@@ -75,6 +76,7 @@ function loadCompiledWithSupabaseMock() {
         getUser: async () => ({ data: { user: _mockUser }, error: null })
       }
     });
+    exports.createAdminClient = () => ({});
     `
   )
 
@@ -93,6 +95,7 @@ function loadCompiledWithSupabaseMock() {
     cryptoMod: req(path.join(DIST_DIR, 'lib', 'assistant', 'crypto.js')),
     registry: req(path.join(DIST_DIR, 'lib', 'assistant', 'tools', 'registry.js')),
     aiProvider: req(path.join(DIST_DIR, 'lib', 'assistant', 'ai-provider.js')),
+    mcpAdapter: req(path.join(DIST_DIR, 'lib', 'assistant', 'mcp-adapter.js')),
     setMockUser: (u) => supabaseMock.__setMockUser(u),
     restore: () => {
       Module._resolveFilename = origResolve
@@ -114,7 +117,7 @@ async function runTests() {
     console.log('[1/4] Compiling real TypeScript assistant modules...')
     compileAssistantModules()
     loaded = loadCompiledWithSupabaseMock()
-    const { auth, cryptoMod, registry, aiProvider, setMockUser } = loaded
+    const { auth, cryptoMod, registry, aiProvider, mcpAdapter, setMockUser } = loaded
 
     console.log('[2/4] Running REAL Authentication & Timing-Safe Comparison Tests...')
     await test('constantTimeEqual handles mismatched lengths safely without throwing RangeError', async () => {
@@ -301,7 +304,68 @@ async function runTests() {
       }
     })
 
-    console.log(`\nALL ${passed} TESTS PASSED cleanly (Real crypto/auth/registry + clearly labeled mocked AI tests).`)
+    await test('[MOCKED] completeWithFailover uses Groq core engine directly without OPENROUTER_API_KEY (failoverUsed=false)', async () => {
+      const origOpenRouter = process.env.OPENROUTER_API_KEY
+      delete process.env.OPENROUTER_API_KEY
+      const origFetch = globalThis.fetch
+      globalThis.fetch = async (url) => {
+        if (String(url).includes('groq.com')) {
+          return new Response(
+            JSON.stringify({
+              id: 'chatcmpl-mock',
+              object: 'chat.completion',
+              created: Math.floor(Date.now() / 1000),
+              model: 'openai/gpt-oss-120b',
+              choices: [{ index: 0, message: { role: 'assistant', content: 'Core Groq response' }, finish_reason: 'stop' }],
+              usage: { prompt_tokens: 8, completion_tokens: 4, total_tokens: 12 },
+            }),
+            { status: 200, headers: { 'Content-Type': 'application/json' } }
+          )
+        }
+        throw new Error(`Unexpected fetch URL: ${url}`)
+      }
+
+      try {
+        const res = await aiProvider.completeWithFailover({
+          systemPrompt: 'Test',
+          prompt: 'Hello core',
+          credentials: { groqApiKey: 'gsk_mock_core_1234567890' },
+        })
+        assert.equal(res.provider, 'groq')
+        assert.equal(res.failoverUsed, false)
+        assert.equal(res.attempts.some((a) => a.provider === 'openrouter'), false)
+      } finally {
+        globalThis.fetch = origFetch
+        if (origOpenRouter) process.env.OPENROUTER_API_KEY = origOpenRouter
+      }
+    })
+
+    await test('MCP JSON-RPC 2.0 initialize, tools/list, and OpenAPI 3.1.0 schema generation work', async () => {
+      const ownerId = 'f6e15a16-757b-4fa6-8b71-56254ebddfc5'
+      const initRes = await mcpAdapter.handleMcpJsonRpcRequest(ownerId, {
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'initialize',
+        params: {},
+      })
+      assert.equal(initRes.result.protocolVersion, '2024-11-05')
+      assert.equal(initRes.result.serverInfo.name, 'sovira-ai-task-assistant')
+
+      const listRes = await mcpAdapter.handleMcpJsonRpcRequest(ownerId, {
+        jsonrpc: '2.0',
+        id: 2,
+        method: 'tools/list',
+      })
+      const toolNames = listRes.result.tools.map((t) => t.name)
+      assert.equal(toolNames.includes('sovira_plan_and_run_task'), true)
+      assert.equal(toolNames.includes('sovira_approve_task'), true)
+
+      const spec = mcpAdapter.getChatGptAppsOpenApiSpec('https://www.sovira.com.ng')
+      assert.equal(spec.openapi, '3.1.0')
+      assert.equal(Boolean(spec.paths['/api/assistant/mcp']), true)
+    })
+
+    console.log(`\nALL ${passed} TESTS PASSED cleanly (Real crypto/auth/registry/MCP + clearly labeled mocked AI tests).`)
   } finally {
     if (loaded) loaded.restore()
     fs.rmSync(DIST_DIR, { recursive: true, force: true })

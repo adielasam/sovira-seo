@@ -127,8 +127,8 @@ async function callOpenRouter(opts: {
 }
 
 /**
- * Executes text generation across Primary (OpenRouter) -> Backup 1 (Google Gemini) -> Backup 2 (Groq)
- * reusing Sovira's installed AI SDK providers and adding failover, timeouts, and error classification.
+ * Executes text generation using Sovira core providers (Groq + Google Gemini)
+ * and optional OpenRouter (tried first only when explicitly configured).
  */
 export async function completeWithFailover(opts: AICompletionOptions): Promise<AICompletionResult> {
   const timeoutMs = opts.timeoutMs ?? 25000
@@ -142,8 +142,9 @@ export async function completeWithFailover(opts: AICompletionOptions): Promise<A
 
   const attempts: AICompletionResult['attempts'] = []
   const startedAll = Date.now()
+  let primaryConfiguredAndFailed = false
 
-  // 1. Primary: OpenRouter
+  // 1. Optional OpenRouter (only invoked if explicitly configured)
   if (openrouterKey) {
     const maxOpenRouterTries = 2
     for (let i = 0; i < maxOpenRouterTries; i++) {
@@ -172,6 +173,7 @@ export async function completeWithFailover(opts: AICompletionOptions): Promise<A
           usage: res.usage,
         }
       } catch (err: any) {
+        primaryConfiguredAndFailed = true
         const classified = classifyAIError(err, err?.status)
         attempts.push({
           provider: 'openrouter',
@@ -184,72 +186,9 @@ export async function completeWithFailover(opts: AICompletionOptions): Promise<A
         await new Promise((r) => setTimeout(r, 700 * (i + 1)))
       }
     }
-  } else {
-    attempts.push({
-      provider: 'openrouter',
-      model: openrouterModel,
-      status: 'failed',
-      errorType: 'NOT_CONFIGURED',
-      message: 'OPENROUTER_API_KEY is not configured; falling back to backup provider.',
-    })
   }
 
-  // 2. Backup 1: Google Gemini (reusing @ai-sdk/google)
-  if (geminiKey) {
-    if (opts.abortSignal?.aborted) {
-      throw new Error('Task execution aborted by cancellation request')
-    }
-    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash']
-    const google = createGoogleGenerativeAI({ apiKey: geminiKey })
-    for (const modelName of geminiModels) {
-      const start = Date.now()
-      try {
-        const result = await generateText({
-          model: google(modelName),
-          system: opts.systemPrompt,
-          prompt: opts.prompt,
-          temperature,
-          maxTokens,
-          abortSignal: combineSignals(timeoutMs, opts.abortSignal),
-        })
-        if (result.text && result.text.trim().length > 0) {
-          attempts.push({ provider: 'gemini', model: modelName, status: 'success' })
-          return {
-            text: result.text,
-            provider: 'gemini',
-            model: modelName,
-            latencyMs: Date.now() - start,
-            failoverUsed: true,
-            attempts,
-            usage: {
-              promptTokens: result.usage?.promptTokens,
-              completionTokens: result.usage?.completionTokens,
-              totalTokens: result.usage?.totalTokens,
-            },
-          }
-        }
-      } catch (err: any) {
-        const classified = classifyAIError(err, err?.statusCode)
-        attempts.push({
-          provider: 'gemini',
-          model: modelName,
-          status: 'failed',
-          errorType: classified.errorType,
-          message: classified.message,
-        })
-      }
-    }
-  } else {
-    attempts.push({
-      provider: 'gemini',
-      model: 'gemini-2.0-flash',
-      status: 'failed',
-      errorType: 'NOT_CONFIGURED',
-      message: 'GEMINI_API_KEY is not configured; falling back to Groq backup.',
-    })
-  }
-
-  // 3. Backup 2: Groq (reusing existing Sovira @ai-sdk/groq models)
+  // 2. Core Provider A: Groq (existing working Sovira @ai-sdk/groq models)
   if (groqKey) {
     if (opts.abortSignal?.aborted) {
       throw new Error('Task execution aborted by cancellation request')
@@ -274,7 +213,55 @@ export async function completeWithFailover(opts: AICompletionOptions): Promise<A
             provider: 'groq',
             model: modelName,
             latencyMs: Date.now() - start,
-            failoverUsed: true,
+            failoverUsed: primaryConfiguredAndFailed,
+            attempts,
+            usage: {
+              promptTokens: result.usage?.promptTokens,
+              completionTokens: result.usage?.completionTokens,
+              totalTokens: result.usage?.totalTokens,
+            },
+          }
+        }
+      } catch (err: any) {
+        primaryConfiguredAndFailed = true
+        const classified = classifyAIError(err, err?.statusCode)
+        attempts.push({
+          provider: 'groq',
+          model: modelName,
+          status: 'failed',
+          errorType: classified.errorType,
+          message: classified.message,
+        })
+      }
+    }
+  }
+
+  // 3. Core Provider B: Google Gemini (reusing @ai-sdk/google)
+  if (geminiKey) {
+    if (opts.abortSignal?.aborted) {
+      throw new Error('Task execution aborted by cancellation request')
+    }
+    const geminiModels = ['gemini-2.0-flash', 'gemini-1.5-flash']
+    const google = createGoogleGenerativeAI({ apiKey: geminiKey })
+    for (const modelName of geminiModels) {
+      const start = Date.now()
+      try {
+        const result = await generateText({
+          model: google(modelName),
+          system: opts.systemPrompt,
+          prompt: opts.prompt,
+          temperature,
+          maxTokens,
+          abortSignal: combineSignals(timeoutMs, opts.abortSignal),
+        })
+        if (result.text && result.text.trim().length > 0) {
+          attempts.push({ provider: 'gemini', model: modelName, status: 'success' })
+          return {
+            text: result.text,
+            provider: 'gemini',
+            model: modelName,
+            latencyMs: Date.now() - start,
+            failoverUsed: primaryConfiguredAndFailed,
             attempts,
             usage: {
               promptTokens: result.usage?.promptTokens,
@@ -286,7 +273,7 @@ export async function completeWithFailover(opts: AICompletionOptions): Promise<A
       } catch (err: any) {
         const classified = classifyAIError(err, err?.statusCode)
         attempts.push({
-          provider: 'groq',
+          provider: 'gemini',
           model: modelName,
           status: 'failed',
           errorType: classified.errorType,
@@ -294,14 +281,10 @@ export async function completeWithFailover(opts: AICompletionOptions): Promise<A
         })
       }
     }
-  } else {
-    attempts.push({
-      provider: 'groq',
-      model: 'openai/gpt-oss-120b',
-      status: 'failed',
-      errorType: 'NOT_CONFIGURED',
-      message: 'GROQ_API_KEY is not configured.',
-    })
+  }
+
+  if (attempts.length === 0) {
+    throw new Error('No AI provider key is configured. Set GROQ_API_KEY or GEMINI_API_KEY in server environment.')
   }
 
   const summary = attempts
@@ -362,7 +345,7 @@ Output strictly valid JSON matching this exact schema (no markdown commentary ou
   "riskLevel": "low | medium | high",
   "approvalRequired": true,
   "expectedOutputs": ["Output item 1", "Output item 2"],
-  "requiredIntegrations": ["openrouter"],
+  "requiredIntegrations": [],
   "steps": [
     {
       "stepOrder": 1,
@@ -374,6 +357,10 @@ Output strictly valid JSON matching this exact schema (no markdown commentary ou
     }
   ]
 }
+
+PLANNING PRIORITY RULES:
+- Prefer "ai_research_analysis" with "requiredIntegrations": [] by default for research, analysis, strategy, comparisons, scripts, summaries, and reports.
+- ONLY include optional external tools (make_webhook_dispatch, notion_record_sync, content_story_pipeline, browser_navigate_extract, browser_interactive_action) if the user explicitly requests that external action, website automation, or video rendering.
 
 CRITICAL PARAMETER RULES BY TOOL:
 - ai_research_analysis: { "topic": string, "focusAreas": string[], "outputFormat": "report"|"comparison_table"|"action_checklist"|"summary" }

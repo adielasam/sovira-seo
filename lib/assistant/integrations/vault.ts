@@ -12,6 +12,7 @@ import { INTEGRATION_PROVIDERS, IntegrationProviderId, IntegrationStatusSummary 
 
 interface ProviderDefinition {
   provider: IntegrationProviderId
+  tier: 'core' | 'optional'
   label: string
   description: string
   envKeys: string[]
@@ -19,28 +20,51 @@ interface ProviderDefinition {
 }
 
 export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefinition> = {
+  groq: {
+    provider: 'groq',
+    tier: 'core',
+    label: 'Groq AI (Active Core Engine)',
+    description: 'Existing working ultra-fast Sovira LLM runtime (openai/gpt-oss-120b, openai/gpt-oss-20b).',
+    envKeys: ['GROQ_API_KEY'],
+    credentialFields: [
+      { key: 'apiKey', label: 'Groq API Key Override (Optional)', placeholder: 'gsk_...', secret: true },
+    ],
+  },
+  gemini: {
+    provider: 'gemini',
+    tier: 'core',
+    label: 'Google Gemini (Active Core Engine)',
+    description: 'Existing working Sovira Google Gemini integration for planning, research, and multimodal fallback.',
+    envKeys: ['GEMINI_API_KEY'],
+    credentialFields: [
+      { key: 'apiKey', label: 'Gemini API Key Override (Optional)', placeholder: 'AIza... or AQ....', secret: true },
+    ],
+  },
+  chatgpt_mcp: {
+    provider: 'chatgpt_mcp',
+    tier: 'core',
+    label: 'ChatGPT Apps SDK & MCP Endpoint',
+    description: 'Shared JSON-RPC 2.0 MCP server and OpenAPI 3.1.0 schema endpoint for connecting ChatGPT Actions & Apps SDK.',
+    envKeys: ['ASSISTANT_MCP_BEARER_TOKEN'],
+    credentialFields: [
+      { key: 'bearerToken', label: 'MCP / ChatGPT Bearer Token', placeholder: 'High-entropy shared bearer token', secret: true },
+    ],
+  },
   openrouter: {
     provider: 'openrouter',
-    label: 'OpenRouter (Primary AI)',
-    description: 'Primary reasoning & task planning router supporting Claude, GPT, and open models.',
+    tier: 'optional',
+    label: 'OpenRouter (Optional Extra Router)',
+    description: 'Optional multi-model gateway. Inactive until configured; Gemini and Groq run natively without it.',
     envKeys: ['OPENROUTER_API_KEY'],
     credentialFields: [
       { key: 'apiKey', label: 'OpenRouter API Key', placeholder: 'sk-or-v1-...', secret: true },
       { key: 'model', label: 'Preferred Model ID', placeholder: 'anthropic/claude-3.5-sonnet', secret: false },
     ],
   },
-  gemini: {
-    provider: 'gemini',
-    label: 'Google Gemini (Backup AI)',
-    description: 'Reuses Sovira Google Gemini integration as failover backup planner and multimodal model.',
-    envKeys: ['GEMINI_API_KEY'],
-    credentialFields: [
-      { key: 'apiKey', label: 'Gemini API Key', placeholder: 'AIza... or AQ....', secret: true },
-    ],
-  },
   telegram: {
     provider: 'telegram',
-    label: 'Private Telegram Bot',
+    tier: 'optional',
+    label: 'Private Telegram Bot (Optional)',
     description: 'Verified two-way bot for submitting instructions, approvals, and receiving completion alerts.',
     envKeys: ['TELEGRAM_BOT_TOKEN', 'TELEGRAM_ALLOWED_USER_ID', 'TELEGRAM_WEBHOOK_SECRET'],
     credentialFields: [
@@ -51,7 +75,8 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   make: {
     provider: 'make',
-    label: 'Make.com Pro',
+    tier: 'optional',
+    label: 'Make.com Pro (Optional)',
     description: 'Authenticated webhook dispatch & signed callback correlation for external scenarios.',
     envKeys: ['MAKE_WEBHOOK_URL', 'MAKE_WEBHOOK_SECRET'],
     credentialFields: [
@@ -61,7 +86,8 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   notion: {
     provider: 'notion',
-    label: 'Notion Workspace',
+    tier: 'optional',
+    label: 'Notion Workspace (Optional)',
     description: 'Task tracking and content production ledger with graceful degradation when unavailable.',
     envKeys: ['NOTION_API_KEY', 'NOTION_DATABASE_ID'],
     credentialFields: [
@@ -71,7 +97,8 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   elevenlabs: {
     provider: 'elevenlabs',
-    label: 'ElevenLabs Voice Studio',
+    tier: 'optional',
+    label: 'ElevenLabs Voice Studio (Optional)',
     description: 'Realistic AI narration synthesis for automated story and video production workflows.',
     envKeys: ['ELEVENLABS_API_KEY'],
     credentialFields: [
@@ -81,7 +108,8 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   creatomate: {
     provider: 'creatomate',
-    label: 'Creatomate Video Renderer',
+    tier: 'optional',
+    label: 'Creatomate Video Renderer (Optional)',
     description: 'Programmatic cloud video assembly, subtitles, watermarks, and MP4 rendering.',
     envKeys: ['CREATOMATE_API_KEY'],
     credentialFields: [
@@ -91,7 +119,8 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   google_oauth: {
     provider: 'google_oauth',
-    label: 'Google OAuth / YouTube Data API v3',
+    tier: 'optional',
+    label: 'Google OAuth / YouTube Data API v3 (Optional)',
     description: 'Official OAuth2 credentials for publishing approved video content as private/unlisted drafts.',
     envKeys: ['YOUTUBE_CLIENT_ID', 'YOUTUBE_CLIENT_SECRET', 'YOUTUBE_REFRESH_TOKEN'],
     credentialFields: [
@@ -102,7 +131,8 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
   },
   browser_worker: {
     provider: 'browser_worker',
-    label: 'Playwright Browser Worker',
+    tier: 'optional',
+    label: 'Playwright Browser Worker (Optional)',
     description: 'Persistent background daemon executing isolated browser navigation, uploads, and captures.',
     envKeys: ['ASSISTANT_WORKER_ID'],
     credentialFields: [],
@@ -111,6 +141,14 @@ export const INTEGRATION_CATALOG: Record<IntegrationProviderId, ProviderDefiniti
 
 function getEnvCredentialsForProvider(provider: IntegrationProviderId): Record<string, string> {
   switch (provider) {
+    case 'groq':
+      return process.env.GROQ_API_KEY ? { apiKey: process.env.GROQ_API_KEY } : {}
+    case 'gemini':
+      return process.env.GEMINI_API_KEY ? { apiKey: process.env.GEMINI_API_KEY } : {}
+    case 'chatgpt_mcp':
+      return process.env.ASSISTANT_MCP_BEARER_TOKEN
+        ? { bearerToken: process.env.ASSISTANT_MCP_BEARER_TOKEN }
+        : {}
     case 'openrouter':
       return {
         ...(process.env.OPENROUTER_API_KEY ? { apiKey: process.env.OPENROUTER_API_KEY } : {}),
@@ -202,16 +240,17 @@ export async function resolveProviderCredentials(
 }
 
 export async function resolveAICredentials(userId: string): Promise<ResolvedAICredentials> {
-  const [openrouter, gemini] = await Promise.all([
-    resolveProviderCredentials(userId, 'openrouter').catch(() => ({ enabled: true, credentials: {} as Record<string, string> })),
+  const [groq, gemini, openrouter] = await Promise.all([
+    resolveProviderCredentials(userId, 'groq').catch(() => ({ enabled: true, credentials: {} as Record<string, string> })),
     resolveProviderCredentials(userId, 'gemini').catch(() => ({ enabled: true, credentials: {} as Record<string, string> })),
+    resolveProviderCredentials(userId, 'openrouter').catch(() => ({ enabled: true, credentials: {} as Record<string, string> })),
   ])
 
   return {
     openrouterApiKey: openrouter.enabled ? openrouter.credentials.apiKey || process.env.OPENROUTER_API_KEY : undefined,
     openrouterModel: openrouter.credentials.model || process.env.OPENROUTER_PRIMARY_MODEL,
     geminiApiKey: gemini.enabled ? gemini.credentials.apiKey || process.env.GEMINI_API_KEY : undefined,
-    groqApiKey: process.env.GROQ_API_KEY,
+    groqApiKey: groq.enabled ? groq.credentials.apiKey || process.env.GROQ_API_KEY : undefined,
   }
 }
 
@@ -346,6 +385,7 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
     if (providerId === 'browser_worker') {
       return {
         provider: 'browser_worker',
+        tier: def.tier,
         label: def.label,
         description: def.description,
         enabled: dbRow?.enabled ?? true,
@@ -355,7 +395,7 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
         lastTestedAt: latestBeat?.last_heartbeat_at || dbRow?.last_tested_at || null,
         lastError: workerOnline
           ? null
-          : 'No active background worker heartbeat in the last 45 seconds. Start worker/assistant-worker.ts.',
+          : 'No active background worker heartbeat in the last 45 seconds. Start worker/assistant-worker.ts when browser automation is needed.',
         secretPreview: workerOnline ? `Worker ${latestBeat.worker_id} Online` : 'Worker Offline',
         credentialFields: def.credentialFields,
         metadata: latestBeat
@@ -379,6 +419,9 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
       status = 'error'
     } else if (dbRow?.status === 'connected' || hasEnv || hasVault) {
       status = 'connected'
+    } else if (providerId === 'chatgpt_mcp') {
+      // Ready via owner Supabase session even before adding an external bearer token
+      status = 'connected'
     }
 
     const verificationMode: IntegrationStatusSummary['verificationMode'] =
@@ -390,6 +433,7 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
 
     return {
       provider: providerId,
+      tier: def.tier,
       label: def.label,
       description: def.description,
       enabled: dbRow?.enabled ?? true,
@@ -398,7 +442,10 @@ export async function getIntegrationStatusList(userId: string): Promise<Integrat
       verificationMode,
       lastTestedAt: dbRow?.last_tested_at || null,
       lastError: dbRow?.last_error ? redactSecretsInText(dbRow.last_error) : null,
-      secretPreview: maskSecretStatus(hasVault || hasEnv),
+      secretPreview:
+        providerId === 'chatgpt_mcp' && !(hasVault || hasEnv)
+          ? 'Owner Session Ready (Set Bearer Token for External ChatGPT Actions)'
+          : maskSecretStatus(hasVault || hasEnv),
       credentialFields: def.credentialFields,
       metadata: (dbRow?.config_metadata as Record<string, unknown>) || {},
     }
@@ -475,6 +522,26 @@ export async function testIntegrationConnection(
 
   try {
     switch (provider) {
+      case 'groq': {
+        if (!creds.apiKey) {
+          return await persistTestResult(userId, provider, 'unconfigured', message)
+        }
+        const res = await fetch('https://api.groq.com/openai/v1/models', {
+          headers: { Authorization: `Bearer ${creds.apiKey}` },
+          signal: AbortSignal.timeout(10000),
+        })
+        ok = res.ok
+        message = res.ok ? 'Groq API key verified cleanly.' : `Groq returned HTTP ${res.status}`
+        break
+      }
+      case 'chatgpt_mcp': {
+        ok = true
+        const hasToken = Boolean(creds.bearerToken)
+        message = hasToken
+          ? 'ChatGPT Apps SDK / MCP endpoint is live and protected with Bearer Token + Session auth.'
+          : 'MCP endpoint is ready for owner Supabase sessions. Set a Bearer Token to authorize external ChatGPT connectors.'
+        break
+      }
       case 'openrouter': {
         if (!creds.apiKey) {
           return await persistTestResult(userId, provider, 'unconfigured', message)

@@ -78,11 +78,11 @@ export const CONTROLLED_TOOL_REGISTRY: Record<ToolName, ToolDefinition> = {
   ai_research_analysis: {
     name: 'ai_research_analysis',
     label: 'AI Research & Structured Report',
-    description: 'Researches, compares, analyzes, and compiles structured markdown reports using OpenRouter/Gemini/Groq.',
+    description: 'Researches, compares, analyzes, and compiles structured markdown reports using Sovira core AI (Groq / Gemini / optional OpenRouter).',
     longRunning: false,
     defaultRequiresApproval: false,
     riskLevel: 'low',
-    requiredIntegrations: ['openrouter'],
+    requiredIntegrations: [],
     parametersSchema: aiResearchAnalysisParamsSchema,
   },
   browser_navigate_extract: {
@@ -132,7 +132,7 @@ export const CONTROLLED_TOOL_REGISTRY: Record<ToolName, ToolDefinition> = {
     longRunning: true,
     defaultRequiresApproval: true,
     riskLevel: 'high',
-    requiredIntegrations: ['openrouter', 'elevenlabs', 'creatomate', 'google_oauth'],
+    requiredIntegrations: ['elevenlabs', 'creatomate', 'google_oauth'],
     parametersSchema: contentStoryPipelineParamsSchema,
   },
 }

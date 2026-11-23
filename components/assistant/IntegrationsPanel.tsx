@@ -19,6 +19,7 @@ import { AssistantNav } from './AssistantNav'
 
 interface IntegrationItem {
   provider: string
+  tier: 'core' | 'optional'
   label: string
   description: string
   enabled: boolean
@@ -178,36 +179,17 @@ export function IntegrationsPanel() {
     }
   }
 
-  return (
-    <div>
-      <AssistantNav workerOnline={workerOnline} />
+  const coreIntegrations = integrations.filter((i) => i.tier === 'core')
+  const optionalIntegrations = integrations.filter((i) => i.tier !== 'core')
 
-      {!encryptionConfigured && (
-        <div className="mb-6 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 flex items-start gap-3 text-sm text-amber-900 dark:text-amber-200">
-          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
-          <div>
-            <p className="font-semibold">AES-256-GCM Master Key Required for Vault Storage</p>
-            <p className="text-xs mt-1">
-              Set a 32-byte key in <code className="font-mono">ASSISTANT_ENCRYPTION_KEY</code> in your server environment before saving encrypted credentials through the UI. Environment variable credentials still show read-only status cleanly.
-            </p>
-          </div>
-        </div>
-      )}
-
-      {loading ? (
-        <div className="flex items-center justify-center py-16 text-sm text-slate-500">
-          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading connected accounts...
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {integrations.map((item) => {
-            const isConnected = item.status === 'connected'
-            const isError = item.status === 'error'
-            return (
-              <div
-                key={item.provider}
-                className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between"
-              >
+  const renderIntegrationCard = (item: IntegrationItem) => {
+    const isConnected = item.status === 'connected'
+    const isError = item.status === 'error'
+    return (
+      <div
+        key={item.provider}
+        className="rounded-2xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-5 shadow-sm flex flex-col justify-between"
+      >
                 <div>
                   <div className="flex items-start justify-between gap-3">
                     <div>
@@ -412,8 +394,65 @@ export function IntegrationsPanel() {
                   )}
                 </div>
               </div>
-            )
-          })}
+    )
+  }
+
+  return (
+    <div>
+      <AssistantNav workerOnline={workerOnline} />
+
+      {!encryptionConfigured && (
+        <div className="mb-6 rounded-2xl border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 p-4 flex items-start gap-3 text-sm text-amber-900 dark:text-amber-200">
+          <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-600" />
+          <div>
+            <p className="font-semibold">AES-256-GCM Master Key Required Only for UI Vault Storage</p>
+            <p className="text-xs mt-1">
+              Groq &amp; Gemini run right away via existing server environment variables. Set <code className="font-mono">ASSISTANT_ENCRYPTION_KEY</code> (32-byte key) if you want to save encrypted keys directly through this UI.
+            </p>
+          </div>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="flex items-center justify-center py-16 text-sm text-slate-500">
+          <Loader2 className="mr-2 h-5 w-5 animate-spin" /> Loading connected accounts...
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <section>
+            <div className="mb-3 flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                  Core Active Integrations (Ready Now)
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  Existing working Sovira AI engines and the shared ChatGPT Apps SDK / MCP backend.
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+              {coreIntegrations.map(renderIntegrationCard)}
+            </div>
+          </section>
+
+          <details className="group rounded-2xl border border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 p-5">
+            <summary className="cursor-pointer list-none flex items-center justify-between">
+              <div>
+                <h2 className="text-sm font-bold uppercase tracking-wider text-slate-700 dark:text-slate-200">
+                  Optional Extensions ({optionalIntegrations.length} — Activate Later When Needed)
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  OpenRouter, Telegram Bot, Make.com Pro, Notion, ElevenLabs, Creatomate, YouTube OAuth, and Playwright Worker.
+                </p>
+              </div>
+              <span className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-1 text-xs font-semibold text-slate-600 dark:text-slate-300">
+                Toggle Extensions
+              </span>
+            </summary>
+            <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-2">
+              {optionalIntegrations.map(renderIntegrationCard)}
+            </div>
+          </details>
         </div>
       )}
     </div>
