@@ -369,6 +369,7 @@ CRITICAL PARAMETER RULES BY TOOL:
 - make_webhook_dispatch: { "scenarioName": string, "eventType": string, "payload": object, "waitForCallback": boolean }
 - notion_record_sync: { "title": string, "status": string, "category": string, "summary"?: string }
 - content_story_pipeline: { "topic": string, "targetAudience": string, "style": string, "durationSeconds": number, "includeSubtitles": boolean, "watermarkText": string, "publishMode": "draft_only"|"youtube_private"|"await_publish_approval" }
+- For website login and dashboard inspection tasks, use a SINGLE "browser_interactive_action" step starting at the user-supplied URL with "fill" actions for the credentials and "click" to submit. Do NOT add a second step with a guessed "/dashboard" URL; the browser runner automatically follows the site's post-login redirect and extracts the dashboard.
 
 Always set approvalRequired: true whenever external integrations, browser actions, Notion writes, Make webhooks, or content publishing are involved.`
 
